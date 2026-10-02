@@ -30,7 +30,7 @@ import spotify_lista
 
 WERSJA = "1.1.0"  # jedyne źródło wersji: czyta ją zbuduj.ps1 (instalator, wydanie na GitHubie) i aktualizacja_programu
 REPO_GITHUB = "matmiccode/nutka"  # skąd program bierze informację o nowych wersjach (GitHub Releases)
-BUYCOFFEE_URL = ""  # profil na buycoffee.to - pusty = przycisk „Postaw kawę” się nie pokazuje
+BUYCOFFEE_URL = "https://buycoffee.to/matcode"  # profil na buycoffee.to - pusty = przycisk „Postaw kawę” się nie pokazuje
 DOMYSLNY_FOLDER = Path.home() / "Music" / "Pobrane"
 PODPIS = "MATCODE"
 ROWNOLEGLE_POBIERANIA = 3  # lista Spotify: ile utworów naraz

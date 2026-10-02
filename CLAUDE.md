@@ -8,7 +8,7 @@ Podpis autora: **MATCODE** – bez imienia i nazwiska (świadoma decyzja przy pu
 
 ## Moduły
 - `app.py` – okno i cała logika UI. Długie operacje w wątkach, do UI tylko przez `queue` jako `(rodzaj, wartość)` obsługiwane w `_odbierz_logi`.
-  - `WERSJA` = jedyne źródło wersji (czyta ją `zbuduj.ps1`), `REPO_GITHUB`, `BUYCOFFEE_URL` (pusty = przycisk ukryty – użytkownik jeszcze nie ma profilu na buycoffee.to; gdy poda link, wpisać i wydać nową wersję).
+  - `WERSJA` = jedyne źródło wersji (czyta ją `zbuduj.ps1`), `REPO_GITHUB`, `BUYCOFFEE_URL` (= https://buycoffee.to/matcode; pusty = przycisk „Postaw kawę autorowi” ukryty). Zostajemy przy buycoffee.to (decyzja użytkownika).
 - `spotify_lista.py` – Spotify → `Lista`/`Utwor` przez **spotapi** (publiczne API web playera, bez kluczy; ~5 s/strona 343 utw.),
   `dopasuj()` w YouTube Music (ytmusicapi: najpierw „songs” ±7 s, potem „videos” ±15 s; tytuł/wykonawca znormalizowane),
   `sciezka_pliku()` (stała nazwa = synchronizacja: istniejący plik = „masz już”), `otaguj()` (mutagen: tagi + okładka ze Spotify).

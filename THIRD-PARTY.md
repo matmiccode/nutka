@@ -23,4 +23,4 @@ pod poniższymi adresami. Część z nich jest na licencji GPL, dlatego cały ko
 Pełne teksty licencji: w katalogach poszczególnych bibliotek w folderze programu (`_internal\*.dist-info`)
 oraz `narzedzia\LICENSE-ffmpeg.txt`.
 
-Nutka nie jest powiązany z YouTube, Google ani Spotify. Nazwy i znaki towarowe należą do ich właścicieli.
+Nutka nie jest powiązana z YouTube, Google ani Spotify. Nazwy i znaki towarowe należą do ich właścicieli.

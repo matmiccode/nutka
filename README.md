@@ -36,8 +36,10 @@
 2. Uruchom go i przejdź przez instalator (około minuty).
 3. Gotowe – Nutka jest w menu Start (i na pulpicie, jeśli zaznaczysz skrót).
 
-> **„System Windows ochronił ten komputer”?** To ostrzeżenie pojawia się przy programach bez płatnego
-> podpisu cyfrowego. Kliknij **Więcej informacji** → **Uruchom mimo to**.
+> **„System Windows ochronił ten komputer”?** To ostrzeżenie pojawia się przy każdym nowym programie bez
+> płatnego podpisu cyfrowego i z małą liczbą pobrań – nie znaczy, że plik jest groźny. Kliknij
+> **Więcej informacji** → **Uruchom mimo to**. Instalator nie wymaga uprawnień administratora i nie zmienia
+> ustawień systemu; kod programu jest w całości jawny w tym repozytorium.
 
 Wymagania: Windows 10 lub 11 (64-bit), ~400 MB miejsca, internet do wyszukiwania i pobierania.
 
@@ -92,10 +94,15 @@ Budowanie: Python 3.12, [Inno Setup 6](https://jrsoftware.org/isinfo.php), potem
 `powershell -ExecutionPolicy Bypass -File zbuduj.ps1` → `dist\Nutka-Setup.exe`.
 Nowa wersja: podbij `WERSJA` w `app.py`, dopisz sekcję w [CHANGELOG.md](CHANGELOG.md), `zbuduj.ps1 -Wydanie`.
 
+## Wsparcie
+
+Nutka jest darmowa i taka zostanie. Jeśli oszczędziła Ci czasu, możesz [postawić autorowi kawę](https://buycoffee.to/matcode) –
+ale nie musisz. Dziękuję!
+
 ## Licencja
 
 Kod Nutki: [MIT](LICENSE) © MATCODE.
 Instalator zawiera programy i biblioteki innych autorów na ich licencjach (m.in. GPL) – lista w
-[THIRD-PARTY.md](THIRD-PARTY.md). Nutka nie jest powiązany z YouTube, Google ani Spotify.
+[THIRD-PARTY.md](THIRD-PARTY.md). Nutka nie jest powiązana z YouTube, Google ani Spotify.
 
 <div align="center"><sub><b>MATCODE</b> – darmowe aplikacje</sub></div>
