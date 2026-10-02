@@ -1,0 +1,6 @@
+yt-dlp
+ytmusicapi
+spotapi
+mutagen
+deno
+customtkinter
