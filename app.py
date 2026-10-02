@@ -268,6 +268,28 @@ class Aplikacja(ctk.CTk):
         return ctk.CTkEntry(rodzic, height=38, corner_radius=10, border_width=1, fg_color=POLE, border_color=OBRYS,
                             text_color=TEKST, placeholder_text_color=TEKST_SZARY, font=ctk.CTkFont(FONT, 14), **opcje)
 
+    def _przycisk_kawy(self, rodzic) -> ctk.CTkFrame:
+        """Biała pigułka w nagłówku: „Postaw kawę autorowi” + niżej mały podpis MATCODE (dobrowolne wsparcie).
+        CTkButton nie umie dwóch rozmiarów tekstu, więc to ramka z dwiema etykietami, cała klikalna."""
+        biel, najechany = "#FFFFFF", "#F6E6F3"
+        ramka = ctk.CTkFrame(rodzic, width=10, height=10, corner_radius=16, fg_color=biel, cursor="hand2")
+        gora = ctk.CTkLabel(ramka, text="Postaw kawę autorowi", text_color=FIOLET, fg_color=biel, height=20,
+                            font=ctk.CTkFont(FONT, 14, "bold"), cursor="hand2")
+        dol = ctk.CTkLabel(ramka, text="MATCODE", text_color=AKCENT, fg_color=biel, height=14,
+                           font=ctk.CTkFont(FONT, 11, "bold"), cursor="hand2")
+        gora.pack(padx=22, pady=(8, 0))
+        dol.pack(padx=22, pady=(0, 8))
+
+        def kolor(c):
+            ramka.configure(fg_color=c)
+            gora.configure(fg_color=c)
+            dol.configure(fg_color=c)
+        for w in (ramka, gora, dol):
+            w.bind("<Button-1>", lambda _: webbrowser.open(BUYCOFFEE_URL))
+            w.bind("<Enter>", lambda _: kolor(najechany))
+            w.bind("<Leave>", lambda _: kolor(biel))
+        return ramka
+
     def _styl_tabeli(self):
         """Tabela wyników to ttk.Treeview (CustomTkinter nie ma tabeli) - ubieramy ją w te same kolory."""
         try:
@@ -300,11 +322,8 @@ class Aplikacja(ctk.CTk):
             obraz = Image.open(plik_naglowka)
             ctk.CTkLabel(naglowek, text="", image=ctk.CTkImage(obraz, size=(obraz.width // 2, obraz.height // 2))
                          ).place(x=0, y=0)
-        if BUYCOFFEE_URL:  # biała pigułka na gradiencie, w prawym górnym rogu (dobrowolne wsparcie autora)
-            ctk.CTkButton(naglowek, text="Postaw kawę  ·  MATCODE", command=lambda: webbrowser.open(BUYCOFFEE_URL),
-                          height=36, width=10, corner_radius=18, fg_color="#FFFFFF", hover_color="#F3E4F1",
-                          text_color=FIOLET, font=ctk.CTkFont(FONT, 14, "bold"), cursor="hand2"
-                          ).place(relx=1.0, x=-margines, rely=0.5, anchor="e")
+        if BUYCOFFEE_URL:
+            self._przycisk_kawy(naglowek).place(relx=1.0, x=-margines, rely=0.5, anchor="e")
 
         # --- wyszukiwarka ---
         wiersz_szukaj = ctk.CTkFrame(self, fg_color="transparent")
