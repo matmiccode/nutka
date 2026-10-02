@@ -300,6 +300,11 @@ class Aplikacja(ctk.CTk):
             obraz = Image.open(plik_naglowka)
             ctk.CTkLabel(naglowek, text="", image=ctk.CTkImage(obraz, size=(obraz.width // 2, obraz.height // 2))
                          ).place(x=0, y=0)
+        if BUYCOFFEE_URL:  # biała pigułka na gradiencie, w prawym górnym rogu (dobrowolne wsparcie autora)
+            ctk.CTkButton(naglowek, text="Postaw kawę  ·  MATCODE", command=lambda: webbrowser.open(BUYCOFFEE_URL),
+                          height=36, width=10, corner_radius=18, fg_color="#FFFFFF", hover_color="#F3E4F1",
+                          text_color=FIOLET, font=ctk.CTkFont(FONT, 14, "bold"), cursor="hand2"
+                          ).place(relx=1.0, x=-margines, rely=0.5, anchor="e")
 
         # --- wyszukiwarka ---
         wiersz_szukaj = ctk.CTkFrame(self, fg_color="transparent")
@@ -416,11 +421,6 @@ class Aplikacja(ctk.CTk):
         self.stopka_wersja.pack(side="left")
         self.stopka_wersja.bind("<Button-1>", lambda _: self.sprawdz_wersje_programu(recznie=True))
         ctk.CTkLabel(stopka, text=PODPIS, **maly).pack(side="right")
-        if BUYCOFFEE_URL:
-            ctk.CTkButton(stopka, text="Postaw kawę autorowi", command=lambda: webbrowser.open(BUYCOFFEE_URL),
-                          height=24, width=10, corner_radius=12, fg_color="transparent", border_width=1,
-                          border_color=AKCENT, hover_color=POLE, text_color=AKCENT,
-                          font=ctk.CTkFont(FONT, 12, "bold")).pack(side="right", padx=(0, 12))
 
     @staticmethod
     def _opis_wersji() -> str:
