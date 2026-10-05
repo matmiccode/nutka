@@ -198,6 +198,26 @@ def szukaj_yt_music(fraza: str, rodzaj: str, ile: int = 15) -> list[dict]:
     return wyniki
 
 
+def ikona_kawy(bok: int, kolor: str):
+    """Filiżanka z parą (przycisk kawy) - emoji w Tk renderują się źle, więc rysujemy ją sami: w 4x na siatce
+    32x32, potem zmniejszenie = gładkie krawędzie. Zwraca obraz RGBA bok x bok."""
+    from PIL import Image, ImageDraw
+    k = bok * 4 / 32
+    maska = Image.new("L", (bok * 4, bok * 4))
+    rysuj = ImageDraw.Draw(maska)
+    s = lambda *punkty: [v * k for v in punkty]  # noqa: E731 - siatka 32x32 -> piksele
+    rysuj.rounded_rectangle(s(5, 13, 21, 26), radius=4 * k, fill=255)       # filiżanka
+    rysuj.rectangle(s(5, 13, 21, 17), fill=255)                              # płaska góra
+    rysuj.ellipse(s(17, 15, 27, 24), outline=255, width=round(2.4 * k))      # ucho
+    rysuj.rounded_rectangle(s(3, 27.5, 25, 30), radius=1.2 * k, fill=255)    # spodek
+    for x in (9.5, 15):                                                      # para
+        rysuj.arc(s(x - 2, 2, x + 2, 6.5), 90, 270, fill=255, width=round(1.8 * k))
+        rysuj.arc(s(x - 2, 6, x + 2, 10.5), 270, 90, fill=255, width=round(1.8 * k))
+    obraz = Image.new("RGBA", (bok, bok), kolor)
+    obraz.putalpha(maska.resize((bok, bok), Image.LANCZOS))
+    return obraz
+
+
 class Aplikacja(ctk.CTk):
     def __init__(self):
         # własny identyfikator aplikacji: pasek zadań bierze wtedy naszą ikonę, a nie ikonę pythona
@@ -280,7 +300,8 @@ class Aplikacja(ctk.CTk):
         Rysowana w Pillow (2x pod DPI) na wycinku gradientu, który leży dokładnie pod nią - zaokrąglone rogi CTk
         mają jeden kolor tła, a gradient pod pigułką przechodzi z różu w fiolet, więc rogi wychodziły kanciaste."""
         from PIL import Image, ImageDraw, ImageFont
-        szer, wys, gora_y = 196, 52, 16  # px logiczne; nagłówek ma 84, pigułka na środku
+        szer, wys, gora_y = 232, 52, 16  # px logiczne; nagłówek ma 84, pigułka na środku
+        kawka = ikona_kawy(56, AKCENT)  # 2x: 28 px logicznych, po lewej od napisów
         try:
             duza, mala = ImageFont.truetype("segoeuib.ttf", 28), ImageFont.truetype("segoeuib.ttf", 21)
         except (OSError, ImportError):  # brak czcionki albo FreeType w paczce - prosty krój zamiast błędu
@@ -304,9 +325,11 @@ class Aplikacja(ctk.CTk):
                 maska = Image.new("L", (W * 2, H * 2))  # podwójna rozdzielczość -> gładkie rogi po zmniejszeniu
                 ImageDraw.Draw(maska).rounded_rectangle((0, 0, W * 2 - 1, H * 2 - 1), radius=H, fill=255)
                 obraz.paste("#F6E6F3" if stan["najechany"] else "#FFFFFF", mask=maska.resize((W, H), Image.LANCZOS))
+                obraz.paste(kawka, (36, (H - kawka.height) // 2 - 2), kawka)
                 rysuj = ImageDraw.Draw(obraz)
-                rysuj.text((W / 2, H * 0.40), "Postaw kawę autorowi", font=duza, fill=FIOLET, anchor="mm")
-                rysuj.text((W / 2, H * 0.73), "MATCODE", font=mala, fill=AKCENT, anchor="mm")
+                srodek = (36 + kawka.width + 18 + W - 40) / 2  # napisy na środku miejsca obok filiżanki
+                rysuj.text((srodek, H * 0.40), "Postaw kawę autorowi", font=duza, fill=FIOLET, anchor="mm")
+                rysuj.text((srodek, H * 0.73), "MATCODE", font=mala, fill=AKCENT, anchor="mm")
                 obrazy[klucz] = ctk.CTkImage(obraz, size=(szer, wys))
             przycisk.configure(image=obrazy[klucz])
 

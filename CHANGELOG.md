@@ -9,7 +9,7 @@ przy proponowaniu aktualizacji – pisz ją dla zwykłego użytkownika.
   stoi obok starego programu – starego Maestro możesz odinstalować w Ustawieniach Windows.
 - Podpowiedź w polu wyszukiwania mówi teraz wprost, co można wpisać albo wkleić (tytuł, wykonawca, link
   do utworu, albumu lub playlisty z YouTube i Spotify).
-- W prawym górnym rogu jest przycisk „Postaw kawę autorowi” z podpisem MATCODE – całkowicie dobrowolny.
+- W prawym górnym rogu jest przycisk z filiżanką „Postaw kawę autorowi” z podpisem MATCODE – całkowicie dobrowolny.
 - Ładniejsza tabela: za długie tytuły kończą się „…” zamiast uciętej litery, utwory, których nie udało się
   pobrać, są wyróżnione na czerwono, a przy mniejszym oknie widać więcej wierszy.
 - **Playlisty i albumy ze Spotify**: wklej link, a Nutka pokaże listę utworów. Odznacz, czego nie chcesz,
