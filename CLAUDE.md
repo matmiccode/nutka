@@ -33,8 +33,12 @@ Podpis autora: **MATCODE** – bez imienia i nazwiska (świadoma decyzja przy pu
 ## Wygląd
 - CustomTkinter, ciemny motyw w kolorach ikony – paleta w stałych na górze `app.py` (`TLO`, `KARTA`, `POLE`, `AKCENT`…). Nowe kontrolki: `_przycisk()` / `_pole()`.
 - Nagłówek = `naglowek.png` (gradient + nutka + nazwa, 2x pod DPI, szerszy niż okno; ramka ma kolor `FIOLET`). Ekran startowy = `splash.png`. Oba wygenerowane Pillow (Segoe UI) – przy zmianie nazwy przerysować.
-- Tabela to `ttk.Treeview` (styl „Nutka.Treeview”, motyw `clam`) z 6 kolumnami; `insert` zawsze z 6 wartościami (ukryte kolumny też liczą się do kolejności!).
+- Przycisk kawy = obrazek z Pillow (`_przycisk_kawy()`) rysowany na wycinku gradientu spod pigułki – zaokrąglone rogi CTk mają jeden kolor tła i na gradiencie wychodziły kanciaste.
+- Tabela to `ttk.Treeview` (styl „Nutka.Treeview”, motyw `clam`) z 6 kolumnami. Wiersze tylko przez `_wstaw_wiersz()` (6 wartości – ukryte kolumny też liczą się do kolejności!),
+  czyszczenie `_wyczysc_tabele()`, status `_ustaw_status()` („✗ …” = tag `blad`). Pełne teksty w `_pelne_teksty`, w tabeli skrócone do „…” (`_skroc_wiersze()`) – nie czytać ich z Treeview.
   Szerokości rozdziela `_dopasuj_kolumny()` (× `_skala` DPI) – wbudowany `stretch` po zmianie `displaycolumns` zostawiał kolumny za krawędzią.
+  Zaznaczenie = `WYBRANY` (stonowana malina), róż `AKCENT` zostaje dla głównych przycisków. Nagłówki kolumn zwykłą wielkością liter. Pusta tabela = `_pokaz_pusta(tytuł, opis)`.
+- Wolne miejsce w pionie dostaje tylko tabela (log ma stałą wysokość).
 - CTk: tekst przycisku przez `.cget("text")`, nie `["text"]`; pole z `textvariable` nie pokazuje placeholdera.
 - Pasek tytułu: `DWMWA_CAPTION_COLOR` = `TLO`. Emoji na przyciskach renderują się źle – tylko tekst/▶/■.
 

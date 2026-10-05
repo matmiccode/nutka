@@ -1,9 +1,10 @@
 """Nutka - okienko: wyszukujesz albo wklejasz link (YouTube lub Spotify), dostajesz mp3.
 
 YouTube  -> yt-dlp pobiera audio i konwertuje do mp3 (ffmpeg).
-Spotify  -> spotDL czyta metadane ze Spotify, szuka utworu na YouTube i pobiera stamtąd.
+Spotify  -> lista utworów (spotapi), każdy dopasowany w YouTube Music i stamtąd pobrany (spotify_lista.py).
 Szukaj   -> wyniki z YouTube Music (ytmusicapi), odsłuch przez ffplay.
-Exe sam po cichu aktualizuje yt-dlp i ytmusicapi (aktualizacje.py).
+Exe sam po cichu aktualizuje yt-dlp, ytmusicapi i spotapi (aktualizacje.py), a nową wersję programu
+proponuje z GitHub Releases (aktualizacja_programu.py).
 
 MATCODE
 """
@@ -21,6 +22,7 @@ import tkinter as tk
 import webbrowser
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
+from tkinter import font as tkfont
 
 import customtkinter as ctk
 
@@ -36,6 +38,7 @@ PODPIS = "MATCODE"
 ROWNOLEGLE_POBIERANIA = 3  # lista Spotify: ile utworów naraz
 BEZ_OKNA = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 CO_ILE_AKTUALIZACJE_MS = 6 * 3600 * 1000  # poza startem - gdyby okno wisiało otwarte dniami
+ROZCIAGANE = ("tytul", "wykonawca", "album")  # kolumny tabeli, które dzielą wolne miejsce i skracają się do „…”
 
 # paleta Nutka - ciemny motyw w kolorach ikony (róż -> fiolet)
 TLO = "#141019"          # tło okna
@@ -46,6 +49,8 @@ TEKST = "#F4EEF7"
 TEKST_SZARY = "#A99BB5"
 AKCENT = "#E0479E"       # róż z ikony
 AKCENT_NAJECHANY = "#C4358A"
+WYBRANY = "#5E2656"      # zaznaczony wiersz tabeli - stonowana malina, żeby róż zostawał dla „Pobierz”
+BLAD = "#FF8FA8"         # wiersz, którego nie udało się pobrać
 FIOLET = "#8E2FB8"       # koniec gradientu nagłówka (naglowek.png)
 FONT = "Segoe UI"
 
@@ -58,7 +63,7 @@ if SPAKOWANY:
 # ffmpeg/ffplay/deno: w exe leżą w narzedzia\ (przy testach z venv deno jest obok pythona)
 _dodatkowe = [FOLDER_PROGRAMU / "narzedzia", Path(sys.executable).parent]
 os.environ["PATH"] = os.pathsep.join([*map(str, _dodatkowe), os.environ.get("PATH", "")])
-# procesy potomne exe (--yt-dlp, --spotdl, test aktualizacji) nie pokazują ekranu wczytywania
+# procesy potomne exe (--yt-dlp, test aktualizacji) nie pokazują ekranu wczytywania
 os.environ["PYINSTALLER_SUPPRESS_SPLASH_SCREEN"] = "1"
 ENV_UTF8 = {**os.environ, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"}
 
@@ -213,6 +218,8 @@ class Aplikacja(ctk.CTk):
         self.odsluch: subprocess.Popen | None = None
         self.odsluch_nr = 0  # numer bieżącego odsłuchu; stary wątek po zmianie numeru się wycofuje
         self.linki_wynikow: dict[str, str] = {}
+        self._pelne_teksty: dict[str, dict[str, str]] = {}  # iid -> pełny tytuł/wykonawca/album (w tabeli bywa „…”)
+        self._skracanie = None
         self.folder = tk.StringVar(value=str(DOMYSLNY_FOLDER))
         self.link = tk.StringVar()
         self.rodzaj = tk.StringVar(value="Utwory")
@@ -268,27 +275,49 @@ class Aplikacja(ctk.CTk):
         return ctk.CTkEntry(rodzic, height=38, corner_radius=10, border_width=1, fg_color=POLE, border_color=OBRYS,
                             text_color=TEKST, placeholder_text_color=TEKST_SZARY, font=ctk.CTkFont(FONT, 14), **opcje)
 
-    def _przycisk_kawy(self, rodzic) -> ctk.CTkFrame:
+    def _przycisk_kawy(self, naglowek: ctk.CTkFrame, gradient, margines: int) -> ctk.CTkLabel:
         """Biała pigułka w nagłówku: „Postaw kawę autorowi” + niżej mały podpis MATCODE (dobrowolne wsparcie).
-        CTkButton nie umie dwóch rozmiarów tekstu, więc to ramka z dwiema etykietami, cała klikalna."""
-        biel, najechany = "#FFFFFF", "#F6E6F3"
-        ramka = ctk.CTkFrame(rodzic, width=10, height=10, corner_radius=16, fg_color=biel, cursor="hand2")
-        gora = ctk.CTkLabel(ramka, text="Postaw kawę autorowi", text_color=FIOLET, fg_color=biel, height=20,
-                            font=ctk.CTkFont(FONT, 14, "bold"), cursor="hand2")
-        dol = ctk.CTkLabel(ramka, text="MATCODE", text_color=AKCENT, fg_color=biel, height=14,
-                           font=ctk.CTkFont(FONT, 11, "bold"), cursor="hand2")
-        gora.pack(padx=22, pady=(8, 0))
-        dol.pack(padx=22, pady=(0, 8))
+        Rysowana w Pillow (2x pod DPI) na wycinku gradientu, który leży dokładnie pod nią - zaokrąglone rogi CTk
+        mają jeden kolor tła, a gradient pod pigułką przechodzi z różu w fiolet, więc rogi wychodziły kanciaste."""
+        from PIL import Image, ImageDraw, ImageFont
+        szer, wys, gora_y = 196, 52, 16  # px logiczne; nagłówek ma 84, pigułka na środku
+        try:
+            duza, mala = ImageFont.truetype("segoeuib.ttf", 28), ImageFont.truetype("segoeuib.ttf", 21)
+        except (OSError, ImportError):  # brak czcionki albo FreeType w paczce - prosty krój zamiast błędu
+            duza = mala = ImageFont.load_default()
+        przycisk = ctk.CTkLabel(naglowek, text="", width=szer, height=wys, fg_color=FIOLET, cursor="hand2")
+        przycisk.place(relx=1.0, x=-margines, y=gora_y, anchor="ne")
+        obrazy: dict[tuple[int, bool], ctk.CTkImage] = {}
+        stan = {"najechany": False}
 
-        def kolor(c):
-            ramka.configure(fg_color=c)
-            gora.configure(fg_color=c)
-            dol.configure(fg_color=c)
-        for w in (ramka, gora, dol):
-            w.bind("<Button-1>", lambda _: webbrowser.open(BUYCOFFEE_URL))
-            w.bind("<Enter>", lambda _: kolor(najechany))
-            w.bind("<Leave>", lambda _: kolor(biel))
-        return ramka
+        def narysuj(_=None):
+            x = round((naglowek.winfo_width() / self._skala - margines - szer) * 2)  # naglowek.png jest 2x
+            klucz = (x, stan["najechany"])
+            if klucz not in obrazy:
+                if len(obrazy) > 40:  # przeciąganie krawędzi okna = dziesiątki pozycji
+                    obrazy.clear()
+                W, H = szer * 2, wys * 2
+                obraz = Image.new("RGB", (W, H), FIOLET)  # za prawym końcem naglowek.png nagłówek jest FIOLET
+                widoczne = min(W, gradient.width - x) if gradient is not None else 0
+                if widoczne > 0:
+                    obraz.paste(gradient.crop((x, gora_y * 2, x + widoczne, gora_y * 2 + H)))
+                maska = Image.new("L", (W * 2, H * 2))  # podwójna rozdzielczość -> gładkie rogi po zmniejszeniu
+                ImageDraw.Draw(maska).rounded_rectangle((0, 0, W * 2 - 1, H * 2 - 1), radius=H, fill=255)
+                obraz.paste("#F6E6F3" if stan["najechany"] else "#FFFFFF", mask=maska.resize((W, H), Image.LANCZOS))
+                rysuj = ImageDraw.Draw(obraz)
+                rysuj.text((W / 2, H * 0.40), "Postaw kawę autorowi", font=duza, fill=FIOLET, anchor="mm")
+                rysuj.text((W / 2, H * 0.73), "MATCODE", font=mala, fill=AKCENT, anchor="mm")
+                obrazy[klucz] = ctk.CTkImage(obraz, size=(szer, wys))
+            przycisk.configure(image=obrazy[klucz])
+
+        def najechanie(tak: bool):
+            stan["najechany"] = tak
+            narysuj()
+        naglowek.bind("<Configure>", narysuj, add="+")
+        przycisk.bind("<Button-1>", lambda _: webbrowser.open(BUYCOFFEE_URL))
+        przycisk.bind("<Enter>", lambda _: najechanie(True))
+        przycisk.bind("<Leave>", lambda _: najechanie(False))
+        return przycisk
 
     def _styl_tabeli(self):
         """Tabela wyników to ttk.Treeview (CustomTkinter nie ma tabeli) - ubieramy ją w te same kolory."""
@@ -300,12 +329,14 @@ class Aplikacja(ctk.CTk):
         styl = ttk.Style(self)
         styl.theme_use("clam")  # tylko "clam" pozwala przemalować nagłówki kolumn
         styl.layout("Nutka.Treeview", [("Nutka.Treeview.treearea", {"sticky": "nswe"})])  # bez ramki
+        self._czcionka_wierszy = tkfont.Font(self, family=FONT, size=11)  # ta sama co w wierszach - do skracania „…”
         styl.configure("Nutka.Treeview", background=KARTA, fieldbackground=KARTA, foreground=TEKST,
-                       rowheight=int(32 * skala), borderwidth=0, font=(FONT, 11))
-        styl.map("Nutka.Treeview", background=[("selected", AKCENT)], foreground=[("selected", "#FFFFFF")])
+                       rowheight=int(32 * skala), borderwidth=0, font=self._czcionka_wierszy)
+        styl.map("Nutka.Treeview", background=[("selected", WYBRANY)], foreground=[("selected", "#FFFFFF")])
+        # padding nagłówka = wcięcie tekstu w komórkach, inaczej nazwy kolumn stoją kilka pikseli obok treści
         styl.configure("Nutka.Treeview.Heading", background=KARTA, foreground=TEKST_SZARY, relief="flat",
-                       borderwidth=0, font=(FONT, 10, "bold"), padding=(8, int(6 * skala)))
-        styl.map("Nutka.Treeview.Heading", background=[("active", POLE)])
+                       borderwidth=0, font=(FONT, 10, "bold"), padding=(4, int(6 * skala)))
+        styl.map("Nutka.Treeview.Heading", background=[("active", KARTA)])
 
     def _zbuduj_ui(self):
         self._styl_tabeli()
@@ -317,13 +348,14 @@ class Aplikacja(ctk.CTk):
         naglowek.grid(row=0, column=0, sticky="ew")
         naglowek.grid_propagate(False)
         plik_naglowka = ZASOBY / "naglowek.png"
+        obraz = None
         if plik_naglowka.exists():
             from PIL import Image
-            obraz = Image.open(plik_naglowka)
+            obraz = Image.open(plik_naglowka).convert("RGB")
             ctk.CTkLabel(naglowek, text="", image=ctk.CTkImage(obraz, size=(obraz.width // 2, obraz.height // 2))
                          ).place(x=0, y=0)
         if BUYCOFFEE_URL:
-            self._przycisk_kawy(naglowek).place(relx=1.0, x=-margines, rely=0.5, anchor="e")
+            self._przycisk_kawy(naglowek, obraz, margines)
 
         # --- wyszukiwarka ---
         wiersz_szukaj = ctk.CTkFrame(self, fg_color="transparent")
@@ -346,7 +378,7 @@ class Aplikacja(ctk.CTk):
         karta_wynikow.grid(row=2, column=0, sticky="nsew", padx=margines)
         karta_wynikow.columnconfigure(0, weight=1)
         karta_wynikow.rowconfigure(1, weight=1)
-        self.rowconfigure(2, weight=3)
+        self.rowconfigure(2, weight=1)  # całe wolne miejsce w pionie dostaje tabela (log ma stałą wysokość)
 
         # pasek trybu listy (Spotify) - widoczny tylko, gdy tabela pokazuje playlistę/album
         self.pasek_listy = ctk.CTkFrame(karta_wynikow, fg_color="transparent")
@@ -364,9 +396,9 @@ class Aplikacja(ctk.CTk):
 
         # szerokości minimalne - wolne miejsce dostają tytuł/wykonawca/album (stretch); razem muszą się zmieścić
         # w najwęższym oknie także w trybie listy (z ptaszkiem i statusem), inaczej CZAS/STATUS uciekają za krawędź
-        kolumny = {"wybor": ("", 40), "tytul": ("TYTUŁ", 210), "wykonawca": ("WYKONAWCA", 140),
-                   "album": ("ALBUM", 140), "czas": ("CZAS", 60), "status": ("STATUS", 120)}
-        self.wyniki = ttk.Treeview(karta_wynikow, columns=list(kolumny), show="headings", height=8,
+        kolumny = {"wybor": ("", 36), "tytul": ("Tytuł", 170), "wykonawca": ("Wykonawca", 120),
+                   "album": ("Album", 120), "czas": ("Czas", 56), "status": ("Status", 140)}
+        self.wyniki = ttk.Treeview(karta_wynikow, columns=list(kolumny), show="headings", height=4,
                                    selectmode="browse", style="Nutka.Treeview")
         self._szerokosci = {klucz: szer for klucz, (_, szer) in kolumny.items()}
         for klucz, (naglowek_kol, szer) in kolumny.items():
@@ -377,6 +409,7 @@ class Aplikacja(ctk.CTk):
         self._pokaz_kolumny(("tytul", "wykonawca", "album", "czas"))  # tryb wyszukiwania
         self.wyniki.tag_configure("parzysty", background="#231C2C")  # delikatne paski co drugi wiersz
         self.wyniki.tag_configure("odznaczony", foreground=TEKST_SZARY)
+        self.wyniki.tag_configure("blad", foreground=BLAD)  # po tagu odznaczony - nieudany wiersz zawsze widać
         self.wyniki.grid(row=1, column=0, sticky="nsew", padx=(12, 0), pady=10)
         suwak_wyn = ctk.CTkScrollbar(karta_wynikow, command=self.wyniki.yview, button_color=OBRYS,
                                      button_hover_color=AKCENT)
@@ -386,12 +419,15 @@ class Aplikacja(ctk.CTk):
         self.wyniki.bind("<Double-1>", self._dwuklik)
         self.wyniki.bind("<Button-1>", self._klik_w_tabeli, add="+")
         self.wyniki.bind("<Configure>", lambda _: self._dopasuj_kolumny(), add="+")
-        self.pusta_tabela = ctk.CTkLabel(
-            karta_wynikow, text="Wyszukaj utwór albo album – wyniki pojawią się tutaj.\n"
-                                "Klik = wybierz,  dwuklik = pobierz,  ▶ = odsłuchaj.\n"
-                                "Link do playlisty lub albumu Spotify wklej w pole wyszukiwania.",
-            text_color=TEKST_SZARY, font=ctk.CTkFont(FONT, 14), fg_color=KARTA)
-        self.pusta_tabela.place(relx=0.5, rely=0.55, anchor="center")
+        # pusta tabela = zachęta: co zrobić najpierw, pod spodem jak obsługiwać wyniki
+        self.pusta_tabela = ctk.CTkFrame(karta_wynikow, fg_color=KARTA)
+        ctk.CTkLabel(self.pusta_tabela, text="♫", text_color=AKCENT, font=ctk.CTkFont(FONT, 34)).pack()
+        self.pusta_tytul = ctk.CTkLabel(self.pusta_tabela, text="", text_color=TEKST, font=ctk.CTkFont(FONT, 17, "bold"))
+        self.pusta_tytul.pack(pady=(2, 6))
+        self.pusta_opis = ctk.CTkLabel(self.pusta_tabela, text="", text_color=TEKST_SZARY, font=ctk.CTkFont(FONT, 13),
+                                       justify="center")
+        self.pusta_opis.pack()
+        self._pokaz_pusta()
 
         # --- link i folder ---
         karta_linku = ctk.CTkFrame(self, fg_color="transparent")
@@ -425,11 +461,10 @@ class Aplikacja(ctk.CTk):
         self.pasek.pack(side="left", fill="x", expand=True, padx=(18, 0))
 
         # --- log ---
-        self.log = ctk.CTkTextbox(self, height=120, corner_radius=14, fg_color=KARTA, text_color=TEKST_SZARY,
+        self.log = ctk.CTkTextbox(self, height=92, corner_radius=14, fg_color=KARTA, text_color=TEKST_SZARY,
                                   font=ctk.CTkFont(FONT, 13), wrap="word", state="disabled",
                                   scrollbar_button_color=OBRYS, scrollbar_button_hover_color=AKCENT)
-        self.log.grid(row=5, column=0, sticky="nsew", padx=margines)
-        self.rowconfigure(5, weight=1)
+        self.log.grid(row=5, column=0, sticky="ew", padx=margines)
 
         # --- stopka ---
         stopka = ctk.CTkFrame(self, fg_color="transparent")
@@ -604,18 +639,16 @@ class Aplikacja(ctk.CTk):
                 self._dopisz("Najpierw poczekaj na koniec pobierania listy (albo kliknij „Zatrzymaj”).")
                 return
             self.zamknij_liste()
-        self.wyniki.delete(*self.wyniki.get_children())
+        self._wyczysc_tabele()
         self.linki_wynikow.clear()
         for i, w in enumerate(wyniki):
-            # wartości dla WSZYSTKICH kolumn (wybor, tytul, wykonawca, album, czas, status) - ukryte też liczą się do kolejności
-            iid = self.wyniki.insert("", "end", values=("", w["tytul"], w["wykonawca"], w["album"], w["czas"], ""),
-                                     tags=("parzysty",) if i % 2 else ())
+            iid = self._wstaw_wiersz(i, w["tytul"], w["wykonawca"], w["album"], w["czas"])
             self.linki_wynikow[iid] = w["link"]
         if wyniki:
             self.pusta_tabela.place_forget()
         else:
-            self.pusta_tabela.configure(text="Nic nie znaleziono – spróbuj inaczej sformułować.")
-            self.pusta_tabela.place(relx=0.5, rely=0.55, anchor="center")
+            self._pokaz_pusta("Nic nie znaleziono", "Sprawdź pisownię albo wpisz samego wykonawcę.\n"
+                                                    "Szukasz całej płyty? Przełącz na „Albumy”.")
 
     def _wybrano_wynik(self, _=None):
         zaznaczone = self.wyniki.selection()
@@ -672,7 +705,7 @@ class Aplikacja(ctk.CTk):
         self.lista = lista
         self.wiersze_listy.clear()
         self.zaznaczone.clear()
-        self.wyniki.delete(*self.wyniki.get_children())
+        self._wyczysc_tabele()
         self._pokaz_kolumny(("wybor", "tytul", "wykonawca", "album", "czas", "status"))
         self.pusta_tabela.place_forget()
         folder = Path(self.folder.get())
@@ -680,9 +713,7 @@ class Aplikacja(ctk.CTk):
         for i, utwor in enumerate(lista.utwory):
             jest = spotify_lista.sciezka_pliku(utwor, lista, folder).exists()  # synchronizacja: to już masz
             masz += jest
-            iid = self.wyniki.insert("", "end", values=("", utwor.tytul, utwor.wykonawca, utwor.album, utwor.czas,
-                                                        "masz już" if jest else ""),
-                                     tags=("parzysty",) if i % 2 else ())
+            iid = self._wstaw_wiersz(i, utwor.tytul, utwor.wykonawca, utwor.album, utwor.czas, "masz już" if jest else "")
             self.wiersze_listy[iid] = utwor
             self._ustaw_zaznaczenie(iid, not jest)
         self.pasek_listy.grid()
@@ -704,11 +735,65 @@ class Aplikacja(ctk.CTk):
         widoczne = self.wyniki.cget("displaycolumns")
         widoczne = list(self._szerokosci) if widoczne in ("#all", ("#all",)) else list(widoczne)
         baza = {k: int(self._szerokosci[k] * self._skala) for k in widoczne}
-        rozciagane = [k for k in widoczne if k in ("tytul", "wykonawca", "album")]
+        rozciagane = [k for k in widoczne if k in ROZCIAGANE]
         wolne = max(0, self.wyniki.winfo_width() - 4 - sum(baza.values()))
         suma = sum(baza[k] for k in rozciagane)
         for k in widoczne:
             self.wyniki.column(k, width=baza[k] + (wolne * baza[k] // suma if k in rozciagane else 0))
+        # przy przeciąganiu krawędzi okna Configure leci seriami - skracamy teksty raz, po chwili spokoju
+        if self._skracanie:
+            self.after_cancel(self._skracanie)
+        self._skracanie = self.after(60, self._skroc_wiersze)
+
+    def _wstaw_wiersz(self, nr: int, tytul: str, wykonawca: str, album: str, czas: str, status: str = "") -> str:
+        """Wiersz tabeli - wartości dla WSZYSTKICH kolumn (wybor, tytul, wykonawca, album, czas, status), ukryte też
+        liczą się do kolejności. Pełne teksty zostają w _pelne_teksty, w tabeli mogą być skrócone do „…”."""
+        iid = self.wyniki.insert("", "end", values=("", tytul, wykonawca, album, czas, status),
+                                 tags=("parzysty",) if nr % 2 else ())
+        self._pelne_teksty[iid] = {"tytul": tytul, "wykonawca": wykonawca, "album": album}
+        self._skroc_wiersze([iid])
+        return iid
+
+    def _wyczysc_tabele(self):
+        self.wyniki.delete(*self.wyniki.get_children())
+        self._pelne_teksty.clear()
+
+    def _skroc_wiersze(self, wiersze=None):
+        """Treeview obcina za długi tekst w pół litery - zamiast tego „…” po ostatnim mieszczącym się znaku."""
+        if wiersze is None:
+            self._skracanie = None
+        czcionka = self._czcionka_wierszy
+        margines = int(14 * self._skala)  # wcięcie tekstu w komórce z obu stron
+        szerokosci = {k: self.wyniki.column(k, "width") - margines for k in ROZCIAGANE}
+
+        def skroc(tekst: str, szer: int) -> str:
+            if czcionka.measure(tekst) <= szer:
+                return tekst
+            od, do = 0, len(tekst)  # najdłuższy początek, który z „…” się mieści
+            while od < do:
+                srodek = (od + do + 1) // 2
+                od, do = (srodek, do) if czcionka.measure(tekst[:srodek].rstrip() + "…") <= szer else (od, srodek - 1)
+            return tekst[:od].rstrip() + "…"
+
+        for iid in wiersze if wiersze is not None else list(self._pelne_teksty):
+            if self.wyniki.exists(iid):
+                for k, tekst in self._pelne_teksty[iid].items():
+                    self.wyniki.set(iid, k, skroc(tekst, szerokosci[k]))
+
+    def _ustaw_status(self, iid: str, tekst: str):
+        """Kolumna STATUS; „✗ …” (nie udało się) barwi cały wiersz, żeby było widać, co ponowić."""
+        if not self.wyniki.exists(iid):
+            return
+        self.wyniki.set(iid, "status", tekst)
+        tagi = [t for t in self.wyniki.item(iid, "tags") if t != "blad"] + (["blad"] if tekst.startswith("✗") else [])
+        self.wyniki.item(iid, tags=tagi)
+
+    def _pokaz_pusta(self, tytul: str = "Czego chcesz posłuchać?",
+                     opis: str = "Wpisz tytuł lub wykonawcę i kliknij „Szukaj” – albo wklej link z YouTube lub Spotify.\n"
+                                 "Klik w wynik wybiera utwór, dwuklik od razu go pobiera."):
+        self.pusta_tytul.configure(text=tytul)
+        self.pusta_opis.configure(text=opis)
+        self.pusta_tabela.place(relx=0.5, rely=0.55, anchor="center")
 
     def zamknij_liste(self):
         if self.pobieranie_listy:
@@ -717,11 +802,11 @@ class Aplikacja(ctk.CTk):
         self.lista = None
         self.wiersze_listy.clear()
         self.zaznaczone.clear()
-        self.wyniki.delete(*self.wyniki.get_children())
+        self._wyczysc_tabele()
         self._pokaz_kolumny(("tytul", "wykonawca", "album", "czas"))
         self.pasek_listy.grid_remove()
         self.przycisk_pobierz.configure(text="Pobierz mp3")
-        self.pusta_tabela.place(relx=0.5, rely=0.55, anchor="center")
+        self._pokaz_pusta()
 
     def _ustaw_zaznaczenie(self, iid: str, zaznacz: bool):
         if zaznacz:
@@ -763,7 +848,7 @@ class Aplikacja(ctk.CTk):
         self.przerwij_liste.clear()
         self.przycisk_pobierz.configure(text="Zatrzymaj")
         for iid in do_pobrania:
-            self.wyniki.set(iid, "status", "w kolejce")
+            self._ustaw_status(iid, "w kolejce")
         self._dopisz(f"▶ Pobieram {len(do_pobrania)} utw. z „{lista.nazwa}” (po {ROWNOLEGLE_POBIERANIA} naraz)…")
         self._ustaw_postep(0)
 
@@ -1003,9 +1088,7 @@ class Aplikacja(ctk.CTk):
                 elif rodzaj == "lista":
                     self._pokaz_liste(*wartosc)
                 elif rodzaj == "status":
-                    iid, tekst = wartosc
-                    if self.wyniki.exists(iid):
-                        self.wyniki.set(iid, "status", tekst)
+                    self._ustaw_status(*wartosc)
                 elif rodzaj == "postep_listy":
                     zrobione, wszystkie = wartosc
                     self._ustaw_postep(100 * zrobione / wszystkie)
