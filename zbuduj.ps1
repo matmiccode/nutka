@@ -152,6 +152,14 @@ Krok "PyInstaller (katalog, nie onefile - szybszy start i mniej fałszywych alar
 Sprawdz "PyInstaller"
 Copy-Item $narzedzia (Join-Path $build "dist\Nutka\narzedzia") -Recurse
 Copy-Item LICENSE, THIRD-PARTY.md (Join-Path $build "dist\Nutka") -ErrorAction SilentlyContinue
+# instrukcja obok Nutka.exe - otwiera ją przycisk Instrukcja w nagłówku (działa bez internetu)
+if (Test-Path "dist\Nutka-instrukcja.pdf") {
+    Copy-Item "dist\Nutka-instrukcja.pdf" (Join-Path $build "dist\Nutka")
+} elseif ($Wydanie) {
+    throw "Brak dist\Nutka-instrukcja.pdf - przycisk Instrukcja w programie nie miałby czego otworzyć."
+} else {
+    Write-Host "Brak dist\Nutka-instrukcja.pdf - build bez instrukcji (przycisk pokaże komunikat)." -ForegroundColor Yellow
+}
 
 Krok "Instalator (Inno Setup)"
 $iscc = @("$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe", "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe", "$env:ProgramFiles\Inno Setup 6\ISCC.exe") |

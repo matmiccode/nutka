@@ -1,14 +1,14 @@
 # Nutka
 
 Darmowa aplikacja okienkowa (CustomTkinter) na Windows: wyszukujesz albo wklejasz link z YouTube lub Spotify, dostajesz mp3.
-Publiczne repo GitHub `matmiccode/nutka` (MIT) z wydaniami do pobrania – część katalogu darmowych apek MATCODE.
+Repo GitHub `matmiccode/nutka` (MIT; na razie PRYWATNE – upublicznimy, gdy wersja będzie gotowa dla świata) z wydaniami do pobrania – część katalogu darmowych apek MATCODE.
 Podpis autora: **MATCODE** – bez imienia i nazwiska (świadoma decyzja przy publicznym repo; nigdzie go nie wpisywać).
 **Produkt to wyłącznie exe z instalatora.** `python app.py` z `build\venv` służy tylko do szybkich testów
 (bez cichych aktualizacji i bez sprawdzania wersji).
 
 ## Moduły
 - `app.py` – okno i cała logika UI. Długie operacje w wątkach, do UI tylko przez `queue` jako `(rodzaj, wartość)` obsługiwane w `_odbierz_logi`.
-  - `WERSJA` = jedyne źródło wersji (czyta ją `zbuduj.ps1`), `REPO_GITHUB`, `BUYCOFFEE_URL` (= https://buycoffee.to/matcode; pusty = przycisk „Postaw kawę autorowi / MATCODE” w prawym górnym rogu nagłówka ukryty; `_przycisk_kawy()`). Zostajemy przy buycoffee.to (decyzja użytkownika).
+  - `WERSJA` = jedyne źródło wersji (czyta ją `zbuduj.ps1`), `REPO_GITHUB`, `BUYCOFFEE_URL` (= https://buycoffee.to/matcode; pusty = przycisk „Postaw kawę autorowi / MATCODE” w prawym górnym rogu nagłówka ukryty; `_przyciski_naglowka()`). Zostajemy przy buycoffee.to (decyzja użytkownika).
 - `spotify_lista.py` – Spotify → `Lista`/`Utwor` przez **spotapi** (publiczne API web playera, bez kluczy; ~5 s/strona 343 utw.),
   `dopasuj()` w YouTube Music (ytmusicapi: najpierw „songs” ±7 s, potem „videos” ±15 s; tytuł/wykonawca znormalizowane),
   `sciezka_pliku()` (stała nazwa = synchronizacja: istniejący plik = „masz już”), `otaguj()` (mutagen: tagi + okładka ze Spotify).
@@ -33,7 +33,8 @@ Podpis autora: **MATCODE** – bez imienia i nazwiska (świadoma decyzja przy pu
 ## Wygląd
 - CustomTkinter, ciemny motyw w kolorach ikony – paleta w stałych na górze `app.py` (`TLO`, `KARTA`, `POLE`, `AKCENT`…). Nowe kontrolki: `_przycisk()` / `_pole()`.
 - Nagłówek = `naglowek.png` (gradient + nutka + nazwa, 2x pod DPI, szerszy niż okno; ramka ma kolor `FIOLET`). Ekran startowy = `splash.png`. Oba wygenerowane Pillow (Segoe UI) – przy zmianie nazwy przerysować.
-- Przycisk kawy = obrazek z Pillow (`_przycisk_kawy()`, filiżanka `ikona_kawy()`) rysowany na wycinku gradientu spod pigułki – zaokrąglone rogi CTk mają jeden kolor tła i na gradiencie wychodziły kanciaste.
+- Prawy górny róg = `_przyciski_naglowka()`: pigułki z `_pigulka()` – obrazek Pillow na wycinku gradientu spod pigułki (zaokrąglone rogi CTk mają jeden kolor tła i na gradiencie wychodziły kanciaste).
+  Biała „Postaw kawę autorowi / MATCODE” (filiżanka `ikona_kawy()`) + szklana „Instrukcja” → `_otworz_instrukcje()` = `Nutka-instrukcja.pdf` obok exe.
 - Tabela to `ttk.Treeview` (styl „Nutka.Treeview”, motyw `clam`) z 6 kolumnami. Wiersze tylko przez `_wstaw_wiersz()` (6 wartości – ukryte kolumny też liczą się do kolejności!),
   czyszczenie `_wyczysc_tabele()`, status `_ustaw_status()` („✗ …” = tag `blad`). Pełne teksty w `_pelne_teksty`, w tabeli skrócone do „…” (`_skroc_wiersze()`) – nie czytać ich z Treeview.
   Szerokości rozdziela `_dopasuj_kolumny()` (× `_skala` DPI) – wbudowany `stretch` po zmianie `displaycolumns` zostawiał kolumny za krawędzią.
@@ -43,7 +44,7 @@ Podpis autora: **MATCODE** – bez imienia i nazwiska (świadoma decyzja przy pu
 - Pasek tytułu: `DWMWA_CAPTION_COLOR` = `TLO`. Emoji na przyciskach renderują się źle – tylko tekst/▶/■.
 
 ## Instalator i wydania
-- `zbuduj.ps1` → `build\venv` (świeże pakiety, yt-dlp nightly) → ffmpeg **gpl-shared** z BtbN + `deno.exe` z pip do `narzedzia\` → PyInstaller **onedir** `--windowed` → Inno Setup (`instalator.iss`, per-user, polski) → `dist\Nutka-Setup.exe` (~125 MB).
+- `zbuduj.ps1` → `build\venv` (świeże pakiety, yt-dlp nightly) → ffmpeg **gpl-shared** z BtbN + `deno.exe` z pip do `narzedzia\` → PyInstaller **onedir** `--windowed` → Inno Setup (`instalator.iss`, per-user, polski) → `dist\Nutka-Setup.exe` (~115 MB).
   - Sam build niczego nie publikuje. **`zbuduj.ps1 -Wydanie`** = `gh release create vX.Y.Z` (instalator + `dist\Nutka-instrukcja.pdf`, opis = sekcja `## [X.Y.Z]` z CHANGELOG.md) + kopia na Dysk Google. Wymaga czystego, wypchniętego repo.
   - Procedura wydania: podbij `WERSJA` w app.py → sekcja w CHANGELOG.md (pisana dla zwykłego użytkownika – to jest „Co nowego” w programie) → commit/push → `zbuduj.ps1 -Wydanie`.
 - W exe nie ma `python -m`, więc `narzedzie()` woła sam exe z `--yt-dlp`, a `uruchom_narzedzie()` odpala `yt_dlp.main()`.
@@ -60,7 +61,10 @@ Podpis autora: **MATCODE** – bez imienia i nazwiska (świadoma decyzja przy pu
 - Dodatkowo folder użytkowników na Dysku Google: ID TYLKO w lokalnym `publikacja.local.json` (poza gitem). Nigdy nie wpisywać do repo ID folderu ani nazwisk osób trzecich.
   Samo kopiowanie: `zbuduj.ps1 -TylkoPublikacja` (Dysk Google na komputerze musi działać, dysk G:).
 - Instrukcja użytkownika = Claude Doc https://claude.ai/code/artifact/ba388908-1322-4f05-a544-aa58c9e38964 (tab `3e14ba65-02ab`).
-  Po zmianie obsługi: popraw doc → eksport PDF A4 → `dist\Nutka-instrukcja.pdf` (idzie do wydania i na Dysk).
+  Po zmianie obsługi: popraw doc (zrzuty: upload do artefaktu docu → blob) → eksport PDF A4 (blob z zakładki, `format pdf`, `paper a4` → Artifact `read` z `path` = id assetu)
+  → `dist\Nutka-instrukcja.pdf`. Idzie do wydania, na Dysk i do instalatora obok `Nutka.exe` (przycisk „Instrukcja”); `-Wydanie` bez tego PDF = błąd.
+- Strona programu = `docs/index.html` (GitHub Pages z `master` /docs, jeden plik, zrzuty z `docs/`). Włączyć dopiero po upublicznieniu repo: Settings → Pages.
+- Zrzuty do README/instrukcji/strony: `python` + PrintWindow na danych testowych, folder ustawiony na `C:\Users\Ty\Music\Pobrane` (nigdy prawdziwa nazwa użytkownika).
 
 ## Licencje
 - Kod: MIT (`LICENSE`). Instalator zawiera GPL (spotapi, mutagen, FFmpeg) – `THIRD-PARTY.md`; kod jest jawny, więc OK.

@@ -30,7 +30,7 @@ import aktualizacja_programu
 import aktualizacje
 import spotify_lista
 
-WERSJA = "1.1.0"  # jedyne źródło wersji: czyta ją zbuduj.ps1 (instalator, wydanie na GitHubie) i aktualizacja_programu
+WERSJA = "1.2.0"  # jedyne źródło wersji: czyta ją zbuduj.ps1 (instalator, wydanie na GitHubie) i aktualizacja_programu
 REPO_GITHUB = "matmiccode/nutka"  # skąd program bierze informację o nowych wersjach (GitHub Releases)
 BUYCOFFEE_URL = "https://buycoffee.to/matcode"  # profil na buycoffee.to - pusty = przycisk „Postaw kawę” się nie pokazuje
 DOMYSLNY_FOLDER = Path.home() / "Music" / "Pobrane"
@@ -295,24 +295,21 @@ class Aplikacja(ctk.CTk):
         return ctk.CTkEntry(rodzic, height=38, corner_radius=10, border_width=1, fg_color=POLE, border_color=OBRYS,
                             text_color=TEKST, placeholder_text_color=TEKST_SZARY, font=ctk.CTkFont(FONT, 14), **opcje)
 
-    def _przycisk_kawy(self, naglowek: ctk.CTkFrame, gradient, margines: int) -> ctk.CTkLabel:
-        """Biała pigułka w nagłówku: „Postaw kawę autorowi” + niżej mały podpis MATCODE (dobrowolne wsparcie).
-        Rysowana w Pillow (2x pod DPI) na wycinku gradientu, który leży dokładnie pod nią - zaokrąglone rogi CTk
-        mają jeden kolor tła, a gradient pod pigułką przechodzi z różu w fiolet, więc rogi wychodziły kanciaste."""
-        from PIL import Image, ImageDraw, ImageFont
-        szer, wys, gora_y = 232, 52, 16  # px logiczne; nagłówek ma 84, pigułka na środku
-        kawka = ikona_kawy(56, AKCENT)  # 2x: 28 px logicznych, po lewej od napisów
-        try:
-            duza, mala = ImageFont.truetype("segoeuib.ttf", 28), ImageFont.truetype("segoeuib.ttf", 21)
-        except (OSError, ImportError):  # brak czcionki albo FreeType w paczce - prosty krój zamiast błędu
-            duza = mala = ImageFont.load_default()
+    def _pigulka(self, naglowek: ctk.CTkFrame, gradient, od_prawej: int, szer: int, wys: int, tresc, akcja,
+                 szklana: bool = False) -> ctk.CTkLabel:
+        """Przycisk-pigułka w nagłówku, rysowany w Pillow (2x pod DPI) na wycinku gradientu, który leży dokładnie
+        pod nim - zaokrąglone rogi CTk mają jeden kolor tła, a pod pigułką gradient przechodzi z różu w fiolet,
+        więc rogi wychodziły kanciaste. Biała albo „szklana” (półprzezroczysta biel = przycisk drugorzędny).
+        tresc(obraz, rysuj, najechany) dorysowuje ikonę i napisy; od_prawej = odstęp od prawego brzegu okna."""
+        from PIL import Image, ImageDraw
+        gora_y = (84 - wys) // 2  # nagłówek ma 84 px logicznych
         przycisk = ctk.CTkLabel(naglowek, text="", width=szer, height=wys, fg_color=FIOLET, cursor="hand2")
-        przycisk.place(relx=1.0, x=-margines, y=gora_y, anchor="ne")
+        przycisk.place(relx=1.0, x=-od_prawej, y=gora_y, anchor="ne")
         obrazy: dict[tuple[int, bool], ctk.CTkImage] = {}
         stan = {"najechany": False}
 
         def narysuj(_=None):
-            x = round((naglowek.winfo_width() / self._skala - margines - szer) * 2)  # naglowek.png jest 2x
+            x = round((naglowek.winfo_width() / self._skala - od_prawej - szer) * 2)  # naglowek.png jest 2x
             klucz = (x, stan["najechany"])
             if klucz not in obrazy:
                 if len(obrazy) > 40:  # przeciąganie krawędzi okna = dziesiątki pozycji
@@ -324,12 +321,13 @@ class Aplikacja(ctk.CTk):
                     obraz.paste(gradient.crop((x, gora_y * 2, x + widoczne, gora_y * 2 + H)))
                 maska = Image.new("L", (W * 2, H * 2))  # podwójna rozdzielczość -> gładkie rogi po zmniejszeniu
                 ImageDraw.Draw(maska).rounded_rectangle((0, 0, W * 2 - 1, H * 2 - 1), radius=H, fill=255)
-                obraz.paste("#F6E6F3" if stan["najechany"] else "#FFFFFF", mask=maska.resize((W, H), Image.LANCZOS))
-                obraz.paste(kawka, (36, (H - kawka.height) // 2 - 2), kawka)
-                rysuj = ImageDraw.Draw(obraz)
-                srodek = (36 + kawka.width + 18 + W - 40) / 2  # napisy na środku miejsca obok filiżanki
-                rysuj.text((srodek, H * 0.40), "Postaw kawę autorowi", font=duza, fill=FIOLET, anchor="mm")
-                rysuj.text((srodek, H * 0.73), "MATCODE", font=mala, fill=AKCENT, anchor="mm")
+                maska = maska.resize((W, H), Image.LANCZOS)
+                if szklana:
+                    krycie = 0.30 if stan["najechany"] else 0.18
+                    obraz.paste("#FFFFFF", mask=maska.point(lambda a: int(a * krycie)))
+                else:
+                    obraz.paste("#F6E6F3" if stan["najechany"] else "#FFFFFF", mask=maska)
+                tresc(obraz, ImageDraw.Draw(obraz), stan["najechany"])
                 obrazy[klucz] = ctk.CTkImage(obraz, size=(szer, wys))
             przycisk.configure(image=obrazy[klucz])
 
@@ -337,10 +335,50 @@ class Aplikacja(ctk.CTk):
             stan["najechany"] = tak
             narysuj()
         naglowek.bind("<Configure>", narysuj, add="+")
-        przycisk.bind("<Button-1>", lambda _: webbrowser.open(BUYCOFFEE_URL))
+        przycisk.bind("<Button-1>", lambda _: akcja())
         przycisk.bind("<Enter>", lambda _: najechanie(True))
         przycisk.bind("<Leave>", lambda _: najechanie(False))
         return przycisk
+
+    @staticmethod
+    def _czcionka_pil(rozmiar: int):
+        from PIL import ImageFont
+        try:
+            return ImageFont.truetype("segoeuib.ttf", rozmiar)
+        except (OSError, ImportError):  # brak czcionki albo FreeType w paczce - prosty krój zamiast błędu
+            return ImageFont.load_default()
+
+    def _przyciski_naglowka(self, naglowek: ctk.CTkFrame, gradient, margines: int):
+        """Prawy górny róg: „Postaw kawę autorowi / MATCODE” (biała, główna) i obok „Instrukcja” (szklana)."""
+        duza, mala = self._czcionka_pil(28), self._czcionka_pil(21)
+        szer_kawy = 232
+        if BUYCOFFEE_URL:
+            kawka = ikona_kawy(56, AKCENT)  # 2x: 28 px logicznych, po lewej od napisów
+
+            def kawa(obraz, rysuj, _najechany):
+                W, H = obraz.size
+                obraz.paste(kawka, (36, (H - kawka.height) // 2 - 2), kawka)
+                srodek = (36 + kawka.width + 18 + W - 40) / 2  # napisy na środku miejsca obok filiżanki
+                rysuj.text((srodek, H * 0.40), "Postaw kawę autorowi", font=duza, fill=FIOLET, anchor="mm")
+                rysuj.text((srodek, H * 0.73), "MATCODE", font=mala, fill=AKCENT, anchor="mm")
+            self._pigulka(naglowek, gradient, margines, szer_kawy, 52, kawa, lambda: webbrowser.open(BUYCOFFEE_URL))
+
+        def instrukcja(obraz, rysuj, _najechany):
+            W, H = obraz.size
+            r, sx = 15, 30 + 15  # kółko z „?” po lewej
+            rysuj.ellipse((sx - r, H / 2 - r, sx + r, H / 2 + r), outline="#FFFFFF", width=3)
+            rysuj.text((sx, H / 2 + 1), "?", font=mala, fill="#FFFFFF", anchor="mm")
+            rysuj.text(((sx + r + W - 26) / 2 + 4, H / 2), "Instrukcja", font=duza, fill="#FFFFFF", anchor="mm")
+        od_prawej = margines + (szer_kawy + 10 if BUYCOFFEE_URL else 0)
+        self._pigulka(naglowek, gradient, od_prawej, 136, 40, instrukcja, self._otworz_instrukcje, szklana=True)
+
+    def _otworz_instrukcje(self):
+        """Instrukcja PDF leży obok Nutka.exe (zbuduj.ps1 kopiuje ją z dist) - działa bez internetu."""
+        for plik in (FOLDER_PROGRAMU / "Nutka-instrukcja.pdf", FOLDER_PROGRAMU / "dist" / "Nutka-instrukcja.pdf"):
+            if plik.exists():
+                os.startfile(plik)
+                return
+        messagebox.showinfo("Instrukcja", "Nie znalazłem instrukcji obok programu – zainstaluj Nutkę ponownie.")
 
     def _styl_tabeli(self):
         """Tabela wyników to ttk.Treeview (CustomTkinter nie ma tabeli) - ubieramy ją w te same kolory."""
@@ -377,8 +415,7 @@ class Aplikacja(ctk.CTk):
             obraz = Image.open(plik_naglowka).convert("RGB")
             ctk.CTkLabel(naglowek, text="", image=ctk.CTkImage(obraz, size=(obraz.width // 2, obraz.height // 2))
                          ).place(x=0, y=0)
-        if BUYCOFFEE_URL:
-            self._przycisk_kawy(naglowek, obraz, margines)
+        self._przyciski_naglowka(naglowek, obraz, margines)
 
         # --- wyszukiwarka ---
         wiersz_szukaj = ctk.CTkFrame(self, fg_color="transparent")

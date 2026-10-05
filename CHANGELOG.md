@@ -3,15 +3,22 @@
 Format: najnowsze na górze. Sekcja wersji jest jednocześnie opisem „Co nowego”, który program pokazuje
 przy proponowaniu aktualizacji – pisz ją dla zwykłego użytkownika.
 
+## [1.2.0] – 2026-10-05
+
+- **Instrukcja w programie**: przycisk „Instrukcja” w prawym górnym rogu otwiera poradnik, jak korzystać
+  z Nutki. Działa też bez internetu.
+- Ładniejsza tabela wyników: za długie tytuły kończą się „…” zamiast uciętej litery, a utwory, których
+  nie udało się pobrać, są wyróżnione na czerwono – od razu widać, co ponowić.
+- Na liście mieści się więcej utworów, a pusty ekran podpowiada, od czego zacząć.
+- Przycisk „Postaw kawę autorowi” dostał filiżankę i gładkie, zaokrąglone brzegi.
+
 ## [1.1.0] – 2026-10-02
 
 - **Nowa nazwa: Nutka** (wcześniej Maestro), nowy nagłówek i ekran startowy. Przy pierwszej instalacji Nutka
   stoi obok starego programu – starego Maestro możesz odinstalować w Ustawieniach Windows.
 - Podpowiedź w polu wyszukiwania mówi teraz wprost, co można wpisać albo wkleić (tytuł, wykonawca, link
   do utworu, albumu lub playlisty z YouTube i Spotify).
-- W prawym górnym rogu jest przycisk z filiżanką „Postaw kawę autorowi” z podpisem MATCODE – całkowicie dobrowolny.
-- Ładniejsza tabela: za długie tytuły kończą się „…” zamiast uciętej litery, utwory, których nie udało się
-  pobrać, są wyróżnione na czerwono, a przy mniejszym oknie widać więcej wierszy.
+- W prawym górnym rogu jest przycisk „Postaw kawę autorowi” z podpisem MATCODE – całkowicie dobrowolny.
 - **Playlisty i albumy ze Spotify**: wklej link, a Nutka pokaże listę utworów. Odznacz, czego nie chcesz,
   i kliknij „Pobierz zaznaczone”. Wczytanie playlisty trwa kilka sekund, pobieranie idzie po 3 utwory naraz.
 - **Synchronizacja**: przy ponownym wczytaniu tej samej playlisty Nutka pokazuje, które utwory już masz,

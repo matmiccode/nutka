@@ -11,7 +11,7 @@
 
 ### [⬇ Pobierz Nutkę dla Windows](https://github.com/matmiccode/nutka/releases/latest/download/Nutka-Setup.exe)
 
-<sub>Jeden plik instalacyjny (~125 MB) · bez konta, bez reklam · instaluje się bez uprawnień administratora</sub>
+<sub>Jeden plik instalacyjny (~115 MB) · bez konta, bez reklam · instaluje się bez uprawnień administratora</sub>
 
 ![Nutka – wyszukiwarka](docs/zrzut-wyszukiwarka.png)
 
@@ -26,7 +26,8 @@
 - **Dobra jakość i porządek** – mp3 VBR ~250–270 kbps z okładką i tagami (tytuł, wykonawca, album, numer, rok).
   Albumy i playlisty trafiają do osobnych folderów.
 - **Sam się aktualizuje** – silnik pobierania odświeża się po cichu, a o nowej wersji programu Nutka
-  powie Ci samo i zainstaluje ją jednym kliknięciem.
+  powie Ci sama i zainstaluje ją jednym kliknięciem.
+- **Instrukcja pod ręką** – przycisk **Instrukcja** w prawym górnym rogu otwiera poradnik, także bez internetu.
 
 ![Nutka – playlista Spotify](docs/zrzut-playlista.png)
 
@@ -55,7 +56,8 @@ Wymagania: Windows 10 lub 11 (64-bit), ~400 MB miejsca, internet do wyszukiwania
 | pobrać z linku YouTube | wklej link w pole **Link** → **Pobierz mp3** |
 
 Pliki trafiają do `Muzyka\Pobrane` (zmienisz to przyciskiem **Wybierz…**).
-Pełna instrukcja w PDF jest dołączona do każdego [wydania](https://github.com/matmiccode/nutka/releases/latest).
+Pełną instrukcję otworzysz w programie przyciskiem **Instrukcja**. Jest też jako PDF w każdym
+[wydaniu](https://github.com/matmiccode/nutka/releases/latest).
 
 ## Częste pytania
 
@@ -89,6 +91,7 @@ Nutka to Python 3.12 + CustomTkinter, spakowany PyInstallerem i Inno Setup.
 | `aktualizacje.py` | ciche aktualizacje lekkich pakietów (yt-dlp, ytmusicapi, spotapi) z PyPI |
 | `aktualizacja_programu.py` | propozycja i instalacja nowej wersji z GitHub Releases |
 | `zbuduj.ps1` | build instalatora; `-Wydanie` publikuje wersję na GitHubie |
+| `docs/` | zrzuty ekranu i strona programu (GitHub Pages) |
 
 Budowanie: Python 3.12, [Inno Setup 6](https://jrsoftware.org/isinfo.php), potem
 `powershell -ExecutionPolicy Bypass -File zbuduj.ps1` → `dist\Nutka-Setup.exe`.
