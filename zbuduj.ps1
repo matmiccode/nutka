@@ -26,7 +26,7 @@ function Krok([string]$opis) { Write-Host "`n=== $opis" -ForegroundColor Cyan }
 function Sprawdz([string]$co) { if ($LASTEXITCODE -ne 0) { throw "$co nie wyszło (kod $LASTEXITCODE)" } }
 
 function Wydaj-NaGitHubie {
-    if (git status --porcelain) { throw "Są niezacommitowane zmiany - najpierw commit i push, potem wydanie." }
+    if (git status --porcelain --untracked-files=no) { throw "Są niezacommitowane zmiany - najpierw commit i push, potem wydanie." }  # nieśledzone (np. AGENTS.md) nie blokują
     if (-not (& $py -c "import aktualizacja_programu as a; print(a.KLUCZ_PUBLICZNY)")) { throw "Brak KLUCZ_PUBLICZNY w aktualizacja_programu.py - odpal podpis_wydania.py nowy-klucz." }
     git push -q; Sprawdz "git push"
     $changelog = Get-Content CHANGELOG.md -Raw -Encoding UTF8
