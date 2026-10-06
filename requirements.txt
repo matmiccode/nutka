@@ -4,3 +4,4 @@ spotapi
 mutagen
 deno
 customtkinter
+cryptography

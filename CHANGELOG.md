@@ -3,6 +3,24 @@
 Format: najnowsze na górze. Sekcja wersji jest jednocześnie opisem „Co nowego”, który program pokazuje
 przy proponowaniu aktualizacji – pisz ją dla zwykłego użytkownika.
 
+## [1.3.0] – 2026-10-06
+
+- **Spokojniejszy ekran**: pusty ekran i „Nic nie znaleziono” bez zbędnych nagłówków kolumn, pasek postępu
+  pokazuje się tylko w trakcie pobierania (z procentem albo licznikiem „3/12” przy playliście), a „Następny”
+  pojawia się dopiero podczas odsłuchu.
+- Na dużym monitorze treść nie rozciąga się już na całą szerokość – okno wygląda dobrze zarówno
+  zmaksymalizowane, jak i małe. Najmniejsze okno jest odrobinę większe, żeby wszystko się mieściło.
+- Przyciski „Instrukcja” i „Postaw kawę autorowi” mają teraz ten sam, stonowany wygląd.
+- „Sprawdź aktualizacje” w lewym dolnym rogu wygląda jak link – wcześniej trzeba było wiedzieć, że klika się
+  w numer wersji.
+- Drobiazgi: krótsza podpowiedź w wyszukiwarce, nazwa długiej playlisty skraca się do „…” zamiast zasłaniać
+  przyciski, postęp utworu bez części dziesiętnej (64 % zamiast 64.0%), okno „Co nowego” bez pustego miejsca.
+- **Instrukcja jako strona**: przycisk „Instrukcja” otwiera poradnik w przeglądarce – nadal działa bez internetu
+  i jest ten sam, co na stronie programu.
+- **Bezpieczniej**: każde wydanie jest podpisane cyfrowo kluczem autora – Nutka zainstaluje tylko wydanie
+  z prawidłowym podpisem, pobrane z oficjalnego miejsca. Wklejony tekst traktuje jak link tylko wtedy, gdy
+  naprawdę prowadzi do YouTube lub Spotify.
+
 ## [1.2.0] – 2026-10-05
 
 - **Instrukcja w programie**: przycisk „Instrukcja” w prawym górnym rogu otwiera poradnik, jak korzystać

@@ -96,6 +96,8 @@ def _rozpakuj_wheel(pakiet: str, wer: str) -> Path:
     """Pobiera wheel z PyPI (sprawdza sumę SHA256) i rozpakowuje do własnego katalogu."""
     info = json.loads(_pobierz(f"https://pypi.org/pypi/{pakiet}/{wer}/json"))
     whl = next(u for u in info["urls"] if u["packagetype"] == "bdist_wheel" and u["filename"].endswith("-none-any.whl"))
+    if not whl["url"].startswith("https://files.pythonhosted.org/"):  # PyPI serwuje pliki tylko stąd
+        raise ValueError(f"nieoczekiwany adres pakietu: {whl['url']}")
     dane = _pobierz(whl["url"])
     if hashlib.sha256(dane).hexdigest() != whl["digests"]["sha256"]:
         raise ValueError(f"zła suma kontrolna {whl['filename']}")

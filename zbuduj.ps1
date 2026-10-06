@@ -7,7 +7,8 @@
 # Wymaga: Python 3.12 (py -3.12), Inno Setup 6, internet; do -Wydanie także gh (zalogowany).
 #
 #   zbuduj.ps1                 sam build do dist\ (nic nie publikuje - do testów)
-#   zbuduj.ps1 -Wydanie        build + wydanie vX.Y.Z na GitHubie (instalator + instrukcja PDF, opis z CHANGELOG.md)
+#   zbuduj.ps1 -Wydanie        build + wydanie vX.Y.Z na GitHubie (instalator + podpis Ed25519, opis z CHANGELOG.md);
+#                              wymaga klucza prywatnego z podpis_wydania.py (poza repo, %APPDATA%\MATCODE)
 #   zbuduj.ps1 -Pakiety "yt-dlp==2026.7.4,ytmusicapi==1.11.5"  celowo stare pakiety = test cichych aktualizacji
 #
 # Wersję bierzemy z WERSJA w app.py (jedno źródło prawdy) - przed wydaniem podbij ją i dopisz sekcję w CHANGELOG.md.
@@ -26,14 +27,16 @@ function Sprawdz([string]$co) { if ($LASTEXITCODE -ne 0) { throw "$co nie wyszł
 
 function Wydaj-NaGitHubie {
     if (git status --porcelain) { throw "Są niezacommitowane zmiany - najpierw commit i push, potem wydanie." }
+    if (-not (& $py -c "import aktualizacja_programu as a; print(a.KLUCZ_PUBLICZNY)")) { throw "Brak KLUCZ_PUBLICZNY w aktualizacja_programu.py - odpal podpis_wydania.py nowy-klucz." }
     git push -q; Sprawdz "git push"
     $changelog = Get-Content CHANGELOG.md -Raw -Encoding UTF8
     $sekcja = [regex]::Match($changelog, "(?ms)^## \[$([regex]::Escape($Wersja))\][^\n]*\n(.*?)(?=^## \[|\z)").Groups[1].Value.Trim()
     if (-not $sekcja) { throw "Brak sekcji ## [$Wersja] w CHANGELOG.md - to jest opis 'Co nowego' w programie." }
     $notatki = Join-Path $env:TEMP "nutka-notatki.md"
     [IO.File]::WriteAllText($notatki, $sekcja, [Text.UTF8Encoding]::new($false))
-    $pliki = @("dist\Nutka-Setup.exe") + @(Get-Item "dist\Nutka-instrukcja.pdf" -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
-    gh release create "v$Wersja" @pliki --title "Nutka $Wersja" --notes-file $notatki; Sprawdz "gh release create"
+    # podpis autora: bez pliku Nutka-Setup.podpis.json zainstalowane Nutki nie zaproponują tej wersji
+    & $py podpis_wydania.py podpisz "dist\Nutka-Setup.exe" $Wersja; Sprawdz "podpis wydania"
+    gh release create "v$Wersja" "dist\Nutka-Setup.exe" "dist\Nutka-Setup.podpis.json" --title "Nutka $Wersja" --notes-file $notatki; Sprawdz "gh release create"
     Write-Host "Wydanie v$Wersja jest na GitHubie - zainstalowane programy zaproponują aktualizację." -ForegroundColor Green
 }
 
@@ -119,14 +122,11 @@ Krok "PyInstaller (katalog, nie onefile - szybszy start i mniej fałszywych alar
 Sprawdz "PyInstaller"
 Copy-Item $narzedzia (Join-Path $build "dist\Nutka\narzedzia") -Recurse
 Copy-Item LICENSE, THIRD-PARTY.md (Join-Path $build "dist\Nutka") -ErrorAction SilentlyContinue
-# instrukcja obok Nutka.exe - otwiera ją przycisk Instrukcja w nagłówku (działa bez internetu)
-if (Test-Path "dist\Nutka-instrukcja.pdf") {
-    Copy-Item "dist\Nutka-instrukcja.pdf" (Join-Path $build "dist\Nutka")
-} elseif ($Wydanie) {
-    throw "Brak dist\Nutka-instrukcja.pdf - przycisk Instrukcja w programie nie miałby czego otworzyć."
-} else {
-    Write-Host "Brak dist\Nutka-instrukcja.pdf - build bez instrukcji (przycisk pokaże komunikat)." -ForegroundColor Yellow
-}
+# instrukcja obok Nutka.exe (podfolder instrukcja\) - otwiera ją przycisk Instrukcja w nagłówku, działa bez internetu;
+# to ta sama strona, co docs/instrukcja.html na GitHub Pages
+$instrukcja = Join-Path $build "dist\Nutka\instrukcja"
+New-Item -ItemType Directory -Force $instrukcja | Out-Null
+Copy-Item "docs\instrukcja.html", "docs\zrzut-wyszukiwarka.png", "docs\zrzut-playlista.png", "docs\ikona.png", "docs\favicon.png" $instrukcja
 
 Krok "Instalator (Inno Setup)"
 $iscc = @("$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe", "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe", "$env:ProgramFiles\Inno Setup 6\ISCC.exe") |

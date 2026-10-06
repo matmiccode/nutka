@@ -21,6 +21,7 @@ import threading
 import tkinter as tk
 import webbrowser
 from pathlib import Path
+from urllib.parse import urlsplit
 from tkinter import filedialog, messagebox, ttk
 from tkinter import font as tkfont
 
@@ -30,15 +31,20 @@ import aktualizacja_programu
 import aktualizacje
 import spotify_lista
 
-WERSJA = "1.2.0"  # jedyne źródło wersji: czyta ją zbuduj.ps1 (instalator, wydanie na GitHubie) i aktualizacja_programu
+WERSJA = "1.3.0"  # jedyne źródło wersji: czyta ją zbuduj.ps1 (instalator, wydanie na GitHubie) i aktualizacja_programu
 REPO_GITHUB = "matmiccode/nutka"  # skąd program bierze informację o nowych wersjach (GitHub Releases)
 BUYCOFFEE_URL = "https://buycoffee.to/matcode"  # profil na buycoffee.to - pusty = przycisk „Postaw kawę” się nie pokazuje
+STRONA_INSTRUKCJI = "https://matmiccode.github.io/nutka/instrukcja.html"  # ta sama strona co docs/instrukcja.html obok exe
 DOMYSLNY_FOLDER = Path.home() / "Music" / "Pobrane"
 PODPIS = "MATCODE"
 ROWNOLEGLE_POBIERANIA = 3  # lista Spotify: ile utworów naraz
+# wklejony tekst trafia jako argument do yt-dlp, więc „link” = tylko http(s) na jednym z tych hostów (rozpoznaj_zrodlo)
+HOSTY_YOUTUBE = {"youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com", "youtu.be", "www.youtu.be"}
+HOSTY_SPOTIFY = {"open.spotify.com", "play.spotify.com"}
 BEZ_OKNA = getattr(subprocess, "CREATE_NO_WINDOW", 0)
 CO_ILE_AKTUALIZACJE_MS = 6 * 3600 * 1000  # poza startem - gdyby okno wisiało otwarte dniami
 ROZCIAGANE = ("tytul", "wykonawca", "album")  # kolumny tabeli, które dzielą wolne miejsce i skracają się do „…”
+MAKS_SZEROKOSC = 1280  # szersze okno: treść pod nagłówkiem zostaje wyśrodkowana, boki wypełnia tło
 
 # paleta Nutka - ciemny motyw w kolorach ikony (róż -> fiolet)
 TLO = "#141019"          # tło okna
@@ -50,6 +56,8 @@ TEKST_SZARY = "#A99BB5"
 AKCENT = "#E0479E"       # róż z ikony
 AKCENT_NAJECHANY = "#C4358A"
 WYBRANY = "#5E2656"      # zaznaczony wiersz tabeli - stonowana malina, żeby róż zostawał dla „Pobierz”
+WYBRANY_NAJECHANY = "#6F2E66"
+LINK = "#F08FCB"         # link w stopce - jaśniejszy róż, czytelny na ciemnym tle
 BLAD = "#FF8FA8"         # wiersz, którego nie udało się pobrać
 FIOLET = "#8E2FB8"       # koniec gradientu nagłówka (naglowek.png)
 FONT = "Segoe UI"
@@ -100,12 +108,19 @@ def uruchom_narzedzie(przelacznik: str, argumenty: list[str]):
 
 
 def rozpoznaj_zrodlo(link: str) -> str | None:
-    link = link.lower()
-    if "spotify.com" in link or link.startswith("spotify:"):
+    """„youtube” / „spotify” / None - po schemacie i hoście, nie po podciągu: tekst zaczynający się od „-” albo
+    wskazujący obcy host nie może udawać linku (do yt-dlp idzie jako argument)."""
+    link = link.strip()
+    if link.lower().startswith("spotify:"):
         return "spotify"
-    if "youtube.com" in link or "youtu.be" in link:
-        return "youtube"
-    return None
+    try:
+        adres = urlsplit(link if "://" in link else "https://" + link)  # „youtu.be/…” bez schematu też działa
+    except ValueError:
+        return None
+    host = (adres.hostname or "").lower()
+    if adres.scheme not in ("http", "https") or not host:
+        return None
+    return "youtube" if host in HOSTY_YOUTUBE else "spotify" if host in HOSTY_SPOTIFY else None
 
 
 def to_playlista_yt(link: str) -> bool:
@@ -134,14 +149,14 @@ def zbuduj_komende(link: str, folder: Path) -> list[str]:
             "-x", "--audio-format", "mp3", "--audio-quality", "0",
             "--embed-thumbnail", "--embed-metadata",
             # zamiast pełnego logu: tylko nasze znaczniki, które GUI rozumie
-            "-q", "--no-warnings", "--no-simulate", "--color", "never",
+            "-q", "--no-warnings", "--ignore-config", "--no-simulate", "--color", "never",
             "--progress", "--newline",
             "--progress-template", "download:POSTEP %(progress._percent_str)s",
             "--print", "before_dl:UTWOR %(playlist_index|)s/%(n_entries|)s %(title)s",
             "--print", "after_move:PLIK %(filepath)s",
             "-P", str(folder),
             *szablon,
-            link,
+            "--", link,  # „--” = koniec opcji: wklejony tekst nigdy nie będzie opcją yt-dlp
         ]
     raise ValueError("Nieznany link - obsługiwane są YouTube i Spotify.")  # Spotify idzie przez tryb listy
 
@@ -150,10 +165,10 @@ def komenda_utworu(video_id: str, plik: Path) -> list[str]:
     """Jeden utwór z listy Spotify: dopasowany film YouTube Music -> dokładnie ten plik mp3 (tagi dopisze otaguj())."""
     return [
         *narzedzie("yt-dlp"), "-x", "--audio-format", "mp3", "--audio-quality", "0",
-        "-q", "--no-warnings", "--color", "never", "--no-playlist", "--progress", "--newline",
+        "-q", "--no-warnings", "--ignore-config", "--color", "never", "--no-playlist", "--progress", "--newline",
         "--progress-template", "download:POSTEP %(progress._percent_str)s",
         "-o", str(plik.with_suffix("")).replace("%", "%%") + ".%(ext)s",  # % w tytule ≠ pole szablonu yt-dlp
-        f"https://music.youtube.com/watch?v={video_id}",
+        "--", f"https://music.youtube.com/watch?v={video_id}",
     ]
 
 
@@ -198,6 +213,28 @@ def szukaj_yt_music(fraza: str, rodzaj: str, ile: int = 15) -> list[dict]:
     return wyniki
 
 
+def procent_postepu(tekst: str) -> float | None:
+    """„POSTEP  64.0%” (nasz --progress-template dla yt-dlp) -> 64.0; None, gdy to nie jest pełna linia postępu."""
+    if not tekst.startswith("POSTEP "):
+        return None
+    try:
+        return float(tekst.split()[1].rstrip("%"))
+    except (IndexError, ValueError):
+        return None
+
+
+def skroc_tekst(tekst: str, szer: float, czcionka) -> str:
+    """Tekst mieszczący się w szer pikseli: za długi kończy się „…” po ostatnim mieszczącym się znaku
+    (Tk obcina w pół litery). czcionka = tkinter.font.Font (CTkFont też nim jest)."""
+    if czcionka.measure(tekst) <= szer:
+        return tekst
+    od, do = 0, len(tekst)  # najdłuższy początek, który z „…” się mieści
+    while od < do:
+        srodek = (od + do + 1) // 2
+        od, do = (srodek, do) if czcionka.measure(tekst[:srodek].rstrip() + "…") <= szer else (od, srodek - 1)
+    return tekst[:od].rstrip() + "…"
+
+
 def ikona_kawy(bok: int, kolor: str):
     """Filiżanka z parą (przycisk kawy) - emoji w Tk renderują się źle, więc rysujemy ją sami: w 4x na siatce
     32x32, potem zmniejszenie = gładkie krawędzie. Zwraca obraz RGBA bok x bok."""
@@ -230,7 +267,7 @@ class Aplikacja(ctk.CTk):
         super().__init__(fg_color=TLO)
         self.title("Nutka – MATCODE")
         self.geometry("960x720")
-        self.minsize(760, 600)
+        self.minsize(900, 660)  # węższe okno: opis listy wchodził na przyciski, a tabela miała 3 wiersze
         self._ustaw_ikone()
 
         self.kolejka: queue.Queue = queue.Queue()
@@ -244,6 +281,9 @@ class Aplikacja(ctk.CTk):
         self.link = tk.StringVar()
         self.rodzaj = tk.StringVar(value="Utwory")
         self._tryb_paska = "determinate"
+        self._pasek_widoczny = False
+        self._bok = None  # ostatnia szerokość pustych kolumn po bokach treści (_ogranicz_szerokosc)
+        self._opis_listy = {"naglowek": "", "nazwa": "", "dopisek": "", "postep": ""}  # części opisu nad listą
         # tryb listy (Spotify): tabela pokazuje utwory z playlisty/albumu z ptaszkami zamiast wyników wyszukiwania
         self.lista: spotify_lista.Lista | None = None
         self.wiersze_listy: dict[str, spotify_lista.Utwor] = {}
@@ -349,19 +389,21 @@ class Aplikacja(ctk.CTk):
             return ImageFont.load_default()
 
     def _przyciski_naglowka(self, naglowek: ctk.CTkFrame, gradient, margines: int):
-        """Prawy górny róg: „Postaw kawę autorowi / MATCODE” (biała, główna) i obok „Instrukcja” (szklana)."""
+        """Prawy górny róg: „Postaw kawę autorowi / MATCODE” i obok „Instrukcja” - obie szklane (biała pigułka była
+        najjaśniejszym elementem okna i przyćmiewała „Szukaj”; róż i biel zostają dla akcji)."""
         duza, mala = self._czcionka_pil(28), self._czcionka_pil(21)
-        szer_kawy = 232
+        szer_kawy, wys = 232, 48
         if BUYCOFFEE_URL:
-            kawka = ikona_kawy(56, AKCENT)  # 2x: 28 px logicznych, po lewej od napisów
+            kawka = ikona_kawy(56, "#FFFFFF")  # 2x: 28 px logicznych, po lewej od napisów
 
             def kawa(obraz, rysuj, _najechany):
                 W, H = obraz.size
                 obraz.paste(kawka, (36, (H - kawka.height) // 2 - 2), kawka)
                 srodek = (36 + kawka.width + 18 + W - 40) / 2  # napisy na środku miejsca obok filiżanki
-                rysuj.text((srodek, H * 0.40), "Postaw kawę autorowi", font=duza, fill=FIOLET, anchor="mm")
-                rysuj.text((srodek, H * 0.73), "MATCODE", font=mala, fill=AKCENT, anchor="mm")
-            self._pigulka(naglowek, gradient, margines, szer_kawy, 52, kawa, lambda: webbrowser.open(BUYCOFFEE_URL))
+                rysuj.text((srodek, H * 0.38), "Postaw kawę autorowi", font=duza, fill="#FFFFFF", anchor="mm")
+                rysuj.text((srodek, H * 0.72), "MATCODE", font=mala, fill="#FBE3F1", anchor="mm")
+            self._pigulka(naglowek, gradient, margines, szer_kawy, wys, kawa, lambda: webbrowser.open(BUYCOFFEE_URL),
+                          szklana=True)
 
         def instrukcja(obraz, rysuj, _najechany):
             W, H = obraz.size
@@ -370,15 +412,16 @@ class Aplikacja(ctk.CTk):
             rysuj.text((sx, H / 2 + 1), "?", font=mala, fill="#FFFFFF", anchor="mm")
             rysuj.text(((sx + r + W - 26) / 2 + 4, H / 2), "Instrukcja", font=duza, fill="#FFFFFF", anchor="mm")
         od_prawej = margines + (szer_kawy + 10 if BUYCOFFEE_URL else 0)
-        self._pigulka(naglowek, gradient, od_prawej, 136, 40, instrukcja, self._otworz_instrukcje, szklana=True)
+        self._pigulka(naglowek, gradient, od_prawej, 136, wys, instrukcja, self._otworz_instrukcje, szklana=True)
 
     def _otworz_instrukcje(self):
-        """Instrukcja PDF leży obok Nutka.exe (zbuduj.ps1 kopiuje ją z dist) - działa bez internetu."""
-        for plik in (FOLDER_PROGRAMU / "Nutka-instrukcja.pdf", FOLDER_PROGRAMU / "dist" / "Nutka-instrukcja.pdf"):
+        """Instrukcja = docs/instrukcja.html; w instalacji leży w podfolderze instrukcja obok Nutka.exe (kopiuje zbuduj.ps1).
+        Otwiera się w przeglądarce i działa bez internetu; gdyby jej nie było - wersja online."""
+        for plik in (FOLDER_PROGRAMU / "instrukcja" / "instrukcja.html", FOLDER_PROGRAMU / "docs" / "instrukcja.html"):
             if plik.exists():
-                os.startfile(plik)
+                webbrowser.open(plik.resolve().as_uri())
                 return
-        messagebox.showinfo("Instrukcja", "Nie znalazłem instrukcji obok programu – zainstaluj Nutkę ponownie.")
+        webbrowser.open(STRONA_INSTRUKCJI)
 
     def _styl_tabeli(self):
         """Tabela wyników to ttk.Treeview (CustomTkinter nie ma tabeli) - ubieramy ją w te same kolory."""
@@ -401,12 +444,15 @@ class Aplikacja(ctk.CTk):
 
     def _zbuduj_ui(self):
         self._styl_tabeli()
-        self.columnconfigure(0, weight=1)
+        # treść (wiersze 1-6) siedzi w kolumnie 1: przy szerokim oknie dostaje najwyżej MAKS_SZEROKOSC, nadmiar
+        # idzie do pustych kolumn 0 i 2 (_ogranicz_szerokosc) - pola rozciągnięte na 1900 px wyglądały pusto
+        self.columnconfigure(1, weight=1)
+        self.bind("<Configure>", self._ogranicz_szerokosc, add="+")
         margines = 18
 
         # --- nagłówek: gradient z nutką i nazwą (naglowek.png; nadmiar po prawej przycięty, dalej kolor FIOLET) ---
         naglowek = ctk.CTkFrame(self, height=84, corner_radius=0, fg_color=FIOLET)
-        naglowek.grid(row=0, column=0, sticky="ew")
+        naglowek.grid(row=0, column=0, columnspan=3, sticky="ew")
         naglowek.grid_propagate(False)
         plik_naglowka = ZASOBY / "naglowek.png"
         obraz = None
@@ -419,23 +465,23 @@ class Aplikacja(ctk.CTk):
 
         # --- wyszukiwarka ---
         wiersz_szukaj = ctk.CTkFrame(self, fg_color="transparent")
-        wiersz_szukaj.grid(row=1, column=0, sticky="ew", padx=margines, pady=(margines, 10))
+        wiersz_szukaj.grid(row=1, column=1, sticky="ew", padx=margines, pady=(margines, 10))
         wiersz_szukaj.columnconfigure(0, weight=1)
-        self.pole_szukaj = self._pole(wiersz_szukaj, placeholder_text="Wpisz tytuł lub wykonawcę – albo wklej link do utworu, albumu lub playlisty (YouTube, Spotify)")
+        self.pole_szukaj = self._pole(wiersz_szukaj, placeholder_text="Wpisz tytuł lub wykonawcę – albo wklej link z YouTube lub Spotify")
         self.pole_szukaj.grid(row=0, column=0, sticky="ew")
         self.pole_szukaj.bind("<Return>", lambda _: self.szukaj())
         self.after(300, self.pole_szukaj.focus)
         ctk.CTkSegmentedButton(
             wiersz_szukaj, values=["Utwory", "Albumy"], variable=self.rodzaj, height=38, corner_radius=10,
-            fg_color=POLE, unselected_color=POLE, unselected_hover_color=OBRYS, selected_color=AKCENT,
-            selected_hover_color=AKCENT_NAJECHANY, text_color=TEKST, font=ctk.CTkFont(FONT, 13),
+            fg_color=POLE, unselected_color=POLE, unselected_hover_color=OBRYS, selected_color=WYBRANY,
+            selected_hover_color=WYBRANY_NAJECHANY, text_color=TEKST, font=ctk.CTkFont(FONT, 13),
         ).grid(row=0, column=1, padx=(10, 0))
         self.przycisk_szukaj = self._przycisk(wiersz_szukaj, "Szukaj", self.szukaj, glowny=True, width=110, height=38)
         self.przycisk_szukaj.grid(row=0, column=2, padx=(10, 0))
 
         # --- wyniki ---
         karta_wynikow = ctk.CTkFrame(self, fg_color=KARTA, corner_radius=14)
-        karta_wynikow.grid(row=2, column=0, sticky="nsew", padx=margines)
+        karta_wynikow.grid(row=2, column=1, sticky="nsew", padx=margines)
         karta_wynikow.columnconfigure(0, weight=1)
         karta_wynikow.rowconfigure(1, weight=1)
         self.rowconfigure(2, weight=1)  # całe wolne miejsce w pionie dostaje tabela (log ma stałą wysokość)
@@ -443,15 +489,19 @@ class Aplikacja(ctk.CTk):
         # pasek trybu listy (Spotify) - widoczny tylko, gdy tabela pokazuje playlistę/album
         self.pasek_listy = ctk.CTkFrame(karta_wynikow, fg_color="transparent")
         self.pasek_listy.grid(row=0, column=0, columnspan=2, sticky="ew", padx=14, pady=(12, 0))
-        self.opis_listy = ctk.CTkLabel(self.pasek_listy, text="", text_color=TEKST, anchor="w",
-                                       font=ctk.CTkFont(FONT, 14, "bold"))
-        self.opis_listy.pack(side="left", fill="x", expand=True)
+        # przyciski pakowane przed opisem: pack przydziela miejsce w kolejności pakowania, więc długi tytuł playlisty
+        # nie wypycha ich za krawędź - opis dostaje resztę i skraca się do „…” (_ustaw_opis_listy)
         maly_przycisk = dict(width=10, height=30)
         self._przycisk(self.pasek_listy, "Zamknij listę", self.zamknij_liste, **maly_przycisk).pack(side="right")
         self._przycisk(self.pasek_listy, "Odznacz wszystko", lambda: self._zaznacz_wszystko(False),
                        **maly_przycisk).pack(side="right", padx=6)
         self._przycisk(self.pasek_listy, "Zaznacz wszystko", lambda: self._zaznacz_wszystko(True),
                        **maly_przycisk).pack(side="right")
+        self._czcionka_opisu = ctk.CTkFont(FONT, 14, "bold")
+        self.opis_listy = ctk.CTkLabel(self.pasek_listy, text="", text_color=TEKST, anchor="w", width=1,
+                                       font=self._czcionka_opisu)
+        self.opis_listy.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        self.opis_listy.bind("<Configure>", lambda _: self._ustaw_opis_listy(), add="+")
         self.pasek_listy.grid_remove()
 
         # szerokości minimalne - wolne miejsce dostają tytuł/wykonawca/album (stretch); razem muszą się zmieścić
@@ -465,7 +515,7 @@ class Aplikacja(ctk.CTk):
             kotwica = {"czas": "e", "wybor": "center"}.get(klucz, "w")
             self.wyniki.heading(klucz, text=naglowek_kol, anchor=kotwica)
             self.wyniki.column(klucz, width=szer, anchor=kotwica, stretch=False)  # rozkład robi _dopasuj_kolumny
-        self.wyniki.heading("wybor", text="☑", command=self._przelacz_wszystkie)
+        self.wyniki.heading("wybor", text="✓", command=self._przelacz_wszystkie)  # ☑ renderował się krzywo
         self._pokaz_kolumny(("tytul", "wykonawca", "album", "czas"))  # tryb wyszukiwania
         self.wyniki.tag_configure("parzysty", background="#231C2C")  # delikatne paski co drugi wiersz
         self.wyniki.tag_configure("odznaczony", foreground=TEKST_SZARY)
@@ -480,18 +530,21 @@ class Aplikacja(ctk.CTk):
         self.wyniki.bind("<Button-1>", self._klik_w_tabeli, add="+")
         self.wyniki.bind("<Configure>", lambda _: self._dopasuj_kolumny(), add="+")
         # pusta tabela = zachęta: co zrobić najpierw, pod spodem jak obsługiwać wyniki
-        self.pusta_tabela = ctk.CTkFrame(karta_wynikow, fg_color=KARTA)
-        ctk.CTkLabel(self.pusta_tabela, text="♫", text_color=AKCENT, font=ctk.CTkFont(FONT, 34)).pack()
-        self.pusta_tytul = ctk.CTkLabel(self.pusta_tabela, text="", text_color=TEKST, font=ctk.CTkFont(FONT, 17, "bold"))
+        # zasłania całą kartę razem z nagłówkami kolumn (nagłówki nad pustką wyglądały na niedokończone)
+        self.pusta_tabela = ctk.CTkFrame(karta_wynikow, fg_color=KARTA, bg_color=TLO, corner_radius=14)  # bg = rogi karty
+        srodek = ctk.CTkFrame(self.pusta_tabela, fg_color="transparent")
+        srodek.place(relx=0.5, rely=0.47, anchor="center")
+        ctk.CTkLabel(srodek, text="♫", text_color=AKCENT, font=ctk.CTkFont(FONT, 34)).pack()
+        self.pusta_tytul = ctk.CTkLabel(srodek, text="", text_color=TEKST, font=ctk.CTkFont(FONT, 17, "bold"))
         self.pusta_tytul.pack(pady=(2, 6))
-        self.pusta_opis = ctk.CTkLabel(self.pusta_tabela, text="", text_color=TEKST_SZARY, font=ctk.CTkFont(FONT, 13),
+        self.pusta_opis = ctk.CTkLabel(srodek, text="", text_color=TEKST_SZARY, font=ctk.CTkFont(FONT, 13),
                                        justify="center")
         self.pusta_opis.pack()
         self._pokaz_pusta()
 
         # --- link i folder ---
         karta_linku = ctk.CTkFrame(self, fg_color="transparent")
-        karta_linku.grid(row=3, column=0, sticky="ew", padx=margines, pady=(12, 0))
+        karta_linku.grid(row=3, column=1, sticky="ew", padx=margines, pady=(12, 0))
         karta_linku.columnconfigure(1, weight=1)
         opis = dict(text_color=TEKST_SZARY, font=ctk.CTkFont(FONT, 13))
         ctk.CTkLabel(karta_linku, text="Link", **opis).grid(row=0, column=0, sticky="w", padx=(2, 12))
@@ -506,41 +559,53 @@ class Aplikacja(ctk.CTk):
 
         # --- przyciski i pasek postępu ---
         przyciski = ctk.CTkFrame(self, fg_color="transparent")
-        przyciski.grid(row=4, column=0, sticky="ew", padx=margines, pady=14)
+        przyciski.grid(row=4, column=1, sticky="ew", padx=margines, pady=14)
         self.przycisk_pobierz = self._przycisk(przyciski, "Pobierz mp3", self.pobierz, glowny=True, width=150, height=42)
         self.przycisk_pobierz.pack(side="left")
         self.przycisk_odsluch = self._przycisk(przyciski, "▶  Odsłuchaj", self.odsluchaj, width=130, height=42)
         self.przycisk_odsluch.pack(side="left", padx=(10, 0))
-        self.przycisk_nastepny = self._przycisk(przyciski, "Następny  ›", self._nastepny, width=110, height=42,
-                                                state="disabled")
-        self.przycisk_nastepny.pack(side="left", padx=(6, 0))
+        # „Następny” pojawia się tylko podczas odsłuchu (_pokaz_odsluch) - stale wyszarzony był martwym elementem
+        self.przycisk_nastepny = self._przycisk(przyciski, "Następny  ›", self._nastepny, width=110, height=42)
         self._przycisk(przyciski, "Otwórz folder", self._otworz_folder, width=130, height=42).pack(side="left", padx=(6, 0))
-        self.pasek = ctk.CTkProgressBar(przyciski, height=8, corner_radius=4, fg_color=POLE, progress_color=POLE,
-                                        mode="determinate")  # różowieje dopiero przy pobieraniu (_ustaw_postep)
-        self.pasek.set(0)  # w spoczynku pusty
-        self.pasek.pack(side="left", fill="x", expand=True, padx=(18, 0))
+        # w spoczynku pasek ma kolor tła (_schowaj_postep) - szara kreska wyglądała jak ozdobny separator;
+        # obok napis: procent albo „3/12” przy liście
+        self.postep_tekst = ctk.CTkLabel(przyciski, text="", width=52, anchor="e", text_color=TEKST_SZARY,
+                                         font=ctk.CTkFont(FONT, 12))
+        self.postep_tekst.pack(side="right")
+        self.pasek = ctk.CTkProgressBar(przyciski, height=6, corner_radius=3, fg_color=TLO, progress_color=TLO,
+                                        mode="determinate")
+        self.pasek.set(0)
+        self.pasek.pack(side="left", fill="x", expand=True, padx=(18, 8))
 
         # --- log ---
-        self.log = ctk.CTkTextbox(self, height=92, corner_radius=14, fg_color=KARTA, text_color=TEKST_SZARY,
-                                  font=ctk.CTkFont(FONT, 13), wrap="word", state="disabled",
+        # wysokość = równe 3 linie + marginesy (tekst stoi corner_radius od brzegu), inaczej po przewinięciu
+        # pierwsza widoczna linia była ucięta w połowie
+        czcionka_logu = ctk.CTkFont(FONT, 13)
+        wys_logu = 3 * czcionka_logu.metrics("linespace") + 2 * 14  # CTkFont liczy w pikselach logicznych, jak height
+        self.log = ctk.CTkTextbox(self, height=wys_logu, corner_radius=14, fg_color=KARTA, text_color=TEKST_SZARY,
+                                  font=czcionka_logu, wrap="word", state="disabled",
                                   scrollbar_button_color=OBRYS, scrollbar_button_hover_color=AKCENT)
-        self.log.grid(row=5, column=0, sticky="ew", padx=margines)
+        self.log.grid(row=5, column=1, sticky="ew", padx=margines)
 
         # --- stopka ---
         stopka = ctk.CTkFrame(self, fg_color="transparent")
-        stopka.grid(row=6, column=0, sticky="ew", padx=margines + 2, pady=(8, 10))
+        stopka.grid(row=6, column=1, sticky="ew", padx=margines + 2, pady=(8, 10))
         maly = dict(text_color=TEKST_SZARY, font=ctk.CTkFont(FONT, 12))
-        # klik w wersję = ręczne „Sprawdź aktualizacje”
-        self.stopka_wersja = ctk.CTkLabel(stopka, text=self._opis_wersji(), cursor="hand2", **maly)
+        self.stopka_wersja = ctk.CTkLabel(stopka, text=self._opis_wersji(), **maly)
         self.stopka_wersja.pack(side="left")
-        self.stopka_wersja.bind("<Button-1>", lambda _: self.sprawdz_wersje_programu(recznie=True))
+        # link „Sprawdź aktualizacje” = ręczne sprawdzenie; wygląda jak link (kolor, podkreślenie po najechaniu)
+        zwykla, podkreslona = ctk.CTkFont(FONT, 12), ctk.CTkFont(FONT, 12, underline=True)
+        link = ctk.CTkLabel(stopka, text="Sprawdź aktualizacje", cursor="hand2", text_color=LINK, font=zwykla)
+        link.pack(side="left", padx=(14, 0))
+        link.bind("<Button-1>", lambda _: self.sprawdz_wersje_programu(recznie=True))
+        link.bind("<Enter>", lambda _: link.configure(font=podkreslona))
+        link.bind("<Leave>", lambda _: link.configure(font=zwykla))
         ctk.CTkLabel(stopka, text=PODPIS, **maly).pack(side="right")
 
     @staticmethod
     def _opis_wersji() -> str:
-        wersja = aktualizacje.wersja("yt-dlp")  # nightly: 2026.9.27.232945.dev0 -> "2026.9.27 (nightly)"
-        silnik = f"{'.'.join(wersja.split('.')[:3])}{' nightly' if 'dev' in wersja else ''}"
-        return f"Nutka {WERSJA}  ·  silnik yt-dlp {silnik}  ·  sprawdź aktualizacje"
+        wersja = aktualizacje.wersja("yt-dlp")  # nightly: 2026.9.27.232945.dev0 -> "2026.9.27"
+        return f"Nutka {WERSJA}  ·  silnik yt-dlp {'.'.join(wersja.split('.')[:3])}"
 
     # ---------- ciche aktualizacje (tylko exe) ----------
 
@@ -595,9 +660,14 @@ class Aplikacja(ctk.CTk):
                      text_color=TEKST_SZARY, font=ctk.CTkFont(FONT, 13)).pack(anchor="w", padx=22)
         ctk.CTkLabel(okno, text="Co nowego:", text_color=TEKST, font=ctk.CTkFont(FONT, 13, "bold")).pack(
             anchor="w", padx=22, pady=(14, 4))
-        opis = ctk.CTkTextbox(okno, height=170, corner_radius=10, fg_color=KARTA, text_color=TEKST_SZARY,
+        # przyciski pakowane przed opisem: pack przydziela miejsce w kolejności, więc opis (expand) bierze resztę
+        # i nad przyciskami nie zostaje pusta dziura
+        przyciski = ctk.CTkFrame(okno, fg_color="transparent")
+        przyciski.pack(fill="x", padx=22, pady=(16, 18), side="bottom")
+        opis = ctk.CTkTextbox(okno, corner_radius=10, fg_color=KARTA, text_color=TEKST_SZARY,
                               font=ctk.CTkFont(FONT, 13), wrap="word")
-        opis.pack(fill="x", padx=22)
+        opis.pack(fill="both", expand=True, padx=22)
+        # opis wydania = treść sekcji z CHANGELOG bez nagłówka „## [x.y.z]” (tak publikuje zbuduj.ps1)
         tresc = re.sub(r"^#+\s*", "", wydanie["opis"].strip(), flags=re.M).replace("**", "")
         tresc = re.sub(r"^\s*[-*]\s+", "•  ", tresc, flags=re.M)  # markdownowe punkty -> kropki
         opis.insert("end", tresc or "Poprawki i ulepszenia.")
@@ -605,8 +675,6 @@ class Aplikacja(ctk.CTk):
         pasek = ctk.CTkProgressBar(okno, height=8, fg_color=POLE, progress_color=AKCENT)
         pasek.set(0)
         stan = ctk.CTkLabel(okno, text="", text_color=TEKST_SZARY, font=ctk.CTkFont(FONT, 12))
-        przyciski = ctk.CTkFrame(okno, fg_color="transparent")
-        przyciski.pack(fill="x", padx=22, pady=(16, 18), side="bottom")
 
         def pomin():
             aktualizacja_programu.zapisz_ustawienie("pominieta_wersja", wydanie["wersja"])
@@ -759,8 +827,7 @@ class Aplikacja(ctk.CTk):
         threading.Thread(target=w_tle, daemon=True).start()
 
     def _pokaz_liste(self, link: str, lista: spotify_lista.Lista):
-        self._ustaw_postep(0)
-        self.pasek.configure(progress_color=POLE)
+        self._schowaj_postep()
         self.przycisk_pobierz.configure(state="normal")
         self.lista = lista
         self.wiersze_listy.clear()
@@ -779,9 +846,40 @@ class Aplikacja(ctk.CTk):
         self.pasek_listy.grid()
         rodzaj = {"playlista": "Playlista", "album": "Album", "utwór": "Utwór"}[lista.rodzaj]
         opis = f"{rodzaj} „{lista.nazwa}”  ·  {len(lista.utwory)} utw."
-        self.opis_listy.configure(text=opis + (f"  ·  {masz} już masz" if masz else ""))
+        self._ustaw_opis_listy(rodzaj, lista.nazwa, f"{len(lista.utwory)} utw." + (f"  ·  {masz} już masz" if masz else ""),
+                               postep="")
         self._dopisz(f"♫ {opis}" + (f" – {masz} już masz, są odznaczone." if masz else "")
                      + " Odznacz, czego nie chcesz, i kliknij „Pobierz zaznaczone”.")
+
+    def _ogranicz_szerokosc(self, zdarzenie):
+        """Nadmiar ponad MAKS_SZEROKOSC (po DPI) idzie po równo do pustych kolumn 0 i 2. Wagę ma tylko kolumna
+        treści - grid kurczy wyłącznie kolumny z wagą, a tabela żąda tyle, ile ostatnio dostała, więc kolumna bez
+        wagi nie zmieściłaby się po zwężeniu okna."""
+        if zdarzenie.widget is self:
+            bok = max(0, (zdarzenie.width - int(MAKS_SZEROKOSC * self._skala)) // 2)
+            if bok != self._bok:  # Configure leci też przy samym przesuwaniu okna
+                self._bok = bok
+                self.columnconfigure((0, 2), minsize=bok)
+
+    def _ustaw_opis_listy(self, naglowek: str | None = None, nazwa: str | None = None, dopisek: str | None = None,
+                          postep: str | None = None):
+        """Opis nad listą: „Playlista „Nazwa”  ·  12 utw.  ·  3 już masz  ·  [2/12]”. Części trzymamy osobno
+        (_opis_listy), bo w wąskim oknie do „…” skracamy samą nazwę - liczby mają zostać widoczne.
+        Bez argumentów = tylko przerysowanie po zmianie szerokości."""
+        for klucz, wartosc in (("naglowek", naglowek), ("nazwa", nazwa), ("dopisek", dopisek), ("postep", postep)):
+            if wartosc is not None:
+                self._opis_listy[klucz] = wartosc
+        o, czcionka = self._opis_listy, self._czcionka_opisu
+        poczatek = f"{o['naglowek']} „{o['nazwa']}"
+        reszta = f"”  ·  {o['dopisek']}" + (f"  ·  [{o['postep']}]" if o["postep"] else "")
+        # CTkFont mierzy w pikselach logicznych (skaluje się dopiero przy rysowaniu), winfo_width daje fizyczne
+        szer = self.opis_listy.winfo_width() / self._skala - 6
+        if szer <= 30 or czcionka.measure(poczatek + reszta) <= szer:
+            self.opis_listy.configure(text=poczatek + reszta)
+        elif czcionka.measure(reszta) <= szer * 0.6:
+            self.opis_listy.configure(text=skroc_tekst(poczatek, szer - czcionka.measure(reszta), czcionka) + reszta)
+        else:
+            self.opis_listy.configure(text=skroc_tekst(poczatek + reszta, szer, czcionka))
 
     def _pokaz_kolumny(self, kolumny: tuple[str, ...]):
         """Zmiana trybu tabeli. Szerokości wracają do bazowych - inaczej Tk zostawia te rozciągnięte w poprzednim
@@ -825,20 +923,10 @@ class Aplikacja(ctk.CTk):
         czcionka = self._czcionka_wierszy
         margines = int(14 * self._skala)  # wcięcie tekstu w komórce z obu stron
         szerokosci = {k: self.wyniki.column(k, "width") - margines for k in ROZCIAGANE}
-
-        def skroc(tekst: str, szer: int) -> str:
-            if czcionka.measure(tekst) <= szer:
-                return tekst
-            od, do = 0, len(tekst)  # najdłuższy początek, który z „…” się mieści
-            while od < do:
-                srodek = (od + do + 1) // 2
-                od, do = (srodek, do) if czcionka.measure(tekst[:srodek].rstrip() + "…") <= szer else (od, srodek - 1)
-            return tekst[:od].rstrip() + "…"
-
         for iid in wiersze if wiersze is not None else list(self._pelne_teksty):
             if self.wyniki.exists(iid):
                 for k, tekst in self._pelne_teksty[iid].items():
-                    self.wyniki.set(iid, k, skroc(tekst, szerokosci[k]))
+                    self.wyniki.set(iid, k, skroc_tekst(tekst, szerokosci[k], czcionka))
 
     def _ustaw_status(self, iid: str, tekst: str):
         """Kolumna STATUS; „✗ …” (nie udało się) barwi cały wiersz, żeby było widać, co ponowić."""
@@ -853,7 +941,8 @@ class Aplikacja(ctk.CTk):
                                  "Klik w wynik wybiera utwór, dwuklik od razu go pobiera."):
         self.pusta_tytul.configure(text=tytul)
         self.pusta_opis.configure(text=opis)
-        self.pusta_tabela.place(relx=0.5, rely=0.55, anchor="center")
+        self.pusta_tabela.place(relx=0, rely=0, relwidth=1, relheight=1)
+        self.pusta_tabela.lift()
 
     def zamknij_liste(self):
         if self.pobieranie_listy:
@@ -910,7 +999,7 @@ class Aplikacja(ctk.CTk):
         for iid in do_pobrania:
             self._ustaw_status(iid, "w kolejce")
         self._dopisz(f"▶ Pobieram {len(do_pobrania)} utw. z „{lista.nazwa}” (po {ROWNOLEGLE_POBIERANIA} naraz)…")
-        self._ustaw_postep(0)
+        self._ustaw_postep(0, f"0/{len(do_pobrania)}")
 
         def jeden(iid: str) -> bool:
             if self.przerwij_liste.is_set():
@@ -931,8 +1020,8 @@ class Aplikacja(ctk.CTk):
                 self.procesy_listy.add(proces)
                 for linia in proces.stdout:
                     tekst = linia.decode("utf-8", errors="replace").strip()
-                    if tekst.startswith("POSTEP "):
-                        self.kolejka.put(("status", (iid, f"pobieram {tekst.split()[-1]}")))
+                    if (procent := procent_postepu(tekst)) is not None:
+                        self.kolejka.put(("status", (iid, f"pobieram {procent:.0f} %")))
                 kod = proces.wait()
                 self.procesy_listy.discard(proces)
                 if kod != 0 or not plik.exists():
@@ -962,8 +1051,7 @@ class Aplikacja(ctk.CTk):
         self.pobieranie_listy = False
         for iid in udane:
             self._ustaw_zaznaczenie(iid, False)  # zostają zaznaczone tylko nieudane = „spróbuj ponownie”
-        self._ustaw_postep(0)
-        self.pasek.configure(progress_color=POLE)
+        self._schowaj_postep()
         przerwane = self.przerwij_liste.is_set()
         self._dopisz(("■ Zatrzymano. " if przerwane else "✔ Gotowe. ") + f"Pobrano {len(udane)} z {len(udane) + len(nieudane)}.")
         if nieudane and not przerwane:
@@ -993,8 +1081,7 @@ class Aplikacja(ctk.CTk):
                 messagebox.showinfo("Odsłuch", "Wybierz utwór z wyników albo wklej link z YouTube.")
                 return
         self.odsluch_nr += 1
-        self.przycisk_odsluch.configure(text="■  Stop", fg_color=AKCENT, hover_color=AKCENT_NAJECHANY)
-        self.przycisk_nastepny.configure(state="normal")
+        self._pokaz_odsluch(True)
 
         def w_tle(nr: int, link: str):
             if utwor is not None:
@@ -1009,12 +1096,12 @@ class Aplikacja(ctk.CTk):
 
     @staticmethod
     def _yt_dlp(*argumenty: str) -> subprocess.CompletedProcess:
-        return subprocess.run([*narzedzie("yt-dlp"), "-q", "--no-warnings", *argumenty], capture_output=True,
+        return subprocess.run([*narzedzie("yt-dlp"), "-q", "--no-warnings", "--ignore-config", *argumenty], capture_output=True,
                               text=True, encoding="utf-8", errors="replace", env=ENV_UTF8, creationflags=BEZ_OKNA)
 
     def _strumien(self, utwor: str) -> tuple[str | None, str]:
         """(tytuł, adres strumienia audio) albo (None, opis błędu)."""
-        wynik = self._yt_dlp("--no-playlist", "-f", "bestaudio", "--print", "title", "--print", "urls", utwor)
+        wynik = self._yt_dlp("--no-playlist", "-f", "bestaudio", "--print", "title", "--print", "urls", "--", utwor)
         linie = wynik.stdout.strip().splitlines()
         if len(linie) < 2:
             return None, wynik.stderr.strip()[-200:]
@@ -1025,7 +1112,7 @@ class Aplikacja(ctk.CTk):
         wyciągamy, gdy leci bieżący - bez kilkusekundowej dziury między utworami."""
         try:
             if to_playlista_yt(link):
-                lista = self._yt_dlp("--flat-playlist", "--print", "url", link).stdout.split()
+                lista = self._yt_dlp("--flat-playlist", "--print", "url", "--", link).stdout.split()
             else:
                 lista = [link]
             nastepny = self._strumien(lista[0]) if lista else (None, "pusta playlista")
@@ -1053,6 +1140,15 @@ class Aplikacja(ctk.CTk):
                 self.odsluch = None
                 self.kolejka.put(("odsluch_koniec", None))
 
+    def _pokaz_odsluch(self, gra: bool):
+        """W trakcie grania „■ Stop” (różowy) i obok niego „Następny ›”; w spoczynku samo „▶ Odsłuchaj”."""
+        if gra:
+            self.przycisk_odsluch.configure(text="■  Stop", fg_color=AKCENT, hover_color=AKCENT_NAJECHANY)
+            self.przycisk_nastepny.pack(side="left", padx=(6, 0), after=self.przycisk_odsluch)
+        else:
+            self.przycisk_odsluch.configure(text="▶  Odsłuchaj", fg_color=POLE, hover_color=OBRYS)
+            self.przycisk_nastepny.pack_forget()
+
     def _nastepny(self):
         if self.odsluch:
             self.odsluch.kill()  # wątek odsłuchu sam przejdzie do kolejnego utworu
@@ -1062,8 +1158,7 @@ class Aplikacja(ctk.CTk):
         if self.odsluch:
             self.odsluch.kill()
             self.odsluch = None
-        self.przycisk_odsluch.configure(text="▶  Odsłuchaj", fg_color=POLE, hover_color=OBRYS)
-        self.przycisk_nastepny.configure(state="disabled")
+        self._pokaz_odsluch(False)
 
     # ---------- pobieranie ----------
 
@@ -1112,12 +1207,9 @@ class Aplikacja(ctk.CTk):
     def _przetworz_linie(self, tekst: str):
         """Zamienia znaczniki z yt-dlp (POSTEP/UTWOR/PLIK) na pasek i krótkie wpisy; resztę przepuszcza."""
         if tekst.startswith("POSTEP "):
-            try:
-                procent = float(tekst.split()[1].rstrip("%"))
+            if (procent := procent_postepu(tekst)) is not None:
                 # 100% = plik ściągnięty, teraz ffmpeg konwertuje -> pasek „mielący”
                 self.kolejka.put(("postep", procent if procent < 100 else None))
-            except (IndexError, ValueError):
-                pass
         elif tekst.startswith("UTWOR "):
             numer, _, tytul = tekst[6:].partition(" ")
             numer = "" if numer in ("/", "NA/NA") else f"[{numer}] "
@@ -1133,16 +1225,14 @@ class Aplikacja(ctk.CTk):
             while True:
                 rodzaj, wartosc = self.kolejka.get_nowait()
                 if rodzaj == "koniec":
-                    self._ustaw_postep(0)
-                    self.pasek.configure(progress_color=POLE)  # w spoczynku niewidoczny
+                    self._schowaj_postep()
                     self.przycisk_pobierz.configure(state="normal")
                 elif rodzaj == "postep":
                     self._ustaw_postep(wartosc)
                 elif rodzaj == "wyniki":
                     self._pokaz_wyniki(wartosc)
                 elif rodzaj == "odsluch_koniec":
-                    self.przycisk_odsluch.configure(text="▶  Odsłuchaj", fg_color=POLE, hover_color=OBRYS)
-                    self.przycisk_nastepny.configure(state="disabled")
+                    self._pokaz_odsluch(False)
                 elif rodzaj == "wersja":
                     self.stopka_wersja.configure(text=wartosc)
                 elif rodzaj == "lista":
@@ -1151,9 +1241,8 @@ class Aplikacja(ctk.CTk):
                     self._ustaw_status(*wartosc)
                 elif rodzaj == "postep_listy":
                     zrobione, wszystkie = wartosc
-                    self._ustaw_postep(100 * zrobione / wszystkie)
-                    self.opis_listy.configure(text=f"{self.opis_listy.cget('text').split('  ·  [')[0]}"
-                                                   f"  ·  [{zrobione}/{wszystkie}]")
+                    self._ustaw_postep(100 * zrobione / wszystkie, f"{zrobione}/{wszystkie}")
+                    self._ustaw_opis_listy(postep=f"{zrobione}/{wszystkie}")
                 elif rodzaj == "lista_koniec":
                     self._koniec_listy(*wartosc)
                 elif rodzaj == "nowa_wersja":
@@ -1177,9 +1266,15 @@ class Aplikacja(ctk.CTk):
             pass
         self.after(100, self._odbierz_logi)
 
-    def _ustaw_postep(self, procent: float | None):
-        """Liczba = pobieranie (pasek z procentami), None = konwersja/tagi (pasek „mielący”)."""
-        self.pasek.configure(progress_color=AKCENT)
+    def _ustaw_postep(self, procent: float | None, tekst: str | None = None):
+        """Liczba = pobieranie (pasek z procentami), None = konwersja/tagi (pasek „mielący”).
+        Napis obok paska: domyślnie procent, lista podaje własny („3/12”)."""
+        if not self._pasek_widoczny:  # kolory tylko przy pokazaniu - każde configure() przerysowuje pasek
+            self._pasek_widoczny = True
+            self.pasek.configure(fg_color=POLE, progress_color=AKCENT)
+        napis = tekst if tekst is not None else ("" if procent is None else f"{procent:.0f} %")
+        if napis != self.postep_tekst.cget("text"):
+            self.postep_tekst.configure(text=napis)
         if procent is None:
             if self._tryb_paska != "indeterminate":
                 self._tryb_paska = "indeterminate"
@@ -1191,6 +1286,17 @@ class Aplikacja(ctk.CTk):
                 self.pasek.stop()
                 self.pasek.configure(mode="determinate")
             self.pasek.set(procent / 100)
+
+    def _schowaj_postep(self):
+        """Koniec pracy: pasek pusty, w kolorze tła (niewidoczny), bez napisu."""
+        if self._tryb_paska != "determinate":
+            self._tryb_paska = "determinate"
+            self.pasek.stop()
+            self.pasek.configure(mode="determinate")
+        self.pasek.set(0)
+        self._pasek_widoczny = False
+        self.pasek.configure(fg_color=TLO, progress_color=TLO)
+        self.postep_tekst.configure(text="")
 
     def _zamknij(self):
         self._zatrzymaj_odsluch()

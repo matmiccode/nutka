@@ -163,9 +163,14 @@ def dopasuj(utwor: Utwor, klient) -> str | None:
 
 # ---------- pliki ----------
 
+_ZASTRZEZONE = re.compile(r"(?i)^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\..*)?$")  # nazwy urządzeń Windows
+
+
 def bezpieczna_nazwa(tekst: str) -> str:
-    tekst = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "", tekst).strip().rstrip(".")
-    return tekst[:150] or "bez nazwy"
+    """Składnik ścieżki z nazwy z internetu: bez znaków zabronionych w Windows, bez kropek i spacji na końcach
+    (Win32 je ignoruje, więc „.. ” wskazywałoby katalog nadrzędny) i bez nazw urządzeń (CON, NUL…)."""
+    tekst = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "", tekst).strip(" .")[:150].rstrip(" .") or "bez nazwy"
+    return "_" + tekst if _ZASTRZEZONE.match(tekst) else tekst
 
 
 def sciezka_pliku(utwor: Utwor, lista: Lista, folder: Path) -> Path:
@@ -173,14 +178,19 @@ def sciezka_pliku(utwor: Utwor, lista: Lista, folder: Path) -> Path:
     Album: podfolder + numer utworu; playlista: podfolder bez numerów (kolejność w playliście się zmienia)."""
     nazwa = bezpieczna_nazwa(f"{utwor.wykonawcy[0] if utwor.wykonawcy else 'Nieznany'} - {utwor.tytul}")
     if lista.rodzaj == "utwór":
-        return folder / f"{nazwa}.mp3"
-    if lista.rodzaj == "album" and utwor.numer:
-        nazwa = f"{utwor.numer:02d} - {nazwa}"
-    return folder / bezpieczna_nazwa(lista.nazwa) / f"{nazwa}.mp3"
+        plik = folder / f"{nazwa}.mp3"
+    else:
+        if lista.rodzaj == "album" and utwor.numer:
+            nazwa = f"{utwor.numer:02d} - {nazwa}"
+        plik = folder / bezpieczna_nazwa(lista.nazwa) / f"{nazwa}.mp3"
+    if not plik.resolve().is_relative_to(folder.resolve()):  # pas bezpieczeństwa - bezpieczna_nazwa() to gwarantuje
+        raise ValueError(f"ścieżka poza folderem docelowym: {plik}")
+    return plik
 
 
 def otaguj(plik: Path, utwor: Utwor, lista: Lista):
     """Tagi ze Spotify (dokładniejsze niż z YouTube) + okładka albumu."""
+    import urllib.parse
     import urllib.request
 
     from mutagen.id3 import APIC, ID3, TALB, TDRC, TIT2, TPE1, TPE2, TRCK, ID3NoHeaderError
@@ -199,7 +209,9 @@ def otaguj(plik: Path, utwor: Utwor, lista: Lista):
         tagi.add(TDRC(encoding=3, text=utwor.rok))
     if utwor.numer:
         tagi.add(TRCK(encoding=3, text=str(utwor.numer)))
-    if utwor.okladka:
+    adres = urllib.parse.urlsplit(utwor.okladka) if utwor.okladka else None
+    # okładka tylko z CDN Spotify przez https - adres przychodzi z danych z sieci
+    if adres and adres.scheme == "https" and (adres.hostname or "").endswith((".scdn.co", ".spotifycdn.com")):
         try:
             with urllib.request.urlopen(utwor.okladka, timeout=15) as odp:
                 tagi.add(APIC(encoding=3, mime="image/jpeg", type=3, desc="Cover", data=odp.read()))

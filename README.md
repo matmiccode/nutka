@@ -56,8 +56,8 @@ Wymagania: Windows 10 lub 11 (64-bit), ~400 MB miejsca, internet do wyszukiwania
 | pobrać z linku YouTube | wklej link w pole **Link** → **Pobierz mp3** |
 
 Pliki trafiają do `Muzyka\Pobrane` (zmienisz to przyciskiem **Wybierz…**).
-Pełną instrukcję otworzysz w programie przyciskiem **Instrukcja**. Jest też jako PDF w każdym
-[wydaniu](https://github.com/matmiccode/nutka/releases/latest).
+Pełną instrukcję otworzysz w programie przyciskiem **Instrukcja** (działa bez internetu). Jest też online:
+[matmiccode.github.io/nutka/instrukcja.html](https://matmiccode.github.io/nutka/instrukcja.html).
 
 ## Częste pytania
 
@@ -89,13 +89,15 @@ Nutka to Python 3.12 + CustomTkinter, spakowany PyInstallerem i Inno Setup.
 | `app.py` | okno, wyszukiwarka, odsłuch, pobieranie (yt-dlp w procesach potomnych) |
 | `spotify_lista.py` | odczyt playlist/albumów Spotify (spotapi) i dopasowanie w YouTube Music |
 | `aktualizacje.py` | ciche aktualizacje lekkich pakietów (yt-dlp, ytmusicapi, spotapi) z PyPI |
-| `aktualizacja_programu.py` | propozycja i instalacja nowej wersji z GitHub Releases |
+| `aktualizacja_programu.py` | propozycja i instalacja nowej wersji z GitHub Releases (tylko wydania podpisane kluczem autora) |
+| `podpis_wydania.py` | podpis Ed25519 wydania – klucz prywatny leży poza repozytorium, publiczny jest w programie |
 | `zbuduj.ps1` | build instalatora; `-Wydanie` publikuje wersję na GitHubie |
-| `docs/` | zrzuty ekranu i strona programu (GitHub Pages) |
+| `docs/` | zrzuty ekranu, strona programu i instrukcja (GitHub Pages; instrukcja trafia też do instalatora) |
 
 Budowanie: Python 3.12, [Inno Setup 6](https://jrsoftware.org/isinfo.php), potem
 `powershell -ExecutionPolicy Bypass -File zbuduj.ps1` → `dist\Nutka-Setup.exe`.
-Nowa wersja: podbij `WERSJA` w `app.py`, dopisz sekcję w [CHANGELOG.md](CHANGELOG.md), `zbuduj.ps1 -Wydanie`.
+Nowa wersja: podbij `WERSJA` w `app.py`, dopisz sekcję w [CHANGELOG.md](CHANGELOG.md), `zbuduj.ps1 -Wydanie`
+(podpisuje instalator kluczem z `podpis_wydania.py` i publikuje wydanie). Zasady bezpieczeństwa: [SECURITY.md](SECURITY.md).
 
 ## Wsparcie
 
