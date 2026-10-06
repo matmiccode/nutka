@@ -4,17 +4,15 @@
 # ffmpeg/ffprobe/ffplay, deno). Instaluje się bez admina; potem sam po cichu aktualizuje lekkie pakiety
 # (aktualizacje.py), a o nowej wersji całego programu dowiaduje się z GitHub Releases (aktualizacja_programu.py).
 #
-# Wymaga: Python 3.12 (py -3.12), Inno Setup 6, internet; do -Wydanie także gh (zalogowany) i Dysk Google.
+# Wymaga: Python 3.12 (py -3.12), Inno Setup 6, internet; do -Wydanie także gh (zalogowany).
 #
 #   zbuduj.ps1                 sam build do dist\ (nic nie publikuje - do testów)
 #   zbuduj.ps1 -Wydanie        build + wydanie vX.Y.Z na GitHubie (instalator + instrukcja PDF, opis z CHANGELOG.md)
-#                              + kopia na Dysk Google (folder użytkowników z publikacja.local.json)
-#   zbuduj.ps1 -TylkoPublikacja  tylko kopia dist\ na Dysk Google (np. po nowym PDF instrukcji)
 #   zbuduj.ps1 -Pakiety "yt-dlp==2026.7.4,ytmusicapi==1.11.5"  celowo stare pakiety = test cichych aktualizacji
 #
 # Wersję bierzemy z WERSJA w app.py (jedno źródło prawdy) - przed wydaniem podbij ją i dopisz sekcję w CHANGELOG.md.
 
-param([string]$Pakiety = "", [switch]$Wydanie, [switch]$TylkoPublikacja)
+param([string]$Pakiety = "", [switch]$Wydanie)
 
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
@@ -25,32 +23,6 @@ if (-not $Wersja) { throw "Nie znalazłem WERSJA = ""x.y.z"" w app.py" }
 
 function Krok([string]$opis) { Write-Host "`n=== $opis" -ForegroundColor Cyan }
 function Sprawdz([string]$co) { if ($LASTEXITCODE -ne 0) { throw "$co nie wyszło (kod $LASTEXITCODE)" } }
-
-# folder użytkowników na Dysku Google - jego ID jest tylko lokalnie w publikacja.local.json (poza gitem:
-# repo jest publiczne), szukany po ID, bo nazwa i litera dysku mogą się zmienić
-function Opublikuj-NaDysku {
-    $konfig = Join-Path $PSScriptRoot "publikacja.local.json"
-    if (-not (Test-Path $konfig)) { Write-Host "Brak publikacja.local.json - pomijam Dysk Google."; return }
-    $DyskGoogleId = (Get-Content $konfig -Raw | ConvertFrom-Json).dysk_google_id
-    $folder = Get-PSDrive -PSProvider FileSystem | ForEach-Object {
-        Get-ChildItem (Join-Path $_.Root ".shortcut-targets-by-id\$DyskGoogleId") -Directory -ErrorAction SilentlyContinue
-    } | Select-Object -First 1
-    if (-not $folder) {
-        Write-Host "Nie widzę folderu na Dysku Google - uruchom Dysk Google na komputerze i odpal: zbuduj.ps1 -TylkoPublikacja" -ForegroundColor Yellow
-        return
-    }
-    foreach ($plik in "Nutka-Setup.exe", "Nutka-instrukcja.pdf") {
-        $zrodlo = Join-Path $PSScriptRoot "dist\$plik"
-        if (-not (Test-Path $zrodlo)) { Write-Host "  brak dist\$plik - pomijam"; continue }
-        $cel = Join-Path $folder.FullName $plik
-        if ((Test-Path $cel) -and (Get-FileHash $cel).Hash -eq (Get-FileHash $zrodlo).Hash) {
-            Write-Host "  $plik - bez zmian"
-        } else {
-            Copy-Item $zrodlo $cel -Force
-            Write-Host "  $plik -> Dysk Google (wyśle go w tle)" -ForegroundColor Green
-        }
-    }
-}
 
 function Wydaj-NaGitHubie {
     if (git status --porcelain) { throw "Są niezacommitowane zmiany - najpierw commit i push, potem wydanie." }
@@ -63,11 +35,6 @@ function Wydaj-NaGitHubie {
     $pliki = @("dist\Nutka-Setup.exe") + @(Get-Item "dist\Nutka-instrukcja.pdf" -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
     gh release create "v$Wersja" @pliki --title "Nutka $Wersja" --notes-file $notatki; Sprawdz "gh release create"
     Write-Host "Wydanie v$Wersja jest na GitHubie - zainstalowane programy zaproponują aktualizację." -ForegroundColor Green
-}
-
-if ($TylkoPublikacja) {
-    Opublikuj-NaDysku
-    exit 0
 }
 
 $build = Join-Path $PSScriptRoot "build"
@@ -173,6 +140,4 @@ Write-Host "`nGotowe: $($wynik.FullName) ($([int]($wynik.Length / 1MB)) MB), wer
 if ($Wydanie) {
     Krok "Wydanie na GitHubie"
     Wydaj-NaGitHubie
-    Krok "Kopia na Dysk Google (folder użytkowników)"
-    Opublikuj-NaDysku
 }

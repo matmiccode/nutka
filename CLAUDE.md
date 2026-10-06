@@ -45,7 +45,7 @@ Podpis autora: **MATCODE** – bez imienia i nazwiska (świadoma decyzja przy pu
 
 ## Instalator i wydania
 - `zbuduj.ps1` → `build\venv` (świeże pakiety, yt-dlp nightly) → ffmpeg **gpl-shared** z BtbN + `deno.exe` z pip do `narzedzia\` → PyInstaller **onedir** `--windowed` → Inno Setup (`instalator.iss`, per-user, polski) → `dist\Nutka-Setup.exe` (~115 MB).
-  - Sam build niczego nie publikuje. **`zbuduj.ps1 -Wydanie`** = `gh release create vX.Y.Z` (instalator + `dist\Nutka-instrukcja.pdf`, opis = sekcja `## [X.Y.Z]` z CHANGELOG.md) + kopia na Dysk Google. Wymaga czystego, wypchniętego repo.
+  - Sam build niczego nie publikuje. **`zbuduj.ps1 -Wydanie`** = `gh release create vX.Y.Z` (instalator + `dist\Nutka-instrukcja.pdf`, opis = sekcja `## [X.Y.Z]` z CHANGELOG.md). Wymaga czystego, wypchniętego repo.
   - Procedura wydania: podbij `WERSJA` w app.py → sekcja w CHANGELOG.md (pisana dla zwykłego użytkownika – to jest „Co nowego” w programie) → commit/push → `zbuduj.ps1 -Wydanie`.
 - W exe nie ma `python -m`, więc `narzedzie()` woła sam exe z `--yt-dlp`, a `uruchom_narzedzie()` odpala `yt_dlp.main()`.
 - PyInstaller ignoruje `PYTHONUTF8` → `wyjscie_utf8()` w procesach potomnych. `ZASOBY` = `sys._MEIPASS` (`__file__` tam NIE wskazuje).
@@ -58,11 +58,10 @@ Podpis autora: **MATCODE** – bez imienia i nazwiska (świadoma decyzja przy pu
 ## Publikacja dla użytkowników
 - Użytkownicy to zwykli ludzie (nie firma) – tak pisać instrukcje, komunikaty i CHANGELOG.
 - Wydania: GitHub Releases (repo publiczne; `releases/latest/download/Nutka-Setup.exe` = stały link w README).
-- Dodatkowo folder użytkowników na Dysku Google: ID TYLKO w lokalnym `publikacja.local.json` (poza gitem). Nigdy nie wpisywać do repo ID folderu ani nazwisk osób trzecich.
-  Samo kopiowanie: `zbuduj.ps1 -TylkoPublikacja` (Dysk Google na komputerze musi działać, dysk G:).
+- **Nie kopiujemy już wydań na Dysk Google** (decyzja użytkownika 2026-10-06) – jedyne źródło to GitHub Releases. Nigdy nie wpisywać do repo nazwisk osób trzecich.
 - Instrukcja użytkownika = Claude Doc https://claude.ai/code/artifact/ba388908-1322-4f05-a544-aa58c9e38964 (tab `3e14ba65-02ab`).
   Po zmianie obsługi: popraw doc (zrzuty: upload do artefaktu docu → blob) → eksport PDF A4 (blob z zakładki, `format pdf`, `paper a4` → Artifact `read` z `path` = id assetu)
-  → `dist\Nutka-instrukcja.pdf`. Idzie do wydania, na Dysk i do instalatora obok `Nutka.exe` (przycisk „Instrukcja”); `-Wydanie` bez tego PDF = błąd.
+  → `dist\Nutka-instrukcja.pdf`. Idzie do wydania i do instalatora obok `Nutka.exe` (przycisk „Instrukcja”); `-Wydanie` bez tego PDF = błąd.
 - Strona programu = `docs/index.html` (GitHub Pages z `master` /docs, jeden plik, zrzuty z `docs/`). Włączyć dopiero po upublicznieniu repo: Settings → Pages.
 - Zrzuty do README/instrukcji/strony: `python` + PrintWindow na danych testowych, folder ustawiony na `C:\Users\Ty\Music\Pobrane` (nigdy prawdziwa nazwa użytkownika).
 
