@@ -1347,6 +1347,12 @@ def autotest():
     try:
         wydanie = aktualizacja_programu.najnowsze_wydanie(REPO_GITHUB)
         print(f"github   najnowsze wydanie: {wydanie['wersja'] if wydanie else 'brak'} (masz {WERSJA})")
+        if wydanie and wydanie["podpis_url"]:  # sprawdza też, czy biblioteka podpisu działa w tym exe
+            suma = aktualizacja_programu.sprawdz_podpis(aktualizacja_programu._pobierz_json(wydanie["podpis_url"]),
+                                                        wydanie["wersja"])
+            print(f"podpis   OK - wydanie {wydanie['wersja']} podpisane kluczem autora (SHA256 {suma[:16]}…)")
+        elif wydanie:
+            print("podpis   BRAK - wydanie bez Nutka-Setup.podpis.json, program go nie zaproponuje")
     except Exception as e:
         print(f"github   BŁĄD: {e!r}")
 
