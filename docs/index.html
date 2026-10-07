@@ -3,279 +3,218 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Nutka – darmowe mp3 z YouTube i Spotify</title>
-<meta name="description" content="Nutka to darmowy program na Windows: wpisz tytuł albo wklej link z YouTube lub Spotify i dostajesz mp3 z okładką. Bez konta, bez reklam.">
-<meta property="og:title" content="Nutka – darmowe mp3 z YouTube i Spotify">
-<meta property="og:description" content="Wpisz tytuł albo wklej link – dostajesz mp3 z okładką i opisem utworu. Darmowy program na Windows od MATCODE.">
-<meta property="og:image" content="zrzut-wyszukiwarka.png">
-<link rel="icon" href="favicon.png">
+<title>Nutka – mp3 z YouTube i Spotify</title>
+<meta name="description" content="Wpisz tytuł albo wklej link z YouTube lub Spotify i dostajesz mp3 z okładką na swoim komputerze. Program dla Windows, za darmo, z otwartym kodem.">
+<link rel="icon" href="favicon.ico">
+<meta property="og:title" content="Nutka – mp3 z YouTube i Spotify">
+<meta property="og:description" content="Wpisz tytuł albo wklej link z YouTube lub Spotify i dostajesz mp3 z okładką na swoim komputerze. Za darmo, z otwartym kodem.">
+<meta property="og:image" content="https://matmiccode.github.io/nutka/img/okno.png">
+<meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap" rel="stylesheet">
-<style>
-  /* paleta = stałe z app.py, gradient = naglowek.png */
-  :root {
-    --tlo: #141019;
-    --karta: #1E1826;
-    --pole: #2A2233;
-    --obrys: #3A3045;
-    --tekst: #F4EEF7;
-    --szary: #A99BB5;
-    --akcent: #E0479E;
-    --akcent-najechany: #C4358A;
-    --fiolet: #8E2FB8;
-    --gradient: linear-gradient(100deg, #EC4899 0%, #B83AA9 55%, #8E2FB8 100%);
-    --naglowkowa: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
-    --zwykla: "Segoe UI", system-ui, -apple-system, sans-serif;
-    --szerokosc: 1080px;
-  }
-  * { box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; }
-  body {
-    margin: 0;
-    background: var(--tlo);
-    color: var(--tekst);
-    font: 17px/1.6 var(--zwykla);
-  }
-  img { max-width: 100%; height: auto; display: block; }
-  a { color: inherit; }
-  a:focus-visible, summary:focus-visible { outline: 3px solid #fff; outline-offset: 3px; border-radius: 6px; }
-  .wnetrze { max-width: var(--szerokosc); margin: 0 auto; padding: 0 24px; }
-  h1, h2, h3 { font-family: var(--naglowkowa); font-weight: 800; line-height: 1.1; margin: 0; }
-  h2 { font-size: clamp(28px, 4vw, 40px); letter-spacing: -0.01em; }
-  h3 { font-size: 20px; font-weight: 600; }
-
-  /* --- nagłówek: ten sam gradient co w programie --- */
-  .gora { background: var(--gradient); position: relative; overflow: hidden; }
-  .gora::after { /* łagodne przejście gradientu w tło strony pod zrzutem */
-    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 160px;
-    background: linear-gradient(to bottom, transparent, var(--tlo));
-  }
-  .pasek { display: flex; align-items: center; justify-content: space-between; padding-top: 22px; gap: 16px; }
-  .marka { display: flex; align-items: center; gap: 12px; text-decoration: none; font: 800 24px/1 var(--naglowkowa); }
-  .marka img { width: 40px; height: 40px; }
-  .pasek nav { display: flex; gap: 22px; font-size: 15px; }
-  .pasek nav a { text-decoration: none; opacity: .9; }
-  .pasek nav a:hover { opacity: 1; text-decoration: underline; text-underline-offset: 4px; }
-
-  .hero { position: relative; z-index: 1; padding: 64px 0 0; text-align: center; }
-  .hero h1 { font-size: clamp(44px, 8vw, 92px); letter-spacing: -0.03em; }
-  .hero p.lead { font-size: clamp(18px, 2.2vw, 21px); max-width: 34em; margin: 20px auto 0; }
-  .akcje { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 32px; }
-  .przycisk {
-    display: inline-flex; align-items: center; gap: 10px; padding: 15px 28px; border-radius: 999px;
-    font-weight: 700; font-size: 17px; text-decoration: none; transition: transform .15s ease, background .15s ease;
-  }
-  .przycisk.glowny { background: #fff; color: var(--fiolet); }
-  .przycisk.glowny:hover { background: #F6E6F3; }
-  .przycisk.drugi { background: rgba(255, 255, 255, .18); color: #fff; }
-  .przycisk.drugi:hover { background: rgba(255, 255, 255, .30); }
-  .przycisk:active { transform: translateY(1px); }
-  .drobne { font-size: 14px; opacity: .85; margin-top: 14px; }
-  .okno {
-    margin: 48px auto 0; max-width: 976px; border-radius: 12px; overflow: hidden;
-    box-shadow: 0 30px 80px rgba(20, 16, 25, .55), 0 0 0 1px rgba(255, 255, 255, .08);
-  }
-
-  /* --- treść --- */
-  section { padding: 88px 0 0; }
-  .wstep { color: var(--szary); max-width: 40em; margin: 14px 0 0; }
-  .cechy { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 36px 40px; margin-top: 40px; }
-  .cechy h3 { margin-bottom: 6px; }
-  .cechy p { margin: 0; color: var(--szary); }
-  .cechy h3::before { /* krótka różowa kreska = rytm sekcji, nie numeracja */
-    content: ""; display: block; width: 28px; height: 4px; border-radius: 2px; background: var(--akcent); margin-bottom: 14px;
-  }
-
-  .dwie { display: grid; grid-template-columns: 1fr 1.25fr; gap: 48px; align-items: center; }
-  .dwie .okno { margin: 0; box-shadow: 0 20px 60px rgba(0, 0, 0, .45), 0 0 0 1px rgba(255, 255, 255, .06); }
-  ol.kroki { margin: 24px 0 0; padding-left: 1.3em; }
-  ol.kroki li { margin: 0 0 10px; padding-left: 4px; }
-  ol.kroki li::marker { color: var(--akcent); font-weight: 700; }
-  .uwaga { color: var(--szary); font-size: 15px; margin-top: 18px; }
-
-  table { width: 100%; border-collapse: collapse; margin-top: 28px; font-size: 16px; }
-  th, td { text-align: left; padding: 14px 16px; border-bottom: 1px solid var(--obrys); vertical-align: top; }
-  th { color: var(--szary); font-weight: 600; font-size: 14px; }
-  td:first-child { font-weight: 600; width: 34%; }
-  kbd, code { font: 600 14px/1 var(--zwykla); background: var(--pole); border: 1px solid var(--obrys); border-radius: 6px; padding: 3px 7px; white-space: nowrap; }
-
-  .ramka { background: var(--karta); border-radius: 16px; padding: 28px 32px; margin-top: 28px; }
-  .ramka p { margin: 8px 0 0; color: var(--szary); }
-  .ramka strong { color: var(--tekst); }
-
-  details { border-bottom: 1px solid var(--obrys); }
-  details:first-of-type { border-top: 1px solid var(--obrys); margin-top: 24px; }
-  summary { cursor: pointer; padding: 18px 0; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
-  summary::-webkit-details-marker { display: none; }
-  summary::after { content: "+"; color: var(--akcent); font-weight: 700; font-size: 22px; line-height: 1; }
-  details[open] summary::after { content: "–"; }
-  details p { margin: 0 0 18px; color: var(--szary); max-width: 46em; }
-
-  .kawa { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px; }
-  .kawa p { margin: 6px 0 0; color: var(--szary); }
-
-  footer { margin-top: 96px; padding: 28px 0 40px; border-top: 1px solid var(--obrys); color: var(--szary); font-size: 14px; }
-  footer .wnetrze { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; }
-  footer strong { color: var(--tekst); }
-
-  @media (max-width: 800px) {
-    .dwie { grid-template-columns: 1fr; }
-    .pasek nav { display: none; }
-    .hero { padding-top: 40px; }
-    .ramka { padding: 22px; }
-    td:first-child { width: auto; }
-    th, td { padding: 12px 8px; }
-  }
-  @media (max-width: 480px) {
-    .wnetrze { padding: 0 16px; }
-    .przycisk { width: 100%; justify-content: center; }
-  }
-  @media (prefers-reduced-motion: reduce) { .przycisk { transition: none; } }
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/v1/matcode.css">
+<link rel="stylesheet" href="nutka.css">
 </head>
 <body>
 
-<header class="gora">
-  <div class="wnetrze">
-    <div class="pasek">
-      <a class="marka" href="#"><img src="ikona.png" alt="" width="40" height="40">Nutka</a>
-      <nav aria-label="Na tej stronie">
-        <a href="#jak">Jak to działa</a>
-        <a href="#instalacja">Instalacja</a>
-        <a href="#pytania">Pytania</a>
-        <a href="instrukcja.html">Instrukcja</a>
-        <a href="https://github.com/matmiccode/nutka">GitHub</a>
-      </nav>
-    </div>
-    <div class="hero">
-      <h1>Wpisz tytuł.<br>Dostajesz mp3.</h1>
-      <p class="lead">Nutka to darmowy program na Windows. Wyszukuje muzykę w YouTube Music, pozwala ją odsłuchać
-        i zapisuje jako mp3 z okładką. Pobiera też całe albumy i playlisty ze Spotify.</p>
-      <div class="akcje">
-        <a class="przycisk glowny" href="https://github.com/matmiccode/nutka/releases/latest/download/Nutka-Setup.exe">Pobierz dla Windows</a>
-        <a class="przycisk drugi" href="instrukcja.html">Instrukcja</a>
-      </div>
-      <p class="drobne">Windows 10 i 11, 64-bit. Bez konta, bez reklam, bez uprawnień administratora.</p>
-      <div class="okno"><img src="zrzut-wyszukiwarka.png" width="976" height="759"
-        alt="Okno Nutki: wyniki wyszukiwania utworów Dawida Podsiadły, jeden zaznaczony, pod spodem przyciski Pobierz mp3 i Odsłuchaj"></div>
-    </div>
-  </div>
+<div class="nuty" role="presentation"></div>
+<header class="wrap top">
+  <a class="marka" href="./"><img src="img/nutka-256.png" alt="" width="36" height="36">Nutka</a>
+  <nav>
+    <a href="#jak">Jak to działa</a>
+    <a href="#prywatnosc" class="ukryj-mobile">Prywatność</a>
+    <a href="instrukcja.html">Instrukcja</a>
+    <a href="https://github.com/matmiccode/nutka" class="ukryj-mobile">Kod</a>
+    <a class="btn btn-primary btn-sm" href="https://github.com/matmiccode/nutka/releases/latest" data-pobierz>Pobierz</a>
+  </nav>
 </header>
 
 <main>
-  <section id="jak">
-    <div class="wnetrze">
+
+<section class="wrap hero">
+  <div>
+    <h1>Wpisz tytuł. Dostajesz mp3 na swoim komputerze.</h1>
+    <p class="lead">Nutka wyszukuje muzykę w&nbsp;YouTube Music, pozwala ją odsłuchać i&nbsp;zapisuje jako mp3 z&nbsp;okładką i&nbsp;opisem utworu. Pobiera też całe albumy i&nbsp;playlisty ze Spotify. Bez konta, bez reklam, niczego o&nbsp;Tobie nie wysyła.</p>
+    <div class="cta">
+      <a class="btn btn-primary" href="https://github.com/matmiccode/nutka/releases/latest" data-pobierz>Pobierz Nutkę dla Windows</a>
+      <a class="btn btn-quiet" href="https://github.com/matmiccode/nutka">Kod źródłowy</a>
+    </div>
+    <p class="drobne"><span data-wersja>Wersja 1.3.0</span> · Windows 10 i&nbsp;11, 64-bit · za darmo, licencja MIT</p>
+  </div>
+
+  <div class="demo" aria-label="Przykład: wpisany wykonawca, wyniki wyszukiwania i pobrany plik mp3">
+    <div class="demo-pole">
+      <div class="wpis"><span>dawid podsiadło</span></div>
+      <div class="szukaj">Szukaj</div>
+    </div>
+    <ul class="demo-wyniki">
+      <li><div><b>na błysk</b><small>Dawid Podsiadło · na błysk</small></div><time>3:50</time></li>
+      <li class="wybrany"><div><b>Małomiasteczkowy</b><small>Dawid Podsiadło · Małomiasteczkowy</small></div><time>3:24</time></li>
+      <li><div><b>sezon</b><small>Dawid Podsiadło · sezon</small></div><time>3:02</time></li>
+    </ul>
+    <div class="demo-pasek" role="presentation"></div>
+    <div class="demo-gotowe">
+      <div class="okladka" role="presentation"></div>
+      <div><span>✓ Dawid Podsiadło – Małomiasteczkowy.mp3</span><small>okładka, wykonawca, album i&nbsp;rok w&nbsp;pliku · Muzyka\Pobrane</small></div>
+    </div>
+  </div>
+</section>
+
+<section id="jak">
+  <div class="wrap">
+    <div class="sekcja-naglowek">
+      <h2>Trzy kroki</h2>
+      <p>Bez konta, bez ustawień i&nbsp;bez uczenia się programu.</p>
+    </div>
+    <ol class="kroki">
+      <li>
+        <h3>Wpisz albo wklej</h3>
+        <p>Tytuł, wykonawcę albo link do utworu, albumu lub playlisty z&nbsp;YouTube i&nbsp;Spotify. Wyniki pochodzą z&nbsp;YouTube Music, więc trafiają w&nbsp;oficjalne wersje.</p>
+      </li>
+      <li>
+        <h3>Posłuchaj</h3>
+        <p>Zaznacz wynik i&nbsp;kliknij Odsłuchaj. Album gra po kolei, a&nbsp;kliknięcie innego wyniku od razu przełącza utwór.</p>
+      </li>
+      <li>
+        <h3>Pobierz mp3</h3>
+        <p>Dwuklik na wyniku albo przycisk Pobierz mp3. Przy playliście ze Spotify odznacz, czego nie chcesz, i&nbsp;kliknij Pobierz zaznaczone.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section id="potrafi">
+  <div class="wrap">
+    <div class="sekcja-naglowek">
       <h2>Co potrafi</h2>
-      <p class="wstep">Wszystko w jednym oknie: szukasz, słuchasz, pobierasz. Pliki od razu mają tytuł, wykonawcę, album i okładkę.</p>
-      <div class="cechy">
-        <div><h3>Wyszukiwarka YouTube Music</h3><p>Wpisz wykonawcę albo tytuł. Wyniki to oficjalne wersje utworów, a przełącznik „Albumy” pokazuje całe płyty.</p></div>
-        <div><h3>Odsłuch przed pobraniem</h3><p>Posłuchaj utworu albo całego albumu po kolei, zanim cokolwiek zapiszesz.</p></div>
-        <div><h3>Playlisty ze Spotify</h3><p>Wklej link do playlisty lub albumu. Odznacz, czego nie chcesz, a resztę Nutka pobierze po trzy utwory naraz.</p></div>
-        <div><h3>Dobiera tylko nowe</h3><p>Wczytaj tę samą playlistę za tydzień – to, co już masz, jest odznaczone, więc pobierasz tylko nowości.</p></div>
-        <div><h3>Dobra jakość</h3><p>mp3 około 250–270 kbps. Albumy i playlisty trafiają do osobnych folderów, z numerami utworów.</p></div>
-        <div><h3>Sama się aktualizuje</h3><p>Silnik pobierania odświeża się po cichu, a o nowej wersji programu Nutka powie Ci sama. Każde wydanie jest podpisane cyfrowo przez autora.</p></div>
-      </div>
     </div>
-  </section>
-
-  <section>
-    <div class="wnetrze dwie">
+    <dl class="cechy">
       <div>
-        <h2>Cała playlista w trzech krokach</h2>
-        <ol class="kroki">
-          <li>W Spotify przy playliście kliknij <strong>… → Udostępnij → Kopiuj link</strong>.</li>
-          <li>Wklej link w pole wyszukiwania Nutki i naciśnij Enter.</li>
-          <li>Odznacz, czego nie chcesz, i kliknij <strong>Pobierz zaznaczone</strong>.</li>
-        </ol>
-        <p class="uwaga">Ze Spotify Nutka bierze tylko listę utworów i ich opis. Dźwięk zawsze pochodzi z YouTube.
-          Działa z publicznymi playlistami – prywatnych i „Polubionych” nie widzi.</p>
+        <dt>Wyszukiwarka YouTube Music</dt>
+        <dd>Wpisz wykonawcę albo tytuł. Przełącznik „Albumy” pokazuje całe płyty, które pobierasz jednym kliknięciem.</dd>
       </div>
-      <div class="okno"><img src="zrzut-playlista.png" width="976" height="759" loading="lazy"
-        alt="Nutka z wczytaną playlistą Spotify: lista utworów z ptaszkami i stanem pobierania przy każdym"></div>
-    </div>
-  </section>
-
-  <section>
-    <div class="wnetrze">
-      <h2>Ściągawka</h2>
-      <table>
-        <thead><tr><th scope="col">Chcę…</th><th scope="col">Co zrobić</th></tr></thead>
-        <tbody>
-          <tr><td>pobrać piosenkę</td><td>wpisz tytuł w wyszukiwarkę, potem dwuklik na wyniku</td></tr>
-          <tr><td>pobrać album</td><td>przełącz na <strong>Albumy</strong>, wyszukaj, dwuklik</td></tr>
-          <tr><td>najpierw posłuchać</td><td>zaznacz wynik i kliknij <strong>▶ Odsłuchaj</strong></td></tr>
-          <tr><td>pobrać playlistę ze Spotify</td><td>wklej link w wyszukiwarkę, Enter, <strong>Pobierz zaznaczone</strong></td></tr>
-          <tr><td>pobrać z linku YouTube</td><td>wklej link w pole <strong>Link</strong>, potem <strong>Pobierz mp3</strong></td></tr>
-          <tr><td>zajrzeć do instrukcji</td><td>przycisk <strong>Instrukcja</strong> w prawym górnym rogu programu albo <a href="instrukcja.html">instrukcja online</a></td></tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <section id="instalacja">
-    <div class="wnetrze">
-      <h2>Instalacja</h2>
-      <ol class="kroki">
-        <li>Pobierz <a href="https://github.com/matmiccode/nutka/releases/latest/download/Nutka-Setup.exe"><strong>Nutka-Setup.exe</strong></a> (około 115 MB).</li>
-        <li>Uruchom go i klikaj „Dalej”. Instalacja trwa mniej więcej minutę.</li>
-        <li>Gotowe – Nutka jest w menu Start, a jeśli chcesz, także na pulpicie.</li>
-      </ol>
-      <div class="ramka">
-        <strong>Windows pokazał „System Windows ochronił ten komputer”?</strong>
-        <p>Kliknij <strong>Więcej informacji</strong>, a potem <strong>Uruchom mimo to</strong>. To ostrzeżenie pojawia się przy
-          każdym nowym programie bez płatnego podpisu cyfrowego i nie znaczy, że plik jest groźny. Kod Nutki jest w całości
-          jawny na <a href="https://github.com/matmiccode/nutka">GitHubie</a>.</p>
+      <div>
+        <dt>Odsłuch przed pobraniem</dt>
+        <dd>Posłuchaj utworu albo całego albumu po kolei, zanim cokolwiek zapiszesz na dysku.</dd>
       </div>
-    </div>
-  </section>
-
-  <section id="pytania">
-    <div class="wnetrze">
-      <h2>Częste pytania</h2>
-      <details>
-        <summary>Skąd jest muzyka?</summary>
-        <p>Zawsze z YouTube (YouTube Music). Przy linkach ze Spotify Nutka dopasowuje utwór po wykonawcy, tytule i długości,
-          a dźwięk pobiera z YouTube. Niczego ze Spotify nie odszyfrowuje.</p>
-      </details>
-      <details>
-        <summary>Czy to legalne?</summary>
-        <p>Nutka jest narzędziem do użytku prywatnego. Pobieraj tylko na własny użytek i nie rozpowszechniaj pobranych plików –
-          szanuj prawa autorów i regulaminy serwisów.</p>
-      </details>
-      <details>
-        <summary>Utwór się nie pobrał. Co teraz?</summary>
-        <p>Czasem utworu nie ma na YouTube albo film jest zablokowany, np. ograniczeniem wiekowym. Nieudane utwory są wyróżnione
-          na czerwono i zostają zaznaczone – kliknij <strong>Pobierz zaznaczone</strong>, żeby spróbować jeszcze raz.</p>
-      </details>
-      <details>
-        <summary>Antywirus zablokował instalator.</summary>
-        <p>W Zabezpieczeniach Windows wejdź w Ochrona przed wirusami i zagrożeniami → Historia ochrony, wybierz zablokowany
-          plik i kliknij Akcje → Zezwalaj na urządzeniu. Potem uruchom instalator jeszcze raz.</p>
-      </details>
-    </div>
-  </section>
-
-  <section>
-    <div class="wnetrze">
-      <div class="ramka kawa">
-        <div>
-          <h3>Nutka jest darmowa i taka zostanie</h3>
-          <p>Jeśli oszczędziła Ci czasu, możesz postawić autorowi kawę. Nie musisz – ale bardzo dziękuję.</p>
-        </div>
-        <a class="przycisk glowny" href="https://buycoffee.to/matcode">Postaw kawę autorowi</a>
+      <div>
+        <dt>Playlisty i&nbsp;albumy ze Spotify</dt>
+        <dd>Wklej link do playlisty lub albumu. Zobaczysz listę utworów z&nbsp;ptaszkami, a&nbsp;Nutka pobierze zaznaczone po trzy naraz.</dd>
       </div>
+      <div>
+        <dt>Dobiera tylko nowe</dt>
+        <dd>Wczytaj tę samą playlistę za tydzień. To, co już masz, jest odznaczone, więc pobierasz tylko nowości.</dd>
+      </div>
+      <div>
+        <dt>Porządek w&nbsp;plikach</dt>
+        <dd>mp3 około 250–270 kbps z&nbsp;okładką i&nbsp;tagami: tytuł, wykonawca, album, numer, rok. Albumy i&nbsp;playlisty w&nbsp;osobnych folderach.</dd>
+      </div>
+      <div>
+        <dt>Sama się aktualizuje</dt>
+        <dd>Silnik pobierania odświeża się po cichu, bo YouTube co jakiś czas zmienia stronę. Nową wersję programu instaluje tylko wtedy, gdy jest podpisana kluczem autora.</dd>
+      </div>
+    </dl>
+  </div>
+</section>
+
+<section id="okno">
+  <div class="wrap">
+    <div class="sekcja-naglowek">
+      <h2>Tak wygląda praca</h2>
+      <p>Wyszukiwarka u&nbsp;góry, wyniki na środku, przyciski i&nbsp;krótkie komunikaty na dole. Przy playliście ze Spotify każdy utwór ma swój stan.</p>
     </div>
-  </section>
+    <figure>
+      <img src="img/okno.png" alt="Okno Nutki: wyniki wyszukiwania utworów Dawida Podsiadły, jeden zaznaczony, pod spodem pola Link i Zapisz do oraz przyciski Pobierz mp3 i Odsłuchaj" width="976" height="759">
+      <figcaption>Nutka 1.3 w&nbsp;Windows 11.</figcaption>
+    </figure>
+    <figure>
+      <img src="img/playlista.png" alt="Nutka z wczytaną playlistą Spotify: lista utworów z ptaszkami i stanem pobierania przy każdym, przycisk Zatrzymaj i pasek postępu" width="976" height="759">
+      <figcaption>Playlista ze Spotify w&nbsp;trakcie pobierania: utwór, którego nie udało się pobrać, jest na czerwono, a&nbsp;„masz już” oznacza plik, który leży w&nbsp;folderze.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="prywatnosc">
+  <div class="wrap">
+    <div class="sekcja-naglowek">
+      <h2>Prywatność</h2>
+      <p>Program do muzyki nie potrzebuje wiedzieć, kim jesteś. Nutka nie ma konta, telemetrii ani reklam.</p>
+    </div>
+    <dl class="cechy">
+      <div>
+        <dt>Pliki zostają u&nbsp;Ciebie</dt>
+        <dd>mp3 trafiają do wybranego folderu, ustawienia leżą na dysku. Po odinstalowaniu program znika w&nbsp;całości, muzyka zostaje.</dd>
+      </div>
+      <div>
+        <dt>Z&nbsp;czym się łączy</dt>
+        <dd>Z&nbsp;YouTube po wyniki i&nbsp;dźwięk. Ze Spotify po publiczne dane playlist: tytuły, wykonawców, okładki; niczego nie odszyfrowuje. Co 6&nbsp;godzin z&nbsp;PyPI po nowszy silnik pobierania, z&nbsp;sumą kontrolną. Z&nbsp;GitHubem, żeby sprawdzić, czy jest nowa wersja.</dd>
+      </div>
+      <div>
+        <dt>Otwarty kod</dt>
+        <dd>Kod programu jest publiczny na licencji MIT. Każdy może sprawdzić, co program robi, i&nbsp;zbudować go samodzielnie.</dd>
+      </div>
+      <div>
+        <dt>Podpisane wydania</dt>
+        <dd>Aktualizację zainstaluje tylko wtedy, gdy wydanie podpisano kluczem autora wbudowanym w&nbsp;program. Samo konto na GitHubie do tego nie wystarczy.</dd>
+      </div>
+    </dl>
+    <p class="muted small odstep">Nutka jest narzędziem do użytku prywatnego. Pobieraj na własny użytek i&nbsp;nie rozpowszechniaj pobranych plików.</p>
+  </div>
+</section>
+
+<section id="pobierz">
+  <div class="wrap">
+    <div class="sekcja-naglowek">
+      <h2>Zanim pobierzesz</h2>
+    </div>
+    <table>
+      <tr><th>System</th><td>Windows 10 lub 11, 64-bit</td></tr>
+      <tr><th>Miejsce na dysku</th><td>około 400 MB (instalator ma 118 MB)</td></tr>
+      <tr><th>Internet</th><td>do wyszukiwania i&nbsp;pobierania; instrukcja działa też bez</td></tr>
+      <tr><th>Uprawnienia</th><td>instalacja bez administratora, w&nbsp;folderze użytkownika</td></tr>
+    </table>
+    <div class="uwaga odstep">
+      <p><strong>Windows ostrzeże przy pierwszej instalacji</strong> („System Windows ochronił ten komputer”), bo instalator nie ma płatnego certyfikatu wydawcy. Kliknij <em>Więcej informacji</em>, potem <em>Uruchom mimo to</em>. Instalacja nie wymaga uprawnień administratora i&nbsp;o&nbsp;nic nie pyta.</p>
+    </div>
+    <div class="cta odstep-duzy">
+      <a class="btn btn-primary" href="https://github.com/matmiccode/nutka/releases/latest" data-pobierz>Pobierz Nutkę dla Windows</a>
+      <a class="btn btn-quiet" href="instrukcja.html">Instrukcja obsługi</a>
+      <a class="btn btn-quiet" href="https://github.com/matmiccode/nutka/releases">Wszystkie wydania i&nbsp;zmiany</a>
+    </div>
+    <p class="muted small odstep">Problem albo pomysł? <a href="https://github.com/matmiccode/nutka/issues/new">Napisz na GitHubie</a>.</p>
+  </div>
+</section>
+
 </main>
 
 <footer>
-  <div class="wnetrze">
-    <span><strong>MATCODE</strong> – darmowe aplikacje</span>
-    <span>Kod na licencji <a href="https://github.com/matmiccode/nutka/blob/master/LICENSE">MIT</a>.
-      Nutka nie jest powiązana z YouTube, Google ani Spotify.</span>
+  <div class="wrap">
+    <div>MATCODE · <a href="https://matmiccode.github.io/">inne programy</a></div>
+    <nav>
+      <a href="https://buycoffee.to/matcode">Postaw kawę autorowi</a>
+      <a href="https://github.com/matmiccode/nutka/blob/master/THIRD-PARTY.md">Licencje składników</a>
+      <a href="https://github.com/matmiccode/nutka/blob/master/LICENSE">Licencja MIT</a>
+      <a href="https://github.com/matmiccode">GitHub</a>
+    </nav>
   </div>
 </footer>
 
+<script>
+// Numer wersji i bezpośredni odnośnik do instalatora z najnowszego wydania.
+// Bez odpowiedzi (brak sieci, limit API) zostają wartości wpisane w stronę.
+(async () => {
+  try {
+    const odp = await fetch("https://api.github.com/repos/matmiccode/nutka/releases/latest",
+                            { headers: { Accept: "application/vnd.github+json" } });
+    if (!odp.ok) return;
+    const dane = await odp.json();
+    const wersja = String(dane.tag_name || "").replace(/^v/, "");
+    const plik = (dane.assets || []).find(z => z.name === "Nutka-Setup.exe");
+    if (wersja) document.querySelectorAll("[data-wersja]").forEach(e => { e.textContent = "Wersja " + wersja; });
+    if (plik) document.querySelectorAll("[data-pobierz]").forEach(e => { e.href = plik.browser_download_url; });
+  } catch (_) { /* strona działa bez tego */ }
+})();
+</script>
 </body>
 </html>

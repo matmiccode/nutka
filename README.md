@@ -13,7 +13,7 @@
 
 <sub>Jeden plik instalacyjny (~115 MB) · bez konta, bez reklam · instaluje się bez uprawnień administratora</sub>
 
-![Nutka – wyszukiwarka](docs/zrzut-wyszukiwarka.png)
+![Nutka – wyszukiwarka](docs/img/okno.png)
 
 </div>
 
@@ -29,7 +29,7 @@
   powie Ci sama i zainstaluje ją jednym kliknięciem.
 - **Instrukcja pod ręką** – przycisk **Instrukcja** w prawym górnym rogu otwiera poradnik, także bez internetu.
 
-![Nutka – playlista Spotify](docs/zrzut-playlista.png)
+![Nutka – playlista Spotify](docs/img/playlista.png)
 
 ## Instalacja
 
@@ -92,7 +92,7 @@ Nutka to Python 3.12 + CustomTkinter, spakowany PyInstallerem i Inno Setup.
 | `aktualizacja_programu.py` | propozycja i instalacja nowej wersji z GitHub Releases (tylko wydania podpisane kluczem autora) |
 | `podpis_wydania.py` | podpis Ed25519 wydania – klucz prywatny leży poza repozytorium, publiczny jest w programie |
 | `zbuduj.ps1` | build instalatora; `-Wydanie` publikuje wersję na GitHubie |
-| `docs/` | zrzuty ekranu, strona programu i instrukcja (GitHub Pages; instrukcja trafia też do instalatora) |
+| `docs/` | strona programu i instrukcja na wspólnej ramie MATCODE (GitHub Pages; instrukcja trafia też do instalatora), zrzuty w `img/` |
 
 Budowanie: Python 3.12, [Inno Setup 6](https://jrsoftware.org/isinfo.php), potem
 `powershell -ExecutionPolicy Bypass -File zbuduj.ps1` → `dist\Nutka-Setup.exe`.

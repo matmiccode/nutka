@@ -123,10 +123,15 @@ Sprawdz "PyInstaller"
 Copy-Item $narzedzia (Join-Path $build "dist\Nutka\narzedzia") -Recurse
 Copy-Item LICENSE, THIRD-PARTY.md (Join-Path $build "dist\Nutka") -ErrorAction SilentlyContinue
 # instrukcja obok Nutka.exe (podfolder instrukcja\) - otwiera ją przycisk Instrukcja w nagłówku, działa bez internetu;
-# to ta sama strona, co docs/instrukcja.html na GitHub Pages
+# to ta sama strona, co docs/instrukcja.html na GitHub Pages. Online używa wspólnego arkusza ramy MATCODE spod
+# /css/v1/matcode.css (repo matmiccode.github.io); kopia offline dostaje jego migawkę obok siebie.
 $instrukcja = Join-Path $build "dist\Nutka\instrukcja"
-New-Item -ItemType Directory -Force $instrukcja | Out-Null
-Copy-Item "docs\instrukcja.html", "docs\zrzut-wyszukiwarka.png", "docs\zrzut-playlista.png", "docs\ikona.png", "docs\favicon.png" $instrukcja
+New-Item -ItemType Directory -Force (Join-Path $instrukcja "img") | Out-Null
+Copy-Item "docs\nutka.css", "docs\favicon.ico" $instrukcja
+Copy-Item "docs\img\okno.png", "docs\img\playlista.png", "docs\img\nutka-256.png" (Join-Path $instrukcja "img")
+Invoke-WebRequest "https://matmiccode.github.io/css/v1/matcode.css" -OutFile (Join-Path $instrukcja "matcode.css") -UseBasicParsing
+$html = (Get-Content "docs\instrukcja.html" -Raw -Encoding UTF8).Replace('href="/css/v1/matcode.css"', 'href="matcode.css"')
+[IO.File]::WriteAllText((Join-Path $instrukcja "instrukcja.html"), $html, [Text.UTF8Encoding]::new($false))
 
 Krok "Instalator (Inno Setup)"
 $iscc = @("$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe", "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe", "$env:ProgramFiles\Inno Setup 6\ISCC.exe") |

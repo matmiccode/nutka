@@ -6,3 +6,7 @@ __pycache__/
 *.m4a
 build/
 dist/
+
+# notatki projektowe dla asystenta - lokalnie, nie publicznie
+CLAUDE.md
+AGENTS.md

@@ -1,0 +1,133 @@
+/* Nutka — to, co różni tę stronę od ramy MATCODE (matmiccode.github.io/RAMA.md):
+   barwy z ikony programu (róż → fiolet) i pokaz w hero: wpisany tytuł zamienia się w gotowe mp3.
+   Reszta wyglądu pochodzi z /css/v1/matcode.css i zostaje bez zmian. */
+
+:root {
+  --nuta-1: #ec4899;
+  --nuta-2: #b83aa9;
+  --nuta-3: #8e2fb8;
+  /* akcent programu zamiast niebieskiego ramy - jeden mocny kolor, w barwach ikony */
+  --accent: #e0479e;
+  --accent-strong: #c4358a;
+  --accent-soft: #3a2237;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) { --accent: #b02a79; --accent-strong: #9a2468; --accent-soft: #f7e3ef; }
+}
+:root[data-theme="light"] { --accent: #b02a79; --accent-strong: #9a2468; --accent-soft: #f7e3ef; }
+
+/* podpis: cienki pasek w barwach ikony nad nagłówkiem strony */
+.nuty { height: 4px; background: linear-gradient(90deg, var(--nuta-1), var(--nuta-2), var(--nuta-3)); }
+
+/* Hero: tekst po lewej, pokaz po prawej; na telefonie jedno pod drugim. */
+.hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; align-items: center; padding: 40px 0 64px; }
+.hero h1 { font-size: clamp(2.2rem, 4vw, 3.2rem); margin-bottom: 18px; }
+.hero .lead { font-size: 1.15rem; color: var(--muted); max-width: 30rem; margin-bottom: 28px; }
+.hero .drobne { color: var(--faint); font-size: 0.9rem; margin: 14px 0 0; }
+
+/* Pokaz: pole wyszukiwania, trzy wyniki, pasek pobierania w barwach ikony i gotowy plik.
+   Jedna zaplanowana sekwencja przy wejściu (ok. 5 s), potem nic się nie rusza. */
+.demo {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 18px 20px 20px; font-size: 0.95rem;
+}
+.demo-pole {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius-sm);
+  padding: 10px 14px; color: var(--text);
+}
+.demo-pole .wpis { position: relative; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; }
+.demo-pole .wpis span { display: inline-block; clip-path: inset(0 100% 0 0); animation: pisz 0.9s steps(15, end) 0.5s forwards; }
+.demo-pole .szukaj { background: var(--accent-strong); color: #fff; border-radius: var(--radius-sm); padding: 6px 12px; font-weight: 600; font-size: 0.88rem; }
+@keyframes pisz { to { clip-path: inset(0 0 0 0); } }
+
+.demo-wyniki { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 4px; }
+.demo-wyniki li {
+  display: grid; grid-template-columns: 1fr auto; column-gap: 12px; align-items: baseline;
+  padding: 8px 10px; border-radius: var(--radius-sm);
+  opacity: 0; transform: translateY(4px); animation: pojaw 0.45s ease-out forwards;
+}
+.demo-wyniki li:nth-child(1) { animation-delay: 1.6s; }
+.demo-wyniki li:nth-child(2) { animation-delay: 1.9s; }
+.demo-wyniki li:nth-child(3) { animation-delay: 2.2s; }
+.demo-wyniki li.wybrany { background: var(--accent-soft); animation: pojaw 0.45s ease-out 1.9s forwards, zaznacz 0.3s ease-out 2.8s forwards; }
+.demo-wyniki b { font-weight: 600; }
+.demo-wyniki small { display: block; color: var(--muted); font-size: 0.88rem; }
+.demo-wyniki time { color: var(--faint); font-variant-numeric: tabular-nums; font-size: 0.9rem; }
+@keyframes pojaw { to { opacity: 1; transform: none; } }
+@keyframes zaznacz { from { background: transparent; } to { background: var(--accent-soft); } }
+
+.demo-pasek { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; position: relative; margin-top: 16px; }
+.demo-pasek::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, var(--nuta-1), var(--nuta-2), var(--nuta-3));
+  clip-path: inset(0 100% 0 0);
+  animation: odslon 1.8s cubic-bezier(0.3, 0.7, 0.3, 1) 3.3s forwards;
+}
+@keyframes odslon { to { clip-path: inset(0 0 0 0); } }
+
+.demo-gotowe {
+  display: flex; gap: 12px; align-items: center; margin-top: 14px;
+  color: var(--ok); font-size: 0.9rem;
+  opacity: 0; animation: pojaw 0.5s ease-out 5.2s forwards;
+}
+.demo-gotowe .okladka { width: 34px; height: 34px; border-radius: 6px; flex: none; background: linear-gradient(135deg, var(--nuta-1), var(--nuta-3)); }
+.demo-gotowe span { color: var(--text); }
+.demo-gotowe small { display: block; color: var(--muted); font-size: 0.85rem; }
+
+/* Druga figura w „Tak wygląda praca” */
+figure + figure { margin-top: 28px; }
+
+/* --- instrukcja.html (ta sama rama; tylko to, czego rama nie ma) --- */
+.instrukcja .tytul { padding: 40px 0 8px; }
+.instrukcja .tytul .lead { font-size: 1.15rem; color: var(--muted); max-width: 36rem; }
+.instrukcja .spis { display: flex; flex-wrap: wrap; gap: 10px; margin: 24px 0 0; padding: 0; list-style: none; }
+.instrukcja .spis a {
+  display: inline-block; padding: 8px 14px; border-radius: 999px;
+  background: var(--surface); border: 1px solid var(--line); color: var(--text); font-size: 0.92rem; font-weight: 500;
+}
+.instrukcja .spis a:hover { border-color: var(--accent); text-decoration: none; }
+.instrukcja p { max-width: 46rem; }
+.instrukcja ul.lista { margin: 0; padding-left: 1.2em; max-width: 46rem; }
+.instrukcja ul.lista li { margin: 0 0 10px; }
+.instrukcja ul.lista li::marker { color: var(--accent); }
+.instrukcja .kroki { max-width: none; }
+.instrukcja table { max-width: 60rem; }
+.instrukcja th { width: 32%; }
+.instrukcja code, .instrukcja kbd {
+  font: 500 0.88rem/1 var(--font); background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: 6px; padding: 3px 7px; white-space: nowrap; color: var(--text);
+}
+.instrukcja .przycisk {
+  display: inline-block; font-weight: 600; padding: 1px 9px; border-radius: 6px;
+  background: var(--surface-2); border: 1px solid var(--line); font-size: 0.9rem; white-space: nowrap; color: var(--text);
+}
+.instrukcja .przycisk.glowny { background: var(--accent-strong); border-color: var(--accent-strong); color: #fff; }
+.instrukcja figure { margin-top: 24px; }
+.instrukcja .cechy dd .przycisk { font-size: 0.85rem; }
+
+/* tabela „co pobierasz” ma trzy kolumny - na telefonie każdy wiersz jako karta */
+@media (max-width: 640px) {
+  .instrukcja table.trzy thead { display: none; }
+  .instrukcja table.trzy tr { display: block; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .instrukcja table.trzy th, .instrukcja table.trzy td { display: block; width: auto; border: 0; padding: 2px 0; }
+  .instrukcja table.trzy td[data-l]::before { content: attr(data-l) ": "; color: var(--faint); }
+  .instrukcja code, .instrukcja kbd { white-space: normal; }
+}
+
+@media (max-width: 860px) {
+  .hero { grid-template-columns: 1fr; gap: 32px; padding: 24px 0 48px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demo-pole .wpis span { clip-path: none; animation: none; }
+  .demo-wyniki li { opacity: 1; transform: none; animation: none; }
+  .demo-wyniki li.wybrany { background: var(--accent-soft); }
+  .demo-pasek::after { clip-path: none; animation: none; }
+  .demo-gotowe { opacity: 1; animation: none; }
+}
+
+@media print {
+  .nuty, .top nav, .spis, footer { display: none; }
+  .instrukcja figure img { border-color: #ccc; }
+}
