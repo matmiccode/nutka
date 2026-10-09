@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nutka – user guide</title>
+<meta name="description" content="How to use Nutka: installation, the window, searching and listening, downloading mp3, Spotify playlists, updates, troubleshooting.">
+<link rel="icon" href="../favicon.ico">
+<link rel="alternate" hreflang="pl" href="https://matmiccode.github.io/nutka/instrukcja.html">
+<link rel="alternate" hreflang="en" href="https://matmiccode.github.io/nutka/en/instrukcja.html">
+<link rel="alternate" hreflang="x-default" href="https://matmiccode.github.io/nutka/instrukcja.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600&display=swap" rel="stylesheet">
+<!-- same frame as the app page; the copy next to Nutka.exe gets a local matcode.css (zbuduj.ps1 swaps the path) -->
+<link rel="stylesheet" href="/css/v1/matcode.css">
+<link rel="stylesheet" href="../nutka.css">
+</head>
+<body class="instrukcja">
+
+<div class="nuty" role="presentation"></div>
+<header class="wrap top">
+  <a class="marka" href="https://matmiccode.github.io/nutka/en/"><img src="../img/nutka-256.png" alt="" width="36" height="36">Nutka</a>
+  <nav>
+    <a href="https://matmiccode.github.io/nutka/en/">App page</a>
+    <a href="https://github.com/matmiccode/nutka" class="ukryj-mobile">Code</a>
+    <a href="../instrukcja.html" class="ukryj-mobile" lang="pl">Polski</a>
+    <a class="btn btn-primary btn-sm" href="https://github.com/matmiccode/nutka/releases/latest">Download</a>
+  </nav>
+</header>
+
+<main>
+
+<section class="wrap tytul">
+  <h1>User guide</h1>
+  <p class="lead">Nutka searches YouTube Music, lets you listen first and saves the track as an mp3 with cover art and tags. It also downloads whole albums and playlists from Spotify. This page explains everything in order; the same copy opens from the app, also without internet.</p>
+  <ul class="spis" aria-label="Contents">
+    <li><a href="#install">Installation</a></li>
+    <li><a href="#window">The window</a></li>
+    <li><a href="#search">Searching and listening</a></li>
+    <li><a href="#download">Downloading mp3</a></li>
+    <li><a href="#spotify">Spotify playlists</a></li>
+    <li><a href="#language">Language</a></li>
+    <li><a href="#updates">Updates</a></li>
+    <li><a href="#problems">When something doesn't work</a></li>
+    <li><a href="#uninstall">Uninstalling</a></li>
+  </ul>
+</section>
+
+<section id="install">
+  <div class="wrap">
+    <div class="sekcja-naglowek">
+      <h2>Installation</h2>
+      <p>Takes about a minute and needs no administrator rights.</p>
+    </div>
+    <ol class="kroki">
+      <li>
+        <h3>Download the installer</h3>
+        <p>The file <strong>Nutka-Setup.exe</strong> from the <a href="https://matmiccode.github.io/nutka/en/">app page</a> (the “Download” button) or from <a href="https://github.com/matmiccode/nutka/releases/latest">GitHub</a>. You can also copy it from someone, e.g. on a USB stick.</p>
+      </li>
+      <li>
+        <h3>Run it</h3>
+        <p>Click <span class="przycisk">Next</span>. Tick “Desktop shortcut” if you want an icon on the desktop. The installer speaks English when your Windows does.</p>
+      </li>
+      <li>
+        <h3>Finish</h3>
+        <p>Leave “Launch Nutka” ticked and click <span class="przycisk">Finish</span>. Later you open Nutka from the Start menu or the shortcut.</p>
+      </li>
+    </ol>
+    <div class="uwaga odstep">
+      <p><strong>Windows showed a blue “Windows protected your PC” box?</strong> Click <em>More info</em>, then <em>Run anyway</em>. This warning appears for every new app without a paid code-signing certificate and doesn't mean the file is dangerous. Nutka's code is fully public on GitHub.</p>
+    </div>
+    <p class="muted small odstep">Requirements: Windows 10 or 11 (64-bit), about 400 MB of disk space, internet for searching and downloading music.</p>
+  </div>
+</section>
+
+<section id="window">
+  <div class="wrap">
+    <div class="sekcja-naglowek">
+      <h2>The window</h2>
+      <p>Search box on top, results in the middle, fields and buttons at the bottom.</p>
+    </div>
+    <figure>
+      <img src="../img/en/okno.png" alt="The Nutka window: search box, a list of results with one track selected, the Link and Save to fields, the Download mp3, Listen and Open folder buttons" width="976" height="759">
+      <figcaption>Search results. The selected track has its address in the “Link” field.</figcaption>
+    </figure>
+    <dl class="cechy odstep-duzy">
+      <div><dt>Box on top</dt><dd>Type a title or artist, or paste a YouTube or Spotify link, and press Enter.</dd></div>
+      <div><dt>Songs / Albums</dt><dd>Whether you are looking for single songs or whole records.</dd></div>
+      <div><dt>Results list</dt><dd>A click selects a track, a double-click downloads it right away.</dd></div>
+      <div><dt>Link</dt><dd>The address of the selected track. You can also paste a YouTube link here with the <span class="przycisk">Paste</span> button.</dd></div>
+      <div><dt>Save to</dt><dd>The folder for mp3 files. Change it with the <span class="przycisk">Browse…</span> button.</dd></div>
+      <div><dt>Download mp3</dt><dd>Downloads what is in the “Link” field. While it runs, a progress bar with a percentage appears next to it.</dd></div>
+      <div><dt>▶ Listen</dt><dd>Plays the selected track without downloading. While playing it turns into <span class="przycisk">■ Stop</span>, and <span class="przycisk">Next ›</span> appears next to it.</dd></div>
+      <div><dt>Open folder</dt><dd>Opens the folder with the downloaded files in Explorer.</dd></div>
+      <div><dt>Box at the bottom</dt><dd>Short messages: what is happening right now and whether it worked.</dd></div>
+      <div><dt>Bottom-left corner</dt><dd>The version number and the <strong>Check for updates</strong> link.</dd></div>
+      <div><dt>Top-right corner</dt><dd><span class="przycisk">Guide</span> opens this page, also without internet. <span class="przycisk">Buy the author a coffee</span> opens a page where you can support the author if you like. <span class="przycisk">PL</span> switches the app to Polish.</dd></div>
+    </dl>
+  </div>
+</section>
+
+<section id="search">
+  <div class="wrap">
+    <div class="sekcja-naglowek">
+      <h2>Searching and listening</h2>
+      <p>Type a track title or an artist and press Enter or <span class="przycisk glowny">Search</span>. Results come from YouTube Music, so they land on the official versions of tracks. The <strong>Songs / Albums</strong> switch decides whether you are looking for songs or whole albums.</p>
+    </div>
+    <ul class="lista">
+      <li><strong>A click on a result</strong> selects it, and its address appears in the “Link” field.</li>
+      <li><strong>A double-click on a result</strong> downloads it as an mp3 right away.</li>
+      <li><strong>▶ Listen</strong> plays the selected track without downloading. With an album it plays the whole album in order.</li>
+      <li>While playing, the button turns into <strong>■ Stop</strong>, and <strong>Next ›</strong> appears next to it, which skips to the next track of the album.</li>
+      <li>Clicking another result while something is playing switches to the new track straight away.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="download">
+  <div class="wrap">
+    <div class="sekcja-naglowek">
+      <h2>Downloading mp3</h2>
+      <p>Select a result or paste a link and click <span class="przycisk glowny">Download mp3</span>. The progress bar shows the download, and the box at the bottom shows the title and finally “Done”.</p>
+    </div>
+    <table class="trzy">
+      <thead><tr><th scope="col">What you download</th><th scope="col">Where to get it</th><th scope="col">How</th></tr></thead>
+      <tbody>
+        <tr><th>A track</th><td data-l="Where">the search box</td><td data-l="How">double-click the result, or select it and click <strong>Download mp3</strong></td></tr>
+        <tr><th>An album</th><td data-l="Where">the search box, “Albums” switch</td><td data-l="How">as above; the whole album goes into a subfolder</td></tr>
+        <tr><th>A track from YouTube</th><td data-l="Where">a <code>youtube.com/watch?v=…</code> link</td><td data-l="How">paste it into the “Link” field (the <strong>Paste</strong> button) and click <strong>Download mp3</strong></td></tr>
+        <tr><th>A YouTube playlist</th><td data-l="Where">a <code>youtube.com/playlist?list=…</code> link</td><td data-l="How">paste it into the “Link” field and click <strong>Download mp3</strong></td></tr>
+        <tr><th>A track, album or playlist from Spotify</th><td data-l="Where">in Spotify: Share → Copy link</td><td data-l="How">paste it into the search box and press Enter, <a href="#spotify">details below</a></td></tr>
+      </tbody>
+    </table>
+    <p class="odstep">Files go to the <strong>Music \ Nutka</strong> folder (<code>C:\Users\&lt;you&gt;\Music\Nutka</code>). Change the folder with the <span class="przycisk">Browse…</span> button and open it with <span class="przycisk">Open folder</span>. An album and a playlist land in their own subfolder, an album with track numbers.</p>
+    <p>The music always comes from YouTube, also with Spotify links: Nutka takes only the title, artist and cover art from Spotify and downloads the audio from YouTube. That's why you occasionally get a different version of a track, e.g. a live one. The quality is mp3 at roughly 250–270 kbps.</p>
+  </div>
+</section>
+
+<section id="spotify">
+  <div class="wrap">
+    <div class="sekcja-naglowek">
+      <h2>Spotify playlists and albums</h2>
+      <p>A whole playlist or album takes three steps, and next time Nutka picks up only the new tracks.</p>
+    </div>
+    <ol class="kroki">
+      <li><h3>Copy the link</h3><p>In Spotify, next to the playlist or album, click <strong>… → Share → Copy link</strong>.</p></li>
+      <li><h3>Paste it into Nutka</h3><p>Into the search box, then Enter. After a few seconds you see the track list with tick boxes.</p></li>
+      <li><h3>Download selected</h3><p>Untick what you don't want (click the tick box or double-click the row) and click <span class="przycisk glowny">Download selected</span>.</p></li>
+    </ol>
+    <figure>
+      <img src="../img/en/playlista.png" alt="Nutka with a Spotify playlist loaded: a list of tracks with tick boxes and a download status next to each, the Stop button and a progress bar" width="976" height="759" loading="lazy">
+      <figcaption>A playlist being downloaded. A track that failed is shown in red, and “already yours” marks a file that is already in the folder.</figcaption>
+    </figure>
+    <ul class="lista odstep-duzy">
+      <li>Every track shows its status: <em>searching</em>, <em>downloading 64&nbsp;%</em>, <strong>✓ done</strong> or <strong>✗ error</strong>. Nutka downloads 3 tracks at a time; <span class="przycisk">Stop</span> interrupts.</li>
+      <li>Tracks you already have are marked <em>already yours</em> and unticked. Just load the playlist again to pick up the new ones.</li>
+      <li>If something fails, those tracks stay ticked. Click <strong>Download selected</strong> again to retry.</li>
+      <li>A playlist goes into a subfolder with its name, an album with track numbers. The files carry the title, artist, album and cover art from Spotify.</li>
+      <li><span class="przycisk">Close list</span> goes back to normal searching.</li>
+    </ul>
+    <div class="uwaga odstep">
+      <p><strong>Nutka sees only public playlists.</strong> It can't load private playlists or “Liked Songs”. Make the playlist public or copy the tracks into a public one.</p>
+    </div>
+  </div>
+</section>
+
+<section id="language">
+  <div class="wrap">
+    <div class="sekcja-naglowek">
+      <h2>Language</h2>
+      <p>Nutka speaks Polish and English.</p>
+    </div>
+    <p>On first start the app follows your Windows language: Polish Windows gets Polish, any other gets English. The small <span class="przycisk">PL</span> / <span class="przycisk">EN</span> button in the top-right corner switches the language; Nutka restarts in the other language and remembers the choice. The guide and the installer come in both languages too.</p>
+  </div>
+</section>
+
+<section id="updates">
+  <div class="wrap">
+    <div class="sekcja-naglowek">
+      <h2>Updates</h2>
+      <p>Nothing to do, Nutka updates itself.</p>
+    </div>
+    <p>YouTube changes its site now and then, so at every start and every 6 hours the app quietly checks for a newer “download engine” and swaps it in. Without internet, or if the update fails, the app keeps working on the version it has.</p>
+    <p>When a new version of the whole app is out, Nutka shows a window with the list of changes. Click <span class="przycisk glowny">Update now</span>: the app downloads the new version, installs it and restarts (about a minute). <span class="przycisk">Remind me later</span> closes the window until the next start, and <span class="przycisk">Skip this version</span> stops reminding you about it.</p>
+    <p>You can check manually with the <strong>Check for updates</strong> link in the bottom-left corner of the window. Your version number is next to it.</p>
+    <p class="muted">Every release is digitally signed with the author's key. Nutka verifies the signature and the checksum before running the installer, and downloads it only from the official releases page on GitHub.</p>
+  </div>
+</section>
+
+<section id="problems">
+  <div class="wrap">
+    <div class="sekcja-naglowek">
+      <h2>When something doesn't work</h2>
+    </div>
+    <table>
+      <tr><th>“Windows protected your PC” during installation</th><td><strong>More info</strong> → <strong>Run anyway</strong></td></tr>
+      <tr><th>Antivirus blocks the installer</th><td>in Windows Security: Virus &amp; threat protection → Protection history → pick the blocked file → Actions → Allow on device; then run the installer again (other antivirus: restore the file from quarantine)</td></tr>
+      <tr><th>Searching or downloading doesn't work</th><td>check your internet; close and reopen Nutka (it updates itself at start)</td></tr>
+      <tr><th>One track won't download, the rest do</th><td>that video may be blocked on YouTube (e.g. age restriction); pick another result</td></tr>
+      <tr><th>A different version of a track came from Spotify</th><td>search for the track in Nutka and pick the right version from the results</td></tr>
+      <tr><th>A Spotify playlist won't load</th><td>check that it is public; Nutka can't see private playlists or “Liked Songs”</td></tr>
+      <tr><th>Pasted text isn't treated as a link</th><td>Nutka accepts only real YouTube and Spotify addresses (starting with <code>https://</code> or the site name); other text goes to the search</td></tr>
+      <tr><th>The app is in the wrong language</th><td>click the <strong>PL</strong> / <strong>EN</strong> button in the top-right corner</td></tr>
+    </table>
+    <div class="uwaga odstep">
+      <p><strong>The problem keeps coming back? Prepare a report.</strong> Open the app folder (<code>%LOCALAPPDATA%\Programs\Nutka</code>), click the Explorer address bar, type <code>cmd</code> and press Enter, then in the black window type <code>Nutka.exe --autotest &gt; report.txt</code>. The file <code>report.txt</code> shows what is missing. Attach it to an <a href="https://github.com/matmiccode/nutka/issues">issue on GitHub</a>.</p>
+    </div>
+  </div>
+</section>
+
+<section id="uninstall">
+  <div class="wrap">
+    <div class="sekcja-naglowek">
+      <h2>Uninstalling</h2>
+    </div>
+    <p>Go to <strong>Settings → Apps → Installed apps</strong>, find Nutka and choose <strong>Uninstall</strong>. The app is removed entirely, together with the updates it downloaded. Your mp3 files in the Music \ Nutka folder stay.</p>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div>MATCODE · <a href="https://matmiccode.github.io/">other apps</a></div>
+    <nav>
+      <a href="https://matmiccode.github.io/nutka/en/">App page</a>
+      <a href="https://buycoffee.to/matcode">Buy the author a coffee</a>
+      <a href="https://github.com/matmiccode">GitHub</a>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>

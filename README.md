@@ -13,6 +13,8 @@
 
 <sub>Jeden plik instalacyjny (~115 MB) · bez konta, bez reklam · instaluje się bez uprawnień administratora</sub>
 
+<sub>🇬🇧 English interface included – Nutka follows your Windows language · <a href="https://matmiccode.github.io/nutka/en/">English page</a> · <a href="https://matmiccode.github.io/nutka/en/instrukcja.html">English guide</a></sub>
+
 ![Nutka – wyszukiwarka](docs/img/okno.png)
 
 </div>

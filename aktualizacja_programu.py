@@ -20,6 +20,8 @@ import tempfile
 import urllib.request
 from pathlib import Path
 
+from teksty import t
+
 NAZWA_INSTALATORA = "Nutka-Setup.exe"
 NAZWA_PODPISU = "Nutka-Setup.podpis.json"  # tworzy podpis_wydania.py (zbuduj.ps1 -Wydanie), leży w wydaniu obok instalatora
 FORMAT_PODPISU = 1
@@ -59,15 +61,15 @@ def sprawdz_podpis(podpis: dict, wersja: str) -> str:
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
     if podpis.get("plik") != NAZWA_INSTALATORA or podpis.get("wersja") != wersja:
-        raise ValueError("Podpis wydania dotyczy innego pliku lub innej wersji - nie instaluję.")
+        raise ValueError(t("Podpis wydania dotyczy innego pliku lub innej wersji - nie instaluję."))
     sha = str(podpis.get("sha256", "")).lower()
     if not re.fullmatch(r"[0-9a-f]{64}", sha):
-        raise ValueError("Podpis wydania nie zawiera poprawnej sumy SHA256 - nie instaluję.")
+        raise ValueError(t("Podpis wydania nie zawiera poprawnej sumy SHA256 - nie instaluję."))
     try:
         klucz = Ed25519PublicKey.from_public_bytes(bytes.fromhex(KLUCZ_PUBLICZNY))
         klucz.verify(bytes.fromhex(str(podpis.get("podpis", ""))), wiadomosc_podpisu(NAZWA_INSTALATORA, wersja, sha))
     except (InvalidSignature, ValueError):
-        raise ValueError("Podpis wydania nie zgadza się z kluczem autora - nie instaluję.") from None
+        raise ValueError(t("Podpis wydania nie zgadza się z kluczem autora - nie instaluję.")) from None
     return sha
 
 
@@ -121,7 +123,7 @@ def do_zaproponowania(repo: str, obecna: str, recznie: bool = False) -> dict | N
     if not wydanie or jako_liczby(wydanie["wersja"]) <= jako_liczby(obecna):
         return None
     if not wydanie["podpis_url"]:
-        raise ValueError(f"Wydanie {wydanie['wersja']} nie ma podpisu autora ({NAZWA_PODPISU}) - nie proponuję aktualizacji.")
+        raise ValueError(t("Wydanie {wersja} nie ma podpisu autora ({plik}) - nie proponuję aktualizacji.").format(wersja=wydanie["wersja"], plik=NAZWA_PODPISU))
     if not recznie and czytaj_ustawienia().get("pominieta_wersja") == wydanie["wersja"]:
         return None
     return wydanie
@@ -133,7 +135,7 @@ def pobierz_instalator(wydanie: dict, postep=lambda procent: None) -> Path:
     adres = wydanie["url"]
     oczekiwana = sprawdz_podpis(_pobierz_json(wydanie["podpis_url"]), wydanie["wersja"])
     if wydanie["sha256"] and wydanie["sha256"].lower() != oczekiwana:
-        raise ValueError("Suma kontrolna z GitHuba różni się od podpisanej przez autora - nie instaluję.")
+        raise ValueError(t("Suma kontrolna z GitHuba różni się od podpisanej przez autora - nie instaluję."))
     gotowy = Path(tempfile.gettempdir()) / f"Nutka-Setup-{wydanie['wersja']}.exe"
     cel = gotowy.with_suffix(".part")  # dopiero po sprawdzeniu sumy -> .exe (urwane/zepsute nigdy nie udaje gotowego)
     skrot = hashlib.sha256()
@@ -153,7 +155,7 @@ def pobierz_instalator(wydanie: dict, postep=lambda procent: None) -> Path:
                 postep(min(100.0, pobrane * 100 / rozmiar))
     if skrot.hexdigest() != oczekiwana:
         cel.unlink(missing_ok=True)
-        raise ValueError("Pobrany instalator nie zgadza się z podpisem autora (zła suma kontrolna) - spróbuj ponownie.")
+        raise ValueError(t("Pobrany instalator nie zgadza się z podpisem autora (zła suma kontrolna) - spróbuj ponownie."))
     os.replace(cel, gotowy)
     return gotowy
 

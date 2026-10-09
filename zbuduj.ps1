@@ -104,6 +104,7 @@ Krok "PyInstaller (katalog, nie onefile - szybszy start i mniej fałszywych alar
     --splash (Join-Path $PSScriptRoot "splash.png") `
     --add-data "$PSScriptRoot\ikona.ico;." `
     --add-data "$PSScriptRoot\naglowek.png;." `
+    --add-data "$PSScriptRoot\naglowek-en.png;." `
     --version-file (Join-Path $build "wersja.txt") `
     --collect-all ytmusicapi `
     --collect-all yt_dlp_ejs `
@@ -132,6 +133,11 @@ Copy-Item "docs\img\okno.png", "docs\img\playlista.png", "docs\img\nutka-256.png
 Invoke-WebRequest "https://matmiccode.github.io/css/v1/matcode.css" -OutFile (Join-Path $instrukcja "matcode.css") -UseBasicParsing
 $html = (Get-Content "docs\instrukcja.html" -Raw -Encoding UTF8).Replace('href="/css/v1/matcode.css"', 'href="matcode.css"')
 [IO.File]::WriteAllText((Join-Path $instrukcja "instrukcja.html"), $html, [Text.UTF8Encoding]::new($false))
+# wersja angielska: instrukcja\en\instrukcja.html (otwiera ją program w angielskim oknie), zrzuty w img\en
+New-Item -ItemType Directory -Force (Join-Path $instrukcja "en"), (Join-Path $instrukcja "img\en") | Out-Null
+Copy-Item "docs\img\en\okno.png", "docs\img\en\playlista.png" (Join-Path $instrukcja "img\en")
+$htmlEn = (Get-Content "docs\en\instrukcja.html" -Raw -Encoding UTF8).Replace('href="/css/v1/matcode.css"', 'href="../matcode.css"')
+[IO.File]::WriteAllText((Join-Path $instrukcja "en\instrukcja.html"), $htmlEn, [Text.UTF8Encoding]::new($false))
 
 Krok "Instalator (Inno Setup)"
 $iscc = @("$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe", "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe", "$env:ProgramFiles\Inno Setup 6\ISCC.exe") |

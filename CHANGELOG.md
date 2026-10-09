@@ -3,6 +3,16 @@
 Format: najnowsze na górze. Sekcja wersji jest jednocześnie opisem „Co nowego”, który program pokazuje
 przy proponowaniu aktualizacji – pisz ją dla zwykłego użytkownika.
 
+## [1.4.0] – 2026-10-09
+
+- **Nutka mówi też po angielsku.** Na komputerze z Windowsem w innym języku niż polski program sam startuje
+  po angielsku; język przełączysz przyciskiem „EN” / „PL” w prawym górnym rogu. Instrukcja jest w obu językach,
+  a instalator pyta po angielsku, gdy Windows nie jest polski.
+- Ekran startowy jest jeden dla obu języków, więc nie ma na nim polskich zdań.
+
+In English: Nutka now speaks English. On a non-Polish Windows it starts in English; switch anytime with the
+“EN” / “PL” button in the top-right corner. The guide and the installer are available in English as well.
+
 ## [1.3.0] – 2026-10-06
 
 - **Spokojniejszy ekran**: pusty ekran i „Nic nie znaleziono” bez zbędnych nagłówków kolumn, pasek postępu

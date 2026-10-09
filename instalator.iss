@@ -31,12 +31,25 @@ WizardStyle=modern
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 CloseApplications=yes
+; język instalatora z Windows (polski albo angielski); pytanie tylko, gdy Windows mówi innym językiem
+ShowLanguageDialog=auto
 
 [Languages]
 Name: "polski"; MessagesFile: "compiler:Languages\Polish.isl"
+Name: "english"; MessagesFile: "compiler:Default.isl"
+
+[CustomMessages]
+polski.SkrotPulpit=Skrót na pulpicie
+english.SkrotPulpit=Desktop shortcut
+polski.Skroty=Skróty:
+english.Skroty=Shortcuts:
+polski.Odinstaluj=Odinstaluj Nutkę
+english.Odinstaluj=Uninstall Nutka
+polski.Uruchom=Uruchom Nutkę
+english.Uruchom=Launch Nutka
 
 [Tasks]
-Name: "pulpit"; Description: "Skrót na pulpicie"; GroupDescription: "Skróty:"
+Name: "pulpit"; Description: "{cm:SkrotPulpit}"; GroupDescription: "{cm:Skroty}"
 
 [Files]
 Source: "build\dist\Nutka\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -53,11 +66,11 @@ Type: filesandordirs; Name: "{localappdata}\Nutka"
 
 [Icons]
 Name: "{group}\Nutka"; Filename: "{app}\Nutka.exe"
-Name: "{group}\Odinstaluj Nutkę"; Filename: "{uninstallexe}"
+Name: "{group}\{cm:Odinstaluj}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\Nutka"; Filename: "{app}\Nutka.exe"; Tasks: pulpit
 
 [Run]
-Filename: "{app}\Nutka.exe"; Description: "Uruchom Nutkę"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\Nutka.exe"; Description: "{cm:Uruchom}"; Flags: nowait postinstall skipifsilent
 ; aktualizacja z programu (/SILENT /AKTUALIZACJA=1): bez pytań uruchom nową wersję
 Filename: "{app}\Nutka.exe"; Flags: nowait; Check: CzyAktualizacja
 

@@ -30,12 +30,17 @@ import customtkinter as ctk
 import aktualizacja_programu
 import aktualizacje
 import spotify_lista
+import teksty
+from teksty import t
 
-WERSJA = "1.3.0"  # jedyne źródło wersji: czyta ją zbuduj.ps1 (instalator, wydanie na GitHubie) i aktualizacja_programu
+# język interfejsu: NUTKA_JEZYK (testy) > wybór z przełącznika w nagłówku (ustawienia.json) > język Windows
+teksty.ustaw(os.environ.get("NUTKA_JEZYK") or aktualizacja_programu.czytaj_ustawienia().get("jezyk"))
+
+WERSJA = "1.4.0"  # jedyne źródło wersji: czyta ją zbuduj.ps1 (instalator, wydanie na GitHubie) i aktualizacja_programu
 REPO_GITHUB = "matmiccode/nutka"  # skąd program bierze informację o nowych wersjach (GitHub Releases)
 BUYCOFFEE_URL = "https://buycoffee.to/matcode"  # profil na buycoffee.to - pusty = przycisk „Postaw kawę” się nie pokazuje
 STRONA_INSTRUKCJI = "https://matmiccode.github.io/nutka/instrukcja.html"  # ta sama strona co docs/instrukcja.html obok exe
-DOMYSLNY_FOLDER = Path.home() / "Music" / "Pobrane"
+DOMYSLNY_FOLDER = Path.home() / "Music" / t("Pobrane")  # po angielsku Music\Nutka
 PODPIS = "MATCODE"
 ROWNOLEGLE_POBIERANIA = 3  # lista Spotify: ile utworów naraz
 # wklejony tekst trafia jako argument do yt-dlp, więc „link” = tylko http(s) na jednym z tych hostów (rozpoznaj_zrodlo)
@@ -158,7 +163,7 @@ def zbuduj_komende(link: str, folder: Path) -> list[str]:
             *szablon,
             "--", link,  # „--” = koniec opcji: wklejony tekst nigdy nie będzie opcją yt-dlp
         ]
-    raise ValueError("Nieznany link - obsługiwane są YouTube i Spotify.")  # Spotify idzie przez tryb listy
+    raise ValueError(t("Nieznany link - obsługiwane są YouTube i Spotify."))  # Spotify idzie przez tryb listy
 
 
 def komenda_utworu(video_id: str, plik: Path) -> list[str]:
@@ -185,7 +190,8 @@ def klient_yt_music():
 
 
 def szukaj_yt_music(fraza: str, rodzaj: str, ile: int = 15) -> list[dict]:
-    """Wyniki z YouTube Music jako słowniki: tytul, wykonawca, album, czas, link."""
+    """Wyniki z YouTube Music jako słowniki: tytul, wykonawca, album, czas, link. rodzaj = "Utwory" | "Albumy"
+    (klucz, nie napis z przełącznika - ten bywa po angielsku)."""
     klient = klient_yt_music()
     wyniki = []
     if rodzaj == "Albumy":
@@ -279,7 +285,7 @@ class Aplikacja(ctk.CTk):
         self._skracanie = None
         self.folder = tk.StringVar(value=str(DOMYSLNY_FOLDER))
         self.link = tk.StringVar()
-        self.rodzaj = tk.StringVar(value="Utwory")
+        self.rodzaj = tk.StringVar(value=t("Utwory"))  # napis z przełącznika; klucz daje _rodzaj_wyszukiwania()
         self._tryb_paska = "determinate"
         self._pasek_widoczny = False
         self._bok = None  # ostatnia szerokość pustych kolumn po bokach treści (_ogranicz_szerokosc)
@@ -389,10 +395,14 @@ class Aplikacja(ctk.CTk):
             return ImageFont.load_default()
 
     def _przyciski_naglowka(self, naglowek: ctk.CTkFrame, gradient, margines: int):
-        """Prawy górny róg: „Postaw kawę autorowi / MATCODE” i obok „Instrukcja” - obie szklane (biała pigułka była
-        najjaśniejszym elementem okna i przyćmiewała „Szukaj”; róż i biel zostają dla akcji)."""
+        """Prawy górny róg: „Postaw kawę autorowi / MATCODE”, obok „Instrukcja” i mała pigułka z drugim językiem
+        („EN” w polskim oknie, „PL” w angielskim) - wszystkie szklane (biała pigułka była najjaśniejszym elementem
+        okna i przyćmiewała „Szukaj”; róż i biel zostają dla akcji). Szerokości liczone z napisów, bo angielskie
+        są dłuższe."""
         duza, mala = self._czcionka_pil(28), self._czcionka_pil(21)
-        szer_kawy, wys = 232, 48
+        wys = 48
+        napis_kawy, napis_instrukcji = t("Postaw kawę autorowi"), t("Instrukcja")
+        szer_kawy = max(232, round((36 + 56 + 18 + duza.getlength(napis_kawy) + 40) / 2))
         if BUYCOFFEE_URL:
             kawka = ikona_kawy(56, "#FFFFFF")  # 2x: 28 px logicznych, po lewej od napisów
 
@@ -400,7 +410,7 @@ class Aplikacja(ctk.CTk):
                 W, H = obraz.size
                 obraz.paste(kawka, (36, (H - kawka.height) // 2 - 2), kawka)
                 srodek = (36 + kawka.width + 18 + W - 40) / 2  # napisy na środku miejsca obok filiżanki
-                rysuj.text((srodek, H * 0.38), "Postaw kawę autorowi", font=duza, fill="#FFFFFF", anchor="mm")
+                rysuj.text((srodek, H * 0.38), napis_kawy, font=duza, fill="#FFFFFF", anchor="mm")
                 rysuj.text((srodek, H * 0.72), "MATCODE", font=mala, fill="#FBE3F1", anchor="mm")
             self._pigulka(naglowek, gradient, margines, szer_kawy, wys, kawa, lambda: webbrowser.open(BUYCOFFEE_URL),
                           szklana=True)
@@ -410,18 +420,41 @@ class Aplikacja(ctk.CTk):
             r, sx = 15, 30 + 15  # kółko z „?” po lewej
             rysuj.ellipse((sx - r, H / 2 - r, sx + r, H / 2 + r), outline="#FFFFFF", width=3)
             rysuj.text((sx, H / 2 + 1), "?", font=mala, fill="#FFFFFF", anchor="mm")
-            rysuj.text(((sx + r + W - 26) / 2 + 4, H / 2), "Instrukcja", font=duza, fill="#FFFFFF", anchor="mm")
+            rysuj.text(((sx + r + W - 26) / 2 + 4, H / 2), napis_instrukcji, font=duza, fill="#FFFFFF", anchor="mm")
+        szer_instrukcji = max(110, round((45 + 15 + 24 + duza.getlength(napis_instrukcji) + 26 + 8) / 2))
         od_prawej = margines + (szer_kawy + 10 if BUYCOFFEE_URL else 0)
-        self._pigulka(naglowek, gradient, od_prawej, 136, wys, instrukcja, self._otworz_instrukcje, szklana=True)
+        self._pigulka(naglowek, gradient, od_prawej, szer_instrukcji, wys, instrukcja, self._otworz_instrukcje,
+                      szklana=True)
+
+        drugi = "EN" if teksty.jezyk() == "pl" else "PL"
+
+        def jezyk(obraz, rysuj, _najechany):
+            W, H = obraz.size
+            rysuj.text((W / 2, H / 2), drugi, font=duza, fill="#FFFFFF", anchor="mm")
+        self._pigulka(naglowek, gradient, od_prawej + szer_instrukcji + 10, 60, wys, jezyk, self._zmien_jezyk,
+                      szklana=True)
+
+    def _zmien_jezyk(self):
+        """Przełącznik PL/EN: zapis w ustawieniach i ponowne uruchomienie (okno jest zbudowane z napisami na stałe)."""
+        if (self.proces or self.pobieranie_listy) and not messagebox.askyesno(
+                t("Język"), t("Trwa pobieranie - przerwać je i zmienić język teraz?")):
+            return
+        nowy = "en" if teksty.jezyk() == "pl" else "pl"
+        aktualizacja_programu.zapisz_ustawienie("jezyk", nowy)
+        srodowisko = {k: v for k, v in os.environ.items() if k not in ("PYINSTALLER_SUPPRESS_SPLASH_SCREEN", "NUTKA_JEZYK")}
+        subprocess.Popen([sys.executable] if SPAKOWANY else [sys.executable, __file__], env=srodowisko, close_fds=True)
+        self._zamknij()
 
     def _otworz_instrukcje(self):
-        """Instrukcja = docs/instrukcja.html; w instalacji leży w podfolderze instrukcja obok Nutka.exe (kopiuje zbuduj.ps1).
-        Otwiera się w przeglądarce i działa bez internetu; gdyby jej nie było - wersja online."""
-        for plik in (FOLDER_PROGRAMU / "instrukcja" / "instrukcja.html", FOLDER_PROGRAMU / "docs" / "instrukcja.html"):
+        """Instrukcja = docs/instrukcja.html (po angielsku docs/en/instrukcja.html); w instalacji leży w podfolderze
+        instrukcja obok Nutka.exe (kopiuje zbuduj.ps1). Otwiera się w przeglądarce i działa bez internetu;
+        gdyby jej nie było - wersja online."""
+        czesc = Path("en") / "instrukcja.html" if teksty.jezyk() == "en" else Path("instrukcja.html")
+        for plik in (FOLDER_PROGRAMU / "instrukcja" / czesc, FOLDER_PROGRAMU / "docs" / czesc):
             if plik.exists():
                 webbrowser.open(plik.resolve().as_uri())
                 return
-        webbrowser.open(STRONA_INSTRUKCJI)
+        webbrowser.open(STRONA_INSTRUKCJI.replace("/nutka/", "/nutka/en/") if teksty.jezyk() == "en" else STRONA_INSTRUKCJI)
 
     def _styl_tabeli(self):
         """Tabela wyników to ttk.Treeview (CustomTkinter nie ma tabeli) - ubieramy ją w te same kolory."""
@@ -454,7 +487,7 @@ class Aplikacja(ctk.CTk):
         naglowek = ctk.CTkFrame(self, height=84, corner_radius=0, fg_color=FIOLET)
         naglowek.grid(row=0, column=0, columnspan=3, sticky="ew")
         naglowek.grid_propagate(False)
-        plik_naglowka = ZASOBY / "naglowek.png"
+        plik_naglowka = ZASOBY / ("naglowek-en.png" if teksty.jezyk() == "en" else "naglowek.png")  # podpis pod nazwą
         obraz = None
         if plik_naglowka.exists():
             from PIL import Image
@@ -467,16 +500,16 @@ class Aplikacja(ctk.CTk):
         wiersz_szukaj = ctk.CTkFrame(self, fg_color="transparent")
         wiersz_szukaj.grid(row=1, column=1, sticky="ew", padx=margines, pady=(margines, 10))
         wiersz_szukaj.columnconfigure(0, weight=1)
-        self.pole_szukaj = self._pole(wiersz_szukaj, placeholder_text="Wpisz tytuł lub wykonawcę – albo wklej link z YouTube lub Spotify")
+        self.pole_szukaj = self._pole(wiersz_szukaj, placeholder_text=t("Wpisz tytuł lub wykonawcę – albo wklej link z YouTube lub Spotify"))
         self.pole_szukaj.grid(row=0, column=0, sticky="ew")
         self.pole_szukaj.bind("<Return>", lambda _: self.szukaj())
         self.after(300, self.pole_szukaj.focus)
         ctk.CTkSegmentedButton(
-            wiersz_szukaj, values=["Utwory", "Albumy"], variable=self.rodzaj, height=38, corner_radius=10,
+            wiersz_szukaj, values=[t("Utwory"), t("Albumy")], variable=self.rodzaj, height=38, corner_radius=10,
             fg_color=POLE, unselected_color=POLE, unselected_hover_color=OBRYS, selected_color=WYBRANY,
             selected_hover_color=WYBRANY_NAJECHANY, text_color=TEKST, font=ctk.CTkFont(FONT, 13),
         ).grid(row=0, column=1, padx=(10, 0))
-        self.przycisk_szukaj = self._przycisk(wiersz_szukaj, "Szukaj", self.szukaj, glowny=True, width=110, height=38)
+        self.przycisk_szukaj = self._przycisk(wiersz_szukaj, t("Szukaj"), self.szukaj, glowny=True, width=110, height=38)
         self.przycisk_szukaj.grid(row=0, column=2, padx=(10, 0))
 
         # --- wyniki ---
@@ -492,10 +525,10 @@ class Aplikacja(ctk.CTk):
         # przyciski pakowane przed opisem: pack przydziela miejsce w kolejności pakowania, więc długi tytuł playlisty
         # nie wypycha ich za krawędź - opis dostaje resztę i skraca się do „…” (_ustaw_opis_listy)
         maly_przycisk = dict(width=10, height=30)
-        self._przycisk(self.pasek_listy, "Zamknij listę", self.zamknij_liste, **maly_przycisk).pack(side="right")
-        self._przycisk(self.pasek_listy, "Odznacz wszystko", lambda: self._zaznacz_wszystko(False),
+        self._przycisk(self.pasek_listy, t("Zamknij listę"), self.zamknij_liste, **maly_przycisk).pack(side="right")
+        self._przycisk(self.pasek_listy, t("Odznacz wszystko"), lambda: self._zaznacz_wszystko(False),
                        **maly_przycisk).pack(side="right", padx=6)
-        self._przycisk(self.pasek_listy, "Zaznacz wszystko", lambda: self._zaznacz_wszystko(True),
+        self._przycisk(self.pasek_listy, t("Zaznacz wszystko"), lambda: self._zaznacz_wszystko(True),
                        **maly_przycisk).pack(side="right")
         self._czcionka_opisu = ctk.CTkFont(FONT, 14, "bold")
         self.opis_listy = ctk.CTkLabel(self.pasek_listy, text="", text_color=TEKST, anchor="w", width=1,
@@ -506,8 +539,8 @@ class Aplikacja(ctk.CTk):
 
         # szerokości minimalne - wolne miejsce dostają tytuł/wykonawca/album (stretch); razem muszą się zmieścić
         # w najwęższym oknie także w trybie listy (z ptaszkiem i statusem), inaczej CZAS/STATUS uciekają za krawędź
-        kolumny = {"wybor": ("", 36), "tytul": ("Tytuł", 170), "wykonawca": ("Wykonawca", 120),
-                   "album": ("Album", 120), "czas": ("Czas", 56), "status": ("Status", 140)}
+        kolumny = {"wybor": ("", 36), "tytul": (t("Tytuł"), 170), "wykonawca": (t("Wykonawca"), 120),
+                   "album": (t("Album"), 120), "czas": (t("Czas"), 56), "status": (t("Status"), 140)}
         self.wyniki = ttk.Treeview(karta_wynikow, columns=list(kolumny), show="headings", height=4,
                                    selectmode="browse", style="Nutka.Treeview")
         self._szerokosci = {klucz: szer for klucz, (_, szer) in kolumny.items()}
@@ -547,26 +580,26 @@ class Aplikacja(ctk.CTk):
         karta_linku.grid(row=3, column=1, sticky="ew", padx=margines, pady=(12, 0))
         karta_linku.columnconfigure(1, weight=1)
         opis = dict(text_color=TEKST_SZARY, font=ctk.CTkFont(FONT, 13))
-        ctk.CTkLabel(karta_linku, text="Link", **opis).grid(row=0, column=0, sticky="w", padx=(2, 12))
+        ctk.CTkLabel(karta_linku, text=t("Link"), **opis).grid(row=0, column=0, sticky="w", padx=(2, 12))
         pole_link = self._pole(karta_linku, textvariable=self.link)
         pole_link.grid(row=0, column=1, sticky="ew")
         pole_link.bind("<Return>", lambda _: self.pobierz())
-        self._przycisk(karta_linku, "Wklej", self._wklej, width=120, height=38).grid(row=0, column=2, padx=(10, 0))
-        ctk.CTkLabel(karta_linku, text="Zapisz do", **opis).grid(row=1, column=0, sticky="w", padx=(2, 12), pady=(8, 0))
+        self._przycisk(karta_linku, t("Wklej"), self._wklej, width=120, height=38).grid(row=0, column=2, padx=(10, 0))
+        ctk.CTkLabel(karta_linku, text=t("Zapisz do"), **opis).grid(row=1, column=0, sticky="w", padx=(2, 12), pady=(8, 0))
         self._pole(karta_linku, textvariable=self.folder).grid(row=1, column=1, sticky="ew", pady=(8, 0))
-        self._przycisk(karta_linku, "Wybierz…", self._wybierz_folder, width=120, height=38).grid(
+        self._przycisk(karta_linku, t("Wybierz…"), self._wybierz_folder, width=120, height=38).grid(
             row=1, column=2, padx=(10, 0), pady=(8, 0))
 
         # --- przyciski i pasek postępu ---
         przyciski = ctk.CTkFrame(self, fg_color="transparent")
         przyciski.grid(row=4, column=1, sticky="ew", padx=margines, pady=14)
-        self.przycisk_pobierz = self._przycisk(przyciski, "Pobierz mp3", self.pobierz, glowny=True, width=150, height=42)
+        self.przycisk_pobierz = self._przycisk(przyciski, t("Pobierz mp3"), self.pobierz, glowny=True, width=150, height=42)
         self.przycisk_pobierz.pack(side="left")
-        self.przycisk_odsluch = self._przycisk(przyciski, "▶  Odsłuchaj", self.odsluchaj, width=130, height=42)
+        self.przycisk_odsluch = self._przycisk(przyciski, t("▶  Odsłuchaj"), self.odsluchaj, width=130, height=42)
         self.przycisk_odsluch.pack(side="left", padx=(10, 0))
         # „Następny” pojawia się tylko podczas odsłuchu (_pokaz_odsluch) - stale wyszarzony był martwym elementem
-        self.przycisk_nastepny = self._przycisk(przyciski, "Następny  ›", self._nastepny, width=110, height=42)
-        self._przycisk(przyciski, "Otwórz folder", self._otworz_folder, width=130, height=42).pack(side="left", padx=(6, 0))
+        self.przycisk_nastepny = self._przycisk(przyciski, t("Następny  ›"), self._nastepny, width=110, height=42)
+        self._przycisk(przyciski, t("Otwórz folder"), self._otworz_folder, width=130, height=42).pack(side="left", padx=(6, 0))
         # w spoczynku pasek ma kolor tła (_schowaj_postep) - szara kreska wyglądała jak ozdobny separator;
         # obok napis: procent albo „3/12” przy liście
         self.postep_tekst = ctk.CTkLabel(przyciski, text="", width=52, anchor="e", text_color=TEKST_SZARY,
@@ -595,7 +628,7 @@ class Aplikacja(ctk.CTk):
         self.stopka_wersja.pack(side="left")
         # link „Sprawdź aktualizacje” = ręczne sprawdzenie; wygląda jak link (kolor, podkreślenie po najechaniu)
         zwykla, podkreslona = ctk.CTkFont(FONT, 12), ctk.CTkFont(FONT, 12, underline=True)
-        link = ctk.CTkLabel(stopka, text="Sprawdź aktualizacje", cursor="hand2", text_color=LINK, font=zwykla)
+        link = ctk.CTkLabel(stopka, text=t("Sprawdź aktualizacje"), cursor="hand2", text_color=LINK, font=zwykla)
         link.pack(side="left", padx=(14, 0))
         link.bind("<Button-1>", lambda _: self.sprawdz_wersje_programu(recznie=True))
         link.bind("<Enter>", lambda _: link.configure(font=podkreslona))
@@ -605,7 +638,7 @@ class Aplikacja(ctk.CTk):
     @staticmethod
     def _opis_wersji() -> str:
         wersja = aktualizacje.wersja("yt-dlp")  # nightly: 2026.9.27.232945.dev0 -> "2026.9.27"
-        return f"Nutka {WERSJA}  ·  silnik yt-dlp {'.'.join(wersja.split('.')[:3])}"
+        return f"Nutka {WERSJA}  ·  {t('silnik yt-dlp')} {'.'.join(wersja.split('.')[:3])}"
 
     # ---------- ciche aktualizacje (tylko exe) ----------
 
@@ -634,31 +667,31 @@ class Aplikacja(ctk.CTk):
             except Exception as e:
                 wydanie = None
                 if recznie:
-                    self.kolejka.put(("log", f"✖ Nie udało się sprawdzić aktualizacji: {e}"))
+                    self.kolejka.put(("log", t("✖ Nie udało się sprawdzić aktualizacji: {e}").format(e=e)))
                     return
             if wydanie:
                 self.kolejka.put(("nowa_wersja", wydanie))
             elif recznie:
-                self.kolejka.put(("log", f"✔ Masz najnowszą wersję Nutki ({WERSJA})."))
+                self.kolejka.put(("log", t("✔ Masz najnowszą wersję Nutki ({wersja}).").format(wersja=WERSJA)))
         if recznie:
-            self._dopisz("Sprawdzam, czy jest nowa wersja Nutki…")
+            self._dopisz(t("Sprawdzam, czy jest nowa wersja Nutki…"))
         threading.Thread(target=w_tle, daemon=True).start()
 
     def _pokaz_nowa_wersje(self, wydanie: dict):
         if self.okno_aktualizacji is not None and self.okno_aktualizacji.winfo_exists():
             return
         okno = self.okno_aktualizacji = ctk.CTkToplevel(self, fg_color=TLO)
-        okno.title("Aktualizacja Nutki")
+        okno.title(t("Aktualizacja Nutki"))
         okno.geometry("560x430")
         okno.resizable(False, False)
         okno.transient(self)
         okno.after(250, lambda: (okno.iconbitmap(str(ZASOBY / "ikona.ico")) if (ZASOBY / "ikona.ico").exists() else None,
                                  okno.lift(), okno.focus_force()))
-        ctk.CTkLabel(okno, text=f"Dostępna jest nowa wersja Nutki {wydanie['wersja']}", text_color=TEKST,
-                     font=ctk.CTkFont(FONT, 18, "bold")).pack(anchor="w", padx=22, pady=(20, 2))
-        ctk.CTkLabel(okno, text=f"Masz wersję {WERSJA}. Aktualizacja zajmie około minuty, Twoje pliki zostają.",
+        ctk.CTkLabel(okno, text=t("Dostępna jest nowa wersja Nutki {wersja}").format(wersja=wydanie["wersja"]),
+                     text_color=TEKST, font=ctk.CTkFont(FONT, 18, "bold")).pack(anchor="w", padx=22, pady=(20, 2))
+        ctk.CTkLabel(okno, text=t("Masz wersję {wersja}. Aktualizacja zajmie około minuty, Twoje pliki zostają.").format(wersja=WERSJA),
                      text_color=TEKST_SZARY, font=ctk.CTkFont(FONT, 13)).pack(anchor="w", padx=22)
-        ctk.CTkLabel(okno, text="Co nowego:", text_color=TEKST, font=ctk.CTkFont(FONT, 13, "bold")).pack(
+        ctk.CTkLabel(okno, text=t("Co nowego:"), text_color=TEKST, font=ctk.CTkFont(FONT, 13, "bold")).pack(
             anchor="w", padx=22, pady=(14, 4))
         # przyciski pakowane przed opisem: pack przydziela miejsce w kolejności, więc opis (expand) bierze resztę
         # i nad przyciskami nie zostaje pusta dziura
@@ -670,7 +703,7 @@ class Aplikacja(ctk.CTk):
         # opis wydania = treść sekcji z CHANGELOG bez nagłówka „## [x.y.z]” (tak publikuje zbuduj.ps1)
         tresc = re.sub(r"^#+\s*", "", wydanie["opis"].strip(), flags=re.M).replace("**", "")
         tresc = re.sub(r"^\s*[-*]\s+", "•  ", tresc, flags=re.M)  # markdownowe punkty -> kropki
-        opis.insert("end", tresc or "Poprawki i ulepszenia.")
+        opis.insert("end", tresc or t("Poprawki i ulepszenia."))
         opis.configure(state="disabled")
         pasek = ctk.CTkProgressBar(okno, height=8, fg_color=POLE, progress_color=AKCENT)
         pasek.set(0)
@@ -682,13 +715,13 @@ class Aplikacja(ctk.CTk):
 
         def zaktualizuj():
             if (self.proces or self.pobieranie_listy) and not messagebox.askyesno(
-                    "Aktualizacja", "Trwa pobieranie - przerwać je i zaktualizować teraz?", parent=okno):
+                    t("Aktualizacja"), t("Trwa pobieranie - przerwać je i zaktualizować teraz?"), parent=okno):
                 return
             for p in przyciski.winfo_children():
                 p.configure(state="disabled")
             pasek.pack(fill="x", padx=22, pady=(14, 2))
             stan.pack(anchor="w", padx=22)
-            stan.configure(text="Pobieram nową wersję…")
+            stan.configure(text=t("Pobieram nową wersję…"))
 
             def w_tle():
                 try:
@@ -699,9 +732,9 @@ class Aplikacja(ctk.CTk):
                     self.kolejka.put(("aktualizacja_blad", (okno, str(e))))
             threading.Thread(target=w_tle, daemon=True).start()
 
-        self._przycisk(przyciski, "Zaktualizuj teraz", zaktualizuj, glowny=True, width=170).pack(side="right")
-        self._przycisk(przyciski, "Przypomnij później", okno.destroy, width=10).pack(side="right", padx=8)
-        self._przycisk(przyciski, "Pomiń tę wersję", pomin, width=10).pack(side="left")
+        self._przycisk(przyciski, t("Zaktualizuj teraz"), zaktualizuj, glowny=True, width=170).pack(side="right")
+        self._przycisk(przyciski, t("Przypomnij później"), okno.destroy, width=10).pack(side="right", padx=8)
+        self._przycisk(przyciski, t("Pomiń tę wersję"), pomin, width=10).pack(side="left")
 
     def _zainstaluj_aktualizacje(self, plik: Path):
         """Instalator /SILENT sam zamknie, zainstaluje i uruchomi nową wersję - my tylko znikamy."""
@@ -748,14 +781,15 @@ class Aplikacja(ctk.CTk):
                 self.wczytaj_spotify(fraza)
             return
         self.przycisk_szukaj.configure(state="disabled")
-        self._dopisz(f"🔍 Szukam: {fraza}")
-        threading.Thread(target=self._szukaj_w_tle, args=(fraza, self.rodzaj.get()), daemon=True).start()
+        self._dopisz(t("🔍 Szukam: {fraza}").format(fraza=fraza))
+        rodzaj = "Albumy" if self.rodzaj.get() == t("Albumy") else "Utwory"  # klucz, nie napis z przełącznika
+        threading.Thread(target=self._szukaj_w_tle, args=(fraza, rodzaj), daemon=True).start()
 
     def _szukaj_w_tle(self, fraza: str, rodzaj: str):
         try:
             self.kolejka.put(("wyniki", szukaj_yt_music(fraza, rodzaj)))
         except Exception as e:
-            self.kolejka.put(("log", f"✖ Wyszukiwanie nie wyszło: {e}"))
+            self.kolejka.put(("log", t("✖ Wyszukiwanie nie wyszło: {e}").format(e=e)))
             self.kolejka.put(("wyniki", None))
 
     def _pokaz_wyniki(self, wyniki: list[dict] | None):
@@ -764,7 +798,7 @@ class Aplikacja(ctk.CTk):
             return
         if self.lista:
             if self.pobieranie_listy:
-                self._dopisz("Najpierw poczekaj na koniec pobierania listy (albo kliknij „Zatrzymaj”).")
+                self._dopisz(t("Najpierw poczekaj na koniec pobierania listy (albo kliknij „Zatrzymaj”)."))
                 return
             self.zamknij_liste()
         self._wyczysc_tabele()
@@ -775,8 +809,8 @@ class Aplikacja(ctk.CTk):
         if wyniki:
             self.pusta_tabela.place_forget()
         else:
-            self._pokaz_pusta("Nic nie znaleziono", "Sprawdź pisownię albo wpisz samego wykonawcę.\n"
-                                                    "Szukasz całej płyty? Przełącz na „Albumy”.")
+            self._pokaz_pusta(t("Nic nie znaleziono"), t("Sprawdź pisownię albo wpisz samego wykonawcę.\n"
+                                                          "Szukasz całej płyty? Przełącz na „Albumy”."))
 
     def _wybrano_wynik(self, _=None):
         zaznaczone = self.wyniki.selection()
@@ -807,13 +841,13 @@ class Aplikacja(ctk.CTk):
 
     def wczytaj_spotify(self, link: str):
         if self.pobieranie_listy:
-            self._dopisz("Trwa pobieranie listy - poczekaj albo kliknij „Zatrzymaj”.")
+            self._dopisz(t("Trwa pobieranie listy - poczekaj albo kliknij „Zatrzymaj”."))
             return
         if not spotify_lista.rozpoznaj(link):
-            messagebox.showinfo("Spotify", "To nie wygląda na link do utworu, albumu ani playlisty Spotify.\n"
-                                           "W Spotify: … → Udostępnij → Kopiuj link.")
+            messagebox.showinfo(t("Spotify"), t("To nie wygląda na link do utworu, albumu ani playlisty Spotify.\n"
+                                                "W Spotify: … → Udostępnij → Kopiuj link."))
             return
-        self._dopisz("Wczytuję listę utworów ze Spotify…")
+        self._dopisz(t("Wczytuję listę utworów ze Spotify…"))
         self.przycisk_pobierz.configure(state="disabled")
         self._ustaw_postep(None)
 
@@ -821,8 +855,8 @@ class Aplikacja(ctk.CTk):
             try:
                 self.kolejka.put(("lista", (link, spotify_lista.wczytaj(link))))
             except Exception as e:
-                self.kolejka.put(("log", f"✖ Nie udało się wczytać listy ze Spotify ({e}). Czy playlista jest "
-                                         "publiczna? Prywatnych playlist i „Polubionych” program nie widzi."))
+                self.kolejka.put(("log", t("✖ Nie udało się wczytać listy ze Spotify ({e}). Czy playlista jest "
+                                           "publiczna? Prywatnych playlist i „Polubionych” program nie widzi.").format(e=e)))
                 self.kolejka.put(("koniec", None))
         threading.Thread(target=w_tle, daemon=True).start()
 
@@ -840,16 +874,16 @@ class Aplikacja(ctk.CTk):
         for i, utwor in enumerate(lista.utwory):
             jest = spotify_lista.sciezka_pliku(utwor, lista, folder).exists()  # synchronizacja: to już masz
             masz += jest
-            iid = self._wstaw_wiersz(i, utwor.tytul, utwor.wykonawca, utwor.album, utwor.czas, "masz już" if jest else "")
+            iid = self._wstaw_wiersz(i, utwor.tytul, utwor.wykonawca, utwor.album, utwor.czas, t("masz już") if jest else "")
             self.wiersze_listy[iid] = utwor
             self._ustaw_zaznaczenie(iid, not jest)
         self.pasek_listy.grid()
-        rodzaj = {"playlista": "Playlista", "album": "Album", "utwór": "Utwór"}[lista.rodzaj]
-        opis = f"{rodzaj} „{lista.nazwa}”  ·  {len(lista.utwory)} utw."
-        self._ustaw_opis_listy(rodzaj, lista.nazwa, f"{len(lista.utwory)} utw." + (f"  ·  {masz} już masz" if masz else ""),
+        rodzaj = {"playlista": t("Playlista"), "album": t("Album"), "utwór": t("Utwór")}[lista.rodzaj]
+        ile = f"{len(lista.utwory)} {t('utw.')}"
+        opis = f"{rodzaj} {t('„')}{lista.nazwa}”  ·  {ile}" + (t(" – {n} już masz, są odznaczone.").format(n=masz) if masz else "")
+        self._ustaw_opis_listy(rodzaj, lista.nazwa, ile + (f"  ·  {t('{n} już masz').format(n=masz)}" if masz else ""),
                                postep="")
-        self._dopisz(f"♫ {opis}" + (f" – {masz} już masz, są odznaczone." if masz else "")
-                     + " Odznacz, czego nie chcesz, i kliknij „Pobierz zaznaczone”.")
+        self._dopisz(t("♫ {opis} Odznacz, czego nie chcesz, i kliknij „Pobierz zaznaczone”.").format(opis=opis))
 
     def _ogranicz_szerokosc(self, zdarzenie):
         """Nadmiar ponad MAKS_SZEROKOSC (po DPI) idzie po równo do pustych kolumn 0 i 2. Wagę ma tylko kolumna
@@ -870,7 +904,7 @@ class Aplikacja(ctk.CTk):
             if wartosc is not None:
                 self._opis_listy[klucz] = wartosc
         o, czcionka = self._opis_listy, self._czcionka_opisu
-        poczatek = f"{o['naglowek']} „{o['nazwa']}"
+        poczatek = f"{o['naglowek']} {t('„')}{o['nazwa']}"  # po angielsku cudzysłów otwierający to “
         reszta = f"”  ·  {o['dopisek']}" + (f"  ·  [{o['postep']}]" if o["postep"] else "")
         # CTkFont mierzy w pikselach logicznych (skaluje się dopiero przy rysowaniu), winfo_width daje fizyczne
         szer = self.opis_listy.winfo_width() / self._skala - 6
@@ -936,17 +970,17 @@ class Aplikacja(ctk.CTk):
         tagi = [t for t in self.wyniki.item(iid, "tags") if t != "blad"] + (["blad"] if tekst.startswith("✗") else [])
         self.wyniki.item(iid, tags=tagi)
 
-    def _pokaz_pusta(self, tytul: str = "Czego chcesz posłuchać?",
-                     opis: str = "Wpisz tytuł lub wykonawcę i kliknij „Szukaj” – albo wklej link z YouTube lub Spotify.\n"
-                                 "Klik w wynik wybiera utwór, dwuklik od razu go pobiera."):
-        self.pusta_tytul.configure(text=tytul)
-        self.pusta_opis.configure(text=opis)
+    def _pokaz_pusta(self, tytul: str | None = None, opis: str | None = None):
+        self.pusta_tytul.configure(text=tytul if tytul is not None else t("Czego chcesz posłuchać?"))
+        self.pusta_opis.configure(text=opis if opis is not None else t(
+            "Wpisz tytuł lub wykonawcę i kliknij „Szukaj” – albo wklej link z YouTube lub Spotify.\n"
+            "Klik w wynik wybiera utwór, dwuklik od razu go pobiera."))
         self.pusta_tabela.place(relx=0, rely=0, relwidth=1, relheight=1)
         self.pusta_tabela.lift()
 
     def zamknij_liste(self):
         if self.pobieranie_listy:
-            self._dopisz("Najpierw zatrzymaj pobieranie listy.")
+            self._dopisz(t("Najpierw zatrzymaj pobieranie listy."))
             return
         self.lista = None
         self.wiersze_listy.clear()
@@ -954,7 +988,7 @@ class Aplikacja(ctk.CTk):
         self._wyczysc_tabele()
         self._pokaz_kolumny(("tytul", "wykonawca", "album", "czas"))
         self.pasek_listy.grid_remove()
-        self.przycisk_pobierz.configure(text="Pobierz mp3")
+        self.przycisk_pobierz.configure(text=t("Pobierz mp3"))
         self._pokaz_pusta()
 
     def _ustaw_zaznaczenie(self, iid: str, zaznacz: bool):
@@ -966,7 +1000,7 @@ class Aplikacja(ctk.CTk):
         tagi = [t for t in self.wyniki.item(iid, "tags") if t != "odznaczony"] + ([] if zaznacz else ["odznaczony"])
         self.wyniki.item(iid, tags=tagi)
         if not self.pobieranie_listy:
-            self.przycisk_pobierz.configure(text=f"Pobierz zaznaczone ({len(self.zaznaczone)})")
+            self.przycisk_pobierz.configure(text=t("Pobierz zaznaczone ({n})").format(n=len(self.zaznaczone)))
 
     def _przelacz(self, iid: str):
         if not self.pobieranie_listy:
@@ -986,19 +1020,20 @@ class Aplikacja(ctk.CTk):
             self.przerwij_liste.set()
             for p in list(self.procesy_listy):
                 p.kill()
-            self._dopisz("Zatrzymuję…")
+            self._dopisz(t("Zatrzymuję…"))
             return
         do_pobrania = [iid for iid in self.wiersze_listy if iid in self.zaznaczone]
         if not do_pobrania:
-            messagebox.showinfo("Pobieranie", "Nic nie jest zaznaczone.")
+            messagebox.showinfo(t("Pobieranie"), t("Nic nie jest zaznaczone."))
             return
         lista, folder = self.lista, Path(self.folder.get())
         self.pobieranie_listy = True
         self.przerwij_liste.clear()
-        self.przycisk_pobierz.configure(text="Zatrzymaj")
+        self.przycisk_pobierz.configure(text=t("Zatrzymaj"))
         for iid in do_pobrania:
-            self._ustaw_status(iid, "w kolejce")
-        self._dopisz(f"▶ Pobieram {len(do_pobrania)} utw. z „{lista.nazwa}” (po {ROWNOLEGLE_POBIERANIA} naraz)…")
+            self._ustaw_status(iid, t("w kolejce"))
+        self._dopisz(t("▶ Pobieram {n} utw. z „{nazwa}” (po {k} naraz)…").format(
+            n=len(do_pobrania), nazwa=lista.nazwa, k=ROWNOLEGLE_POBIERANIA))
         self._ustaw_postep(0, f"0/{len(do_pobrania)}")
 
         def jeden(iid: str) -> bool:
@@ -1008,11 +1043,11 @@ class Aplikacja(ctk.CTk):
             plik = spotify_lista.sciezka_pliku(utwor, lista, folder)
             try:
                 if plik.exists():
-                    self.kolejka.put(("status", (iid, "masz już")))
+                    self.kolejka.put(("status", (iid, t("masz już"))))
                     return True
-                self.kolejka.put(("status", (iid, "szukam…")))
+                self.kolejka.put(("status", (iid, t("szukam…"))))
                 if not (utwor.youtube_id or spotify_lista.dopasuj(utwor, klient_yt_music())):
-                    self.kolejka.put(("status", (iid, "✗ brak na YouTube")))
+                    self.kolejka.put(("status", (iid, "✗ " + t("brak na YouTube"))))
                     return False
                 plik.parent.mkdir(parents=True, exist_ok=True)
                 proces = subprocess.Popen(komenda_utworu(utwor.youtube_id, plik), stdout=subprocess.PIPE,
@@ -1021,18 +1056,18 @@ class Aplikacja(ctk.CTk):
                 for linia in proces.stdout:
                     tekst = linia.decode("utf-8", errors="replace").strip()
                     if (procent := procent_postepu(tekst)) is not None:
-                        self.kolejka.put(("status", (iid, f"pobieram {procent:.0f} %")))
+                        self.kolejka.put(("status", (iid, t("pobieram {p} %").format(p=f"{procent:.0f}"))))
                 kod = proces.wait()
                 self.procesy_listy.discard(proces)
                 if kod != 0 or not plik.exists():
-                    self.kolejka.put(("status", (iid, "✗ przerwano" if self.przerwij_liste.is_set() else "✗ błąd")))
+                    self.kolejka.put(("status", (iid, "✗ " + t("przerwano" if self.przerwij_liste.is_set() else "błąd"))))
                     return False
-                self.kolejka.put(("status", (iid, "zapisuję…")))
+                self.kolejka.put(("status", (iid, t("zapisuję…"))))
                 spotify_lista.otaguj(plik, utwor, lista)
-                self.kolejka.put(("status", (iid, "✓ pobrano")))
+                self.kolejka.put(("status", (iid, "✓ " + t("pobrano"))))
                 return True
             except Exception as e:
-                self.kolejka.put(("status", (iid, "✗ błąd")))
+                self.kolejka.put(("status", (iid, "✗ " + t("błąd"))))
                 self.kolejka.put(("log", f"✖ {utwor.wykonawca} - {utwor.tytul}: {e}"))
                 return False
 
@@ -1053,11 +1088,12 @@ class Aplikacja(ctk.CTk):
             self._ustaw_zaznaczenie(iid, False)  # zostają zaznaczone tylko nieudane = „spróbuj ponownie”
         self._schowaj_postep()
         przerwane = self.przerwij_liste.is_set()
-        self._dopisz(("■ Zatrzymano. " if przerwane else "✔ Gotowe. ") + f"Pobrano {len(udane)} z {len(udane) + len(nieudane)}.")
+        self._dopisz(t("■ Zatrzymano. " if przerwane else "✔ Gotowe. ")
+                     + t("Pobrano {n} z {m}.").format(n=len(udane), m=len(udane) + len(nieudane)))
         if nieudane and not przerwane:
-            self._dopisz(f"Nie udało się {len(nieudane)} – zostały zaznaczone; kliknij „Pobierz zaznaczone”, "
-                         "żeby spróbować jeszcze raz.")
-        self.przycisk_pobierz.configure(text=f"Pobierz zaznaczone ({len(self.zaznaczone)})")
+            self._dopisz(t("Nie udało się {n} – zostały zaznaczone; kliknij „Pobierz zaznaczone”, "
+                           "żeby spróbować jeszcze raz.").format(n=len(nieudane)))
+        self.przycisk_pobierz.configure(text=t("Pobierz zaznaczone ({n})").format(n=len(self.zaznaczone)))
 
     # ---------- odsłuch ----------
 
@@ -1066,19 +1102,19 @@ class Aplikacja(ctk.CTk):
             self._zatrzymaj_odsluch()
             return
         if not shutil.which("ffplay"):
-            messagebox.showwarning("Odsłuch", "Brak ffplay (część ffmpeg) - zainstaluj program ponownie.")
+            messagebox.showwarning(t("Odsłuch"), t("Brak ffplay (część ffmpeg) - zainstaluj program ponownie."))
             return
         utwor = None
         if self.lista:  # lista Spotify: odsłuch zaznaczonego wiersza (dopasowanie w YouTube Music w tle)
             wybrane = self.wyniki.selection()
             if not wybrane:
-                messagebox.showinfo("Odsłuch", "Kliknij utwór na liście, który chcesz odsłuchać.")
+                messagebox.showinfo(t("Odsłuch"), t("Kliknij utwór na liście, który chcesz odsłuchać."))
                 return
             utwor, link = self.wiersze_listy[wybrane[0]], ""
         else:
             link = self.link.get().strip()
             if rozpoznaj_zrodlo(link) != "youtube":
-                messagebox.showinfo("Odsłuch", "Wybierz utwór z wyników albo wklej link z YouTube.")
+                messagebox.showinfo(t("Odsłuch"), t("Wybierz utwór z wyników albo wklej link z YouTube."))
                 return
         self.odsluch_nr += 1
         self._pokaz_odsluch(True)
@@ -1086,7 +1122,7 @@ class Aplikacja(ctk.CTk):
         def w_tle(nr: int, link: str):
             if utwor is not None:
                 if not (utwor.youtube_id or spotify_lista.dopasuj(utwor, klient_yt_music())):
-                    self.kolejka.put(("log", f"✖ Nie znalazłem „{utwor.tytul}” na YouTube Music."))
+                    self.kolejka.put(("log", t("✖ Nie znalazłem „{tytul}” na YouTube Music.").format(tytul=utwor.tytul)))
                     if nr == self.odsluch_nr:
                         self.kolejka.put(("odsluch_koniec", None))
                     return
@@ -1115,13 +1151,13 @@ class Aplikacja(ctk.CTk):
                 lista = self._yt_dlp("--flat-playlist", "--print", "url", "--", link).stdout.split()
             else:
                 lista = [link]
-            nastepny = self._strumien(lista[0]) if lista else (None, "pusta playlista")
+            nastepny = self._strumien(lista[0]) if lista else (None, t("pusta playlista"))
             for i in range(len(lista)):
                 tytul, adres = nastepny
                 if nr != self.odsluch_nr:
                     return  # w międzyczasie kliknięto Stop albo inny utwór
                 if tytul is None:
-                    self.kolejka.put(("log", f"✖ Nie da się odtworzyć: {adres}"))
+                    self.kolejka.put(("log", t("✖ Nie da się odtworzyć: {blad}").format(blad=adres)))
                 else:
                     numer = f"[{i + 1}/{len(lista)}] " if len(lista) > 1 else ""
                     self.kolejka.put(("log", f"🎧 {numer}{tytul}"))
@@ -1134,7 +1170,7 @@ class Aplikacja(ctk.CTk):
                 if tytul is not None:
                     self.odsluch.wait()  # kończy się sam albo przez ⏭ (kill) - wtedy lecimy dalej
         except Exception as e:
-            self.kolejka.put(("log", f"✖ Odsłuch nie działa: {e}"))
+            self.kolejka.put(("log", t("✖ Odsłuch nie działa: {e}").format(e=e)))
         finally:
             if nr == self.odsluch_nr:
                 self.odsluch = None
@@ -1143,10 +1179,10 @@ class Aplikacja(ctk.CTk):
     def _pokaz_odsluch(self, gra: bool):
         """W trakcie grania „■ Stop” (różowy) i obok niego „Następny ›”; w spoczynku samo „▶ Odsłuchaj”."""
         if gra:
-            self.przycisk_odsluch.configure(text="■  Stop", fg_color=AKCENT, hover_color=AKCENT_NAJECHANY)
+            self.przycisk_odsluch.configure(text=t("■  Stop"), fg_color=AKCENT, hover_color=AKCENT_NAJECHANY)
             self.przycisk_nastepny.pack(side="left", padx=(6, 0), after=self.przycisk_odsluch)
         else:
-            self.przycisk_odsluch.configure(text="▶  Odsłuchaj", fg_color=POLE, hover_color=OBRYS)
+            self.przycisk_odsluch.configure(text=t("▶  Odsłuchaj"), fg_color=POLE, hover_color=OBRYS)
             self.przycisk_nastepny.pack_forget()
 
     def _nastepny(self):
@@ -1170,7 +1206,7 @@ class Aplikacja(ctk.CTk):
             return
         link = self.link.get().strip()
         if not rozpoznaj_zrodlo(link):
-            messagebox.showwarning("Zły link", "Wybierz coś z wyników albo wklej link z YouTube lub Spotify.")
+            messagebox.showwarning(t("Zły link"), t("Wybierz coś z wyników albo wklej link z YouTube lub Spotify."))
             return
         if rozpoznaj_zrodlo(link) == "spotify":  # Spotify zawsze przez listę: najpierw widzisz, co pobierzesz
             self.wczytaj_spotify(link)
@@ -1180,7 +1216,7 @@ class Aplikacja(ctk.CTk):
 
         self.przycisk_pobierz.configure(state="disabled")
         self._ustaw_postep(None)
-        self._dopisz(f"▶ Start ({rozpoznaj_zrodlo(link)}): {link}")
+        self._dopisz(t("▶ Start ({zrodlo}): {link}").format(zrodlo=rozpoznaj_zrodlo(link), link=link))
         threading.Thread(target=self._uruchom, args=(zbuduj_komende(link, folder),), daemon=True).start()
 
     def _uruchom(self, komenda: list[str]):
@@ -1197,9 +1233,9 @@ class Aplikacja(ctk.CTk):
                 if tekst:
                     self._przetworz_linie(tekst)
             kod = self.proces.wait()
-            self.kolejka.put(("log", "✔ Gotowe." if kod == 0 else f"✖ Błąd (kod {kod}) - szczegóły wyżej."))
+            self.kolejka.put(("log", t("✔ Gotowe.") if kod == 0 else t("✖ Błąd (kod {kod}) - szczegóły wyżej.").format(kod=kod)))
         except Exception as e:
-            self.kolejka.put(("log", f"✖ Nie udało się uruchomić: {e}"))
+            self.kolejka.put(("log", t("✖ Nie udało się uruchomić: {e}").format(e=e)))
         finally:
             self.proces = None
             self.kolejka.put(("koniec", None))
@@ -1251,7 +1287,7 @@ class Aplikacja(ctk.CTk):
                     pasek, stan, procent = wartosc
                     if pasek.winfo_exists():
                         pasek.set(procent / 100)
-                        stan.configure(text=f"Pobieram nową wersję… {procent:.0f}%")
+                        stan.configure(text=t("Pobieram nową wersję… {p}%").format(p=f"{procent:.0f}"))
                 elif rodzaj == "aktualizacja_gotowa":
                     self._zainstaluj_aktualizacje(wartosc)
                     return  # okno zamknięte - koniec pętli
@@ -1259,7 +1295,7 @@ class Aplikacja(ctk.CTk):
                     okno, blad = wartosc
                     if okno.winfo_exists():
                         okno.destroy()
-                    messagebox.showerror("Aktualizacja", f"Nie udało się pobrać aktualizacji:\n{blad}")
+                    messagebox.showerror(t("Aktualizacja"), t("Nie udało się pobrać aktualizacji:\n{blad}").format(blad=blad))
                 else:
                     self._dopisz(wartosc)
         except queue.Empty:

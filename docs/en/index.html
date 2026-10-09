@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nutka – mp3 from YouTube and Spotify</title>
+<meta name="description" content="Type a title or paste a YouTube or Spotify link and get an mp3 with cover art on your own computer. A free, open-source Windows app.">
+<link rel="icon" href="../favicon.ico">
+<link rel="alternate" hreflang="pl" href="https://matmiccode.github.io/nutka/">
+<link rel="alternate" hreflang="en" href="https://matmiccode.github.io/nutka/en/">
+<link rel="alternate" hreflang="x-default" href="https://matmiccode.github.io/nutka/">
+<meta property="og:title" content="Nutka – mp3 from YouTube and Spotify">
+<meta property="og:description" content="Type a title or paste a YouTube or Spotify link and get an mp3 with cover art on your own computer. Free and open source.">
+<meta property="og:image" content="https://matmiccode.github.io/nutka/img/en/okno.png">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/v1/matcode.css">
+<link rel="stylesheet" href="../nutka.css">
+</head>
+<body>
+
+<div class="nuty" role="presentation"></div>
+<header class="wrap top">
+  <a class="marka" href="./"><img src="../img/nutka-256.png" alt="" width="36" height="36">Nutka</a>
+  <nav>
+    <a href="#how">How it works</a>
+    <a href="#privacy" class="ukryj-mobile">Privacy</a>
+    <a href="instrukcja.html">Guide</a>
+    <a href="https://github.com/matmiccode/nutka" class="ukryj-mobile">Code</a>
+    <a href="../" class="ukryj-mobile" lang="pl">Polski</a>
+    <a class="btn btn-primary btn-sm" href="https://github.com/matmiccode/nutka/releases/latest" data-pobierz>Download</a>
+  </nav>
+</header>
+
+<main>
+
+<section class="wrap hero">
+  <div>
+    <h1>Type a title. Get an mp3 on your own computer.</h1>
+    <p class="lead">Nutka searches YouTube Music, lets you listen first and saves the track as an mp3 with cover art and tags. It also downloads whole albums and playlists from Spotify. No account, no ads, nothing about you is sent anywhere.</p>
+    <div class="cta">
+      <a class="btn btn-primary" href="https://github.com/matmiccode/nutka/releases/latest" data-pobierz>Download Nutka for Windows</a>
+      <a class="btn btn-quiet" href="https://github.com/matmiccode/nutka">Source code</a>
+    </div>
+    <p class="drobne"><span data-wersja>Version 1.4.0</span> · Windows 10 and 11, 64-bit · free, MIT license · Polish and English</p>
+  </div>
+
+  <div class="demo" aria-label="Example: a typed artist name, search results and a finished mp3 file">
+    <div class="demo-pole">
+      <div class="wpis"><span>dawid podsiadło</span></div>
+      <div class="szukaj">Search</div>
+    </div>
+    <ul class="demo-wyniki">
+      <li><div><b>na błysk</b><small>Dawid Podsiadło · na błysk</small></div><time>3:50</time></li>
+      <li class="wybrany"><div><b>Małomiasteczkowy</b><small>Dawid Podsiadło · Małomiasteczkowy</small></div><time>3:24</time></li>
+      <li><div><b>sezon</b><small>Dawid Podsiadło · sezon</small></div><time>3:02</time></li>
+    </ul>
+    <div class="demo-pasek" role="presentation"></div>
+    <div class="demo-gotowe">
+      <div class="okladka" role="presentation"></div>
+      <div><span>✓ Dawid Podsiadło – Małomiasteczkowy.mp3</span><small>cover, artist, album and year in the file · Music\Nutka</small></div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <div class="sekcja-naglowek">
+      <h2>Three steps</h2>
+      <p>No account, no settings, nothing to learn.</p>
+    </div>
+    <ol class="kroki">
+      <li>
+        <h3>Type or paste</h3>
+        <p>A title, an artist, or a link to a track, album or playlist on YouTube or Spotify. Results come from YouTube Music, so they land on the official versions.</p>
+      </li>
+      <li>
+        <h3>Listen</h3>
+        <p>Select a result and click Listen. An album plays track by track, and clicking another result switches straight away.</p>
+      </li>
+      <li>
+        <h3>Download the mp3</h3>
+        <p>Double-click a result or click Download mp3. With a Spotify playlist, untick what you don't want and click Download selected.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section id="features">
+  <div class="wrap">
+    <div class="sekcja-naglowek">
+      <h2>What it does</h2>
+    </div>
+    <dl class="cechy">
+      <div>
+        <dt>YouTube Music search</dt>
+        <dd>Type an artist or a title. The “Albums” switch shows whole records, which you download with one click.</dd>
+      </div>
+      <div>
+        <dt>Listen before you download</dt>
+        <dd>Play a track or a whole album in order before anything lands on your disk.</dd>
+      </div>
+      <div>
+        <dt>Spotify playlists and albums</dt>
+        <dd>Paste a playlist or album link. You get the track list with tick boxes, and Nutka downloads the ticked ones three at a time.</dd>
+      </div>
+      <div>
+        <dt>Picks up only what's new</dt>
+        <dd>Load the same playlist a week later. What you already have is unticked, so you download only the new tracks.</dd>
+      </div>
+      <div>
+        <dt>Tidy files</dt>
+        <dd>mp3 at roughly 250–270 kbps with cover art and tags: title, artist, album, track number, year. Albums and playlists go into their own folders.</dd>
+      </div>
+      <div>
+        <dt>Keeps itself up to date</dt>
+        <dd>The download engine refreshes quietly, because YouTube changes its site now and then. A new version of the app is installed only when it is signed with the author's key.</dd>
+      </div>
+    </dl>
+  </div>
+</section>
+
+<section id="window">
+  <div class="wrap">
+    <div class="sekcja-naglowek">
+      <h2>What it looks like</h2>
+      <p>Search box on top, results in the middle, buttons and short messages at the bottom. With a Spotify playlist every track shows its own status.</p>
+    </div>
+    <figure>
+      <img src="../img/en/okno.png" alt="The Nutka window: search results for Dawid Podsiadło with one selected, the Link and Save to fields below, and the Download mp3 and Listen buttons" width="976" height="759">
+      <figcaption>Nutka 1.4 on Windows 11.</figcaption>
+    </figure>
+    <figure>
+      <img src="../img/en/playlista.png" alt="Nutka with a Spotify playlist loaded: a list of tracks with tick boxes and a download status next to each, the Stop button and a progress bar" width="976" height="759">
+      <figcaption>A Spotify playlist being downloaded: a track that failed is shown in red, and “already yours” marks a file that is already in the folder.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="privacy">
+  <div class="wrap">
+    <div class="sekcja-naglowek">
+      <h2>Privacy</h2>
+      <p>A music app doesn't need to know who you are. Nutka has no account, no telemetry and no ads.</p>
+    </div>
+    <dl class="cechy">
+      <div>
+        <dt>Your files stay with you</dt>
+        <dd>mp3 files go to the folder you choose, settings live on your disk. After uninstalling, the app is gone entirely and the music stays.</dd>
+      </div>
+      <div>
+        <dt>What it connects to</dt>
+        <dd>YouTube for results and audio. Spotify for public playlist data: titles, artists, cover art; nothing is decrypted. PyPI every 6 hours for a newer download engine, with a checksum. GitHub to check for a new version.</dd>
+      </div>
+      <div>
+        <dt>Open source</dt>
+        <dd>The code is public under the MIT license. Anyone can check what the app does and build it themselves.</dd>
+      </div>
+      <div>
+        <dt>Signed releases</dt>
+        <dd>An update is installed only when the release is signed with the author's key built into the app. A GitHub account alone is not enough.</dd>
+      </div>
+    </dl>
+    <p class="muted small odstep">Nutka is a tool for private use. Download for yourself and don't distribute the files.</p>
+  </div>
+</section>
+
+<section id="download">
+  <div class="wrap">
+    <div class="sekcja-naglowek">
+      <h2>Before you download</h2>
+    </div>
+    <table>
+      <tr><th>System</th><td>Windows 10 or 11, 64-bit</td></tr>
+      <tr><th>Disk space</th><td>about 400 MB (the installer is 118 MB)</td></tr>
+      <tr><th>Internet</th><td>for searching and downloading; the guide works offline too</td></tr>
+      <tr><th>Permissions</th><td>installs without administrator rights, in your user folder</td></tr>
+      <tr><th>Language</th><td>follows your Windows language (Polish or English); switch anytime with the EN / PL button in the top-right corner</td></tr>
+    </table>
+    <div class="uwaga odstep">
+      <p><strong>Windows will warn you on first install</strong> (“Windows protected your PC”), because the installer has no paid publisher certificate. Click <em>More info</em>, then <em>Run anyway</em>. The installation needs no administrator rights and asks no questions.</p>
+    </div>
+    <div class="cta odstep-duzy">
+      <a class="btn btn-primary" href="https://github.com/matmiccode/nutka/releases/latest" data-pobierz>Download Nutka for Windows</a>
+      <a class="btn btn-quiet" href="instrukcja.html">User guide</a>
+      <a class="btn btn-quiet" href="https://github.com/matmiccode/nutka/releases">All releases and changes</a>
+    </div>
+    <p class="muted small odstep">A problem or an idea? <a href="https://github.com/matmiccode/nutka/issues/new">Write on GitHub</a>.</p>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div>MATCODE · <a href="https://matmiccode.github.io/">other apps</a></div>
+    <nav>
+      <a href="https://buycoffee.to/matcode">Buy the author a coffee</a>
+      <a href="https://github.com/matmiccode/nutka/blob/master/THIRD-PARTY.md">Third-party licenses</a>
+      <a href="https://github.com/matmiccode/nutka/blob/master/LICENSE">MIT license</a>
+      <a href="https://github.com/matmiccode">GitHub</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+// Version number and a direct link to the installer from the latest release.
+// Without a response (offline, API limit) the values written into the page stay.
+(async () => {
+  try {
+    const odp = await fetch("https://api.github.com/repos/matmiccode/nutka/releases/latest",
+                            { headers: { Accept: "application/vnd.github+json" } });
+    if (!odp.ok) return;
+    const dane = await odp.json();
+    const wersja = String(dane.tag_name || "").replace(/^v/, "");
+    const plik = (dane.assets || []).find(z => z.name === "Nutka-Setup.exe");
+    if (wersja) document.querySelectorAll("[data-wersja]").forEach(e => { e.textContent = "Version " + wersja; });
+    if (plik) document.querySelectorAll("[data-pobierz]").forEach(e => { e.href = plik.browser_download_url; });
+  } catch (_) { /* the page works without it */ }
+})();
+</script>
+</body>
+</html>

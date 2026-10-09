@@ -12,6 +12,8 @@ from dataclasses import dataclass, field
 from difflib import SequenceMatcher
 from pathlib import Path
 
+from teksty import t
+
 
 @dataclass
 class Utwor:
@@ -113,7 +115,7 @@ def wczytaj(link: str) -> Lista:
                   rok=((album.get("date") or {}).get("isoString") or "")[:4])
         return Lista(u.tytul, "utwór", [u])
 
-    raise ValueError("To nie jest link do utworu, albumu ani playlisty Spotify.")
+    raise ValueError(t("To nie jest link do utworu, albumu ani playlisty Spotify."))
 
 
 # ---------- dopasowanie w YouTube Music ----------
@@ -176,7 +178,7 @@ def bezpieczna_nazwa(tekst: str) -> str:
 def sciezka_pliku(utwor: Utwor, lista: Lista, folder: Path) -> Path:
     """Stała nazwa pliku = rozpoznawanie, co już masz (synchronizacja playlisty).
     Album: podfolder + numer utworu; playlista: podfolder bez numerów (kolejność w playliście się zmienia)."""
-    nazwa = bezpieczna_nazwa(f"{utwor.wykonawcy[0] if utwor.wykonawcy else 'Nieznany'} - {utwor.tytul}")
+    nazwa = bezpieczna_nazwa(f"{utwor.wykonawcy[0] if utwor.wykonawcy else t('Nieznany')} - {utwor.tytul}")
     if lista.rodzaj == "utwór":
         plik = folder / f"{nazwa}.mp3"
     else:
