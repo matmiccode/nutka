@@ -129,13 +129,13 @@ Copy-Item LICENSE, THIRD-PARTY.md (Join-Path $build "dist\Nutka") -ErrorAction S
 $instrukcja = Join-Path $build "dist\Nutka\instrukcja"
 New-Item -ItemType Directory -Force (Join-Path $instrukcja "img") | Out-Null
 Copy-Item "docs\nutka.css", "docs\favicon.ico" $instrukcja
-Copy-Item "docs\img\okno.png", "docs\img\playlista.png", "docs\img\nutka-256.png" (Join-Path $instrukcja "img")
+Copy-Item "docs\img\okno.png", "docs\img\playlista.png", "docs\img\wideo.png", "docs\img\nutka-256.png" (Join-Path $instrukcja "img")
 Invoke-WebRequest "https://matmiccode.github.io/css/v1/matcode.css" -OutFile (Join-Path $instrukcja "matcode.css") -UseBasicParsing
 $html = (Get-Content "docs\instrukcja.html" -Raw -Encoding UTF8).Replace('href="/css/v1/matcode.css"', 'href="matcode.css"')
 [IO.File]::WriteAllText((Join-Path $instrukcja "instrukcja.html"), $html, [Text.UTF8Encoding]::new($false))
 # wersja angielska: instrukcja\en\instrukcja.html (otwiera ją program w angielskim oknie), zrzuty w img\en
 New-Item -ItemType Directory -Force (Join-Path $instrukcja "en"), (Join-Path $instrukcja "img\en") | Out-Null
-Copy-Item "docs\img\en\okno.png", "docs\img\en\playlista.png" (Join-Path $instrukcja "img\en")
+Copy-Item "docs\img\en\okno.png", "docs\img\en\playlista.png", "docs\img\en\wideo.png" (Join-Path $instrukcja "img\en")
 $htmlEn = (Get-Content "docs\en\instrukcja.html" -Raw -Encoding UTF8).Replace('href="/css/v1/matcode.css"', 'href="../matcode.css"')
 [IO.File]::WriteAllText((Join-Path $instrukcja "en\instrukcja.html"), $htmlEn, [Text.UTF8Encoding]::new($false))
 

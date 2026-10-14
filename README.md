@@ -2,7 +2,7 @@
 
 # Nutka
 
-**Darmowy program do pobierania muzyki w mp3 – z YouTube, YouTube Music i playlist Spotify.**
+**Darmowy program do pobierania muzyki w mp3 i filmów w mp4 – z YouTube, YouTube Music i playlist Spotify.**
 
 [![Najnowsza wersja](https://img.shields.io/github/v/release/matmiccode/nutka?label=wersja&color=e0479e)](https://github.com/matmiccode/nutka/releases/latest)
 [![Pobrania](https://img.shields.io/github/downloads/matmiccode/nutka/total?label=pobrania&color=8e2fb8)](https://github.com/matmiccode/nutka/releases)
@@ -25,6 +25,8 @@
 - **Odsłuch przed pobraniem** – pojedynczy utwór albo cały album po kolei.
 - **Playlisty i albumy ze Spotify** – wklej link, zobacz listę utworów, odznacz, czego nie chcesz, pobierz resztę.
   Przy kolejnym wczytaniu tej samej playlisty Nutka pobiera tylko nowe utwory.
+- **Filmy z YouTube** – przełącz **Muzyka / Wideo** na **Wideo**, wklej link do filmu albo playlisty i wybierz
+  jakość (1080p, 720p, 480p albo najwyższa). Wielogodzinne nagrania też. Filmy mają osobny folder.
 - **Dobra jakość i porządek** – mp3 VBR ~250–270 kbps z okładką i tagami (tytuł, wykonawca, album, numer, rok).
   Albumy i playlisty trafiają do osobnych folderów.
 - **Sam się aktualizuje** – silnik pobierania odświeża się po cichu, a o nowej wersji programu Nutka
@@ -56,8 +58,9 @@ Wymagania: Windows 10 lub 11 (64-bit), ~400 MB miejsca, internet do wyszukiwania
 | pobrać playlistę ze Spotify | w Spotify: **… → Udostępnij → Kopiuj link**, wklej w wyszukiwarkę → Enter → **Pobierz zaznaczone** |
 | dociągnąć nowe utwory z playlisty | wczytaj ją jeszcze raz – to, co już masz, jest odznaczone |
 | pobrać z linku YouTube | wklej link w pole **Link** → **Pobierz mp3** |
+| pobrać film z YouTube | przełącz **Muzyka / Wideo** na **Wideo**, wybierz jakość, wklej link → **Pobierz wideo** |
 
-Pliki trafiają do `Muzyka\Pobrane` (zmienisz to przyciskiem **Wybierz…**).
+Pliki trafiają do `Muzyka\Pobrane`, filmy do `Filmy\Pobrane` (zmienisz to przyciskiem **Wybierz…**).
 Pełną instrukcję otworzysz w programie przyciskiem **Instrukcja** (działa bez internetu). Jest też online:
 [matmiccode.github.io/nutka/instrukcja.html](https://matmiccode.github.io/nutka/instrukcja.html).
 

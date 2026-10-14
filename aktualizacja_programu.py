@@ -108,8 +108,13 @@ def czytaj_ustawienia() -> dict:
 
 
 def zapisz_ustawienie(klucz: str, wartosc):
+    zapisz_ustawienia({klucz: wartosc})
+
+
+def zapisz_ustawienia(nowe: dict):
+    """Dopisuje (nadpisuje) podane klucze w ustawienia.json, reszta zostaje."""
     ustawienia = czytaj_ustawienia()
-    ustawienia[klucz] = wartosc
+    ustawienia.update(nowe)
     try:
         USTAWIENIA.parent.mkdir(parents=True, exist_ok=True)
         USTAWIENIA.write_text(json.dumps(ustawienia, indent=1), encoding="utf-8")

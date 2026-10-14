@@ -3,6 +3,22 @@
 Format: najnowsze na górze. Sekcja wersji jest jednocześnie opisem „Co nowego”, który program pokazuje
 przy proponowaniu aktualizacji – pisz ją dla zwykłego użytkownika.
 
+## [1.5.0] – 2026-10-14
+
+- **Nutka pobiera też filmy.** Obok pola „Link” jest przełącznik **Muzyka / Wideo**. W trybie „Wideo” link
+  z YouTube (pojedynczy film albo cała playlista, także wielogodzinne nagrania) zapisuje się jako plik mp4,
+  a obok wybierasz jakość: 1080p, 720p, 480p albo Najwyższa. Do 1080p Nutka bierze obraz H.264 i dźwięk AAC,
+  więc plik gra na komputerze, telefonie i telewizorze bez dodatkowych kodeków.
+- Filmy mają własny folder (domyślnie **Filmy \ Pobrane**), żeby nie mieszały się z muzyką. Pole „Zapisz do”
+  pokazuje folder tego, co właśnie pobierasz.
+- Nutka pamięta wybrane foldery, tryb i jakość między uruchomieniami.
+- Ze Spotify, tak jak dotąd, pobiera się tylko muzyka – po wczytaniu listy program sam przełącza się na „Muzyka”.
+
+In English: Nutka now downloads videos too. Next to the “Link” field there is a **Music / Video** switch: in “Video”
+mode a YouTube link (a single video or a whole playlist, hours-long recordings included) is saved as an mp4 in the
+quality you pick (1080p, 720p, 480p or Highest). Videos get their own folder (Videos \ Nutka by default), and Nutka
+remembers your folders, mode and quality. Spotify stays music-only.
+
 ## [1.4.0] – 2026-10-09
 
 - **Nutka mówi też po angielsku.** Na komputerze z Windowsem w innym języku niż polski program sam startuje

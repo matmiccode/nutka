@@ -73,7 +73,11 @@ EN = {
     "Wklej": "Paste",
     "Zapisz do": "Save to",
     "Wybierz…": "Browse…",
+    "Muzyka": "Music",
+    "Wideo": "Video",
+    "Najwyższa": "Highest",
     "Pobierz mp3": "Download mp3",
+    "Pobierz wideo": "Download video",
     "▶  Odsłuchaj": "▶  Listen",
     "■  Stop": "■  Stop",
     "Następny  ›": "Next  ›",
@@ -138,6 +142,9 @@ EN = {
     "Wybierz coś z wyników albo wklej link z YouTube lub Spotify.":
         "Pick something from the results or paste a YouTube or Spotify link.",
     "▶ Start ({zrodlo}): {link}": "▶ Start ({zrodlo}): {link}",
+    "▶ Start (wideo {jakosc}): {link}": "▶ Start (video {jakosc}): {link}",
+    "♫ Ze Spotify Nutka pobiera tylko muzykę (mp3) – przełączam na „Muzyka”.":
+        "♫ From Spotify Nutka downloads music only (mp3) – switching to “Music”.",
     "✔ Gotowe.": "✔ Done.",
     "✖ Błąd (kod {kod}) - szczegóły wyżej.": "✖ Error (code {kod}) – details above.",
     "✖ Nie udało się uruchomić: {e}": "✖ Couldn't start: {e}",

@@ -1,6 +1,6 @@
-"""Nutka - okienko: wyszukujesz albo wklejasz link (YouTube lub Spotify), dostajesz mp3.
+"""Nutka - okienko: wyszukujesz albo wklejasz link (YouTube lub Spotify), dostajesz mp3 albo film mp4.
 
-YouTube  -> yt-dlp pobiera audio i konwertuje do mp3 (ffmpeg).
+YouTube  -> yt-dlp pobiera audio i konwertuje do mp3 (ffmpeg); w trybie „Wideo” obraz + dźwięk sklejone do mp4.
 Spotify  -> lista utworów (spotapi), każdy dopasowany w YouTube Music i stamtąd pobrany (spotify_lista.py).
 Szukaj   -> wyniki z YouTube Music (ytmusicapi), odsłuch przez ffplay.
 Exe sam po cichu aktualizuje yt-dlp, ytmusicapi i spotapi (aktualizacje.py), a nową wersję programu
@@ -36,11 +36,19 @@ from teksty import t
 # język interfejsu: NUTKA_JEZYK (testy) > wybór z przełącznika w nagłówku (ustawienia.json) > język Windows
 teksty.ustaw(os.environ.get("NUTKA_JEZYK") or aktualizacja_programu.czytaj_ustawienia().get("jezyk"))
 
-WERSJA = "1.4.0"  # jedyne źródło wersji: czyta ją zbuduj.ps1 (instalator, wydanie na GitHubie) i aktualizacja_programu
+WERSJA = "1.5.0"  # jedyne źródło wersji: czyta ją zbuduj.ps1 (instalator, wydanie na GitHubie) i aktualizacja_programu
 REPO_GITHUB = "matmiccode/nutka"  # skąd program bierze informację o nowych wersjach (GitHub Releases)
 BUYCOFFEE_URL = "https://buycoffee.to/matcode"  # profil na buycoffee.to - pusty = przycisk „Postaw kawę” się nie pokazuje
 STRONA_INSTRUKCJI = "https://matmiccode.github.io/nutka/instrukcja.html"  # ta sama strona co docs/instrukcja.html obok exe
 DOMYSLNY_FOLDER = Path.home() / "Music" / t("Pobrane")  # po angielsku Music\Nutka
+DOMYSLNY_FOLDER_WIDEO = Path.home() / "Videos" / t("Pobrane")  # filmy osobno od muzyki: Filmy\Pobrane (en: Videos\Nutka)
+# jakość wideo: klucz w ustawieniach -> kolejność formatów yt-dlp (-S). Do 1080p wolimy H.264 + AAC, bo taki mp4 gra
+# wszędzie (Windows, telefon, telewizor); „najwyższa” bierze też 1440p/4K, które YouTube ma tylko w VP9/AV1 -
+# zostają bez przekodowania (ffmpeg tylko skleja), więc starszy telewizor może takiego pliku nie odtworzyć
+JAKOSCI_WIDEO = {"najwyzsza": "res,vcodec:h264,acodec:aac", "1080p": "res:1080,vcodec:h264,acodec:aac",
+                 "720p": "res:720,vcodec:h264,acodec:aac", "480p": "res:480,vcodec:h264,acodec:aac"}
+NAZWY_JAKOSCI = {"najwyzsza": t("Najwyższa"), "1080p": "1080p", "720p": "720p", "480p": "480p"}  # napisy na liście
+DOMYSLNA_JAKOSC = "1080p"
 PODPIS = "MATCODE"
 ROWNOLEGLE_POBIERANIA = 3  # lista Spotify: ile utworów naraz
 # wklejony tekst trafia jako argument do yt-dlp, więc „link” = tylko http(s) na jednym z tych hostów (rozpoznaj_zrodlo)
@@ -137,7 +145,8 @@ def to_playlista_yt(link: str) -> bool:
     return "/playlist?" in link or "music.youtube.com/browse/" in link
 
 
-def zbuduj_komende(link: str, folder: Path) -> list[str]:
+def zbuduj_komende(link: str, folder: Path, jakosc_wideo: str | None = None) -> list[str]:
+    """yt-dlp dla linku z YouTube: mp3 (domyślnie) albo film mp4 w podanej jakości (klucz z JAKOSCI_WIDEO)."""
     zrodlo = rozpoznaj_zrodlo(link)
     if zrodlo == "youtube":
         if to_playlista_yt(link):
@@ -149,10 +158,16 @@ def zbuduj_komende(link: str, folder: Path) -> list[str]:
         else:
             # "Wykonawca - Tytuł" gdy YT Music zna wykonawcę; zwykłe filmy mają go zwykle już w tytule
             szablon = ["-o", "%(artists.0&{} - |)s%(title)s.%(ext)s", "--no-playlist"]
+        if jakosc_wideo:
+            # obraz i dźwięk osobno (tak YouTube trzyma wszystko powyżej 360p), ffmpeg skleja je do mp4 bez przekodowania;
+            # bez okładki - w mp4 byłaby drugą ścieżką obrazu, którą część odtwarzaczy bierze za film
+            format_pliku = ["-f", "bv*+ba/b", "-S", JAKOSCI_WIDEO[jakosc_wideo], "--merge-output-format", "mp4",
+                            "--embed-metadata"]
+        else:
+            format_pliku = ["-x", "--audio-format", "mp3", "--audio-quality", "0", "--embed-thumbnail", "--embed-metadata"]
         return [
             *narzedzie("yt-dlp"),
-            "-x", "--audio-format", "mp3", "--audio-quality", "0",
-            "--embed-thumbnail", "--embed-metadata",
+            *format_pliku,
             # zamiast pełnego logu: tylko nasze znaczniki, które GUI rozumie
             "-q", "--no-warnings", "--ignore-config", "--no-simulate", "--color", "never",
             "--progress", "--newline",
@@ -283,7 +298,13 @@ class Aplikacja(ctk.CTk):
         self.linki_wynikow: dict[str, str] = {}
         self._pelne_teksty: dict[str, dict[str, str]] = {}  # iid -> pełny tytuł/wykonawca/album (w tabeli bywa „…”)
         self._skracanie = None
-        self.folder = tk.StringVar(value=str(DOMYSLNY_FOLDER))
+        # foldery, tryb (muzyka/wideo) i jakość wideo wracają z ustawienia.json (_zapisz_ustawienia_pobierania)
+        ustawienia = aktualizacja_programu.czytaj_ustawienia()
+        self.folder = tk.StringVar(value=ustawienia.get("folder") or str(DOMYSLNY_FOLDER))
+        self.folder_wideo = tk.StringVar(value=ustawienia.get("folder_wideo") or str(DOMYSLNY_FOLDER_WIDEO))
+        jakosc = ustawienia.get("jakosc_wideo")
+        self.jakosc = tk.StringVar(value=NAZWY_JAKOSCI[jakosc if jakosc in NAZWY_JAKOSCI else DOMYSLNA_JAKOSC])
+        self.tryb = tk.StringVar(value=t("Wideo") if ustawienia.get("pobieranie") == "wideo" else t("Muzyka"))
         self.link = tk.StringVar()
         self.rodzaj = tk.StringVar(value=t("Utwory"))  # napis z przełącznika; klucz daje _rodzaj_wyszukiwania()
         self._tryb_paska = "determinate"
@@ -300,6 +321,7 @@ class Aplikacja(ctk.CTk):
         self.okno_aktualizacji: ctk.CTkToplevel | None = None
 
         self._zbuduj_ui()
+        self._zmien_tryb(zapisz=False)  # jakość i folder wideo widać tylko w trybie „Wideo”
         self.protocol("WM_DELETE_WINDOW", self._zamknij)
         self.after(100, self._odbierz_logi)
         self.after(150, self._kolor_paska_tytulu)
@@ -584,11 +606,27 @@ class Aplikacja(ctk.CTk):
         pole_link = self._pole(karta_linku, textvariable=self.link)
         pole_link.grid(row=0, column=1, sticky="ew")
         pole_link.bind("<Return>", lambda _: self.pobierz())
-        self._przycisk(karta_linku, t("Wklej"), self._wklej, width=120, height=38).grid(row=0, column=2, padx=(10, 0))
+        # „Muzyka / Wideo” przy linku (jak Utwory/Albumy przy wyszukiwarce): co ma wyjść z pobrania; przy wideo obok
+        # lista jakości, a pole „Zapisz do” pokazuje osobny folder na filmy (_zmien_tryb)
+        self.przelacznik_trybu = ctk.CTkSegmentedButton(
+            karta_linku, values=[t("Muzyka"), t("Wideo")], variable=self.tryb, command=lambda _: self._zmien_tryb(),
+            height=38, corner_radius=10, fg_color=POLE, unselected_color=POLE, unselected_hover_color=OBRYS,
+            selected_color=WYBRANY, selected_hover_color=WYBRANY_NAJECHANY, text_color=TEKST,
+            text_color_disabled=TEKST_SZARY, font=ctk.CTkFont(FONT, 13))
+        self.przelacznik_trybu.grid(row=0, column=2, padx=(10, 0))
+        self.wybor_jakosci = ctk.CTkOptionMenu(
+            karta_linku, values=list(NAZWY_JAKOSCI.values()), variable=self.jakosc, width=112, height=38,
+            corner_radius=10, fg_color=POLE, button_color=POLE, button_hover_color=OBRYS, text_color=TEKST,
+            dropdown_fg_color=KARTA, dropdown_hover_color=WYBRANY, dropdown_text_color=TEKST,
+            font=ctk.CTkFont(FONT, 13), dropdown_font=ctk.CTkFont(FONT, 13),
+            command=lambda _: self._zapisz_ustawienia_pobierania())
+        self.wybor_jakosci.grid(row=0, column=3, padx=(10, 0))
+        self._przycisk(karta_linku, t("Wklej"), self._wklej, width=120, height=38).grid(row=0, column=4, padx=(10, 0))
         ctk.CTkLabel(karta_linku, text=t("Zapisz do"), **opis).grid(row=1, column=0, sticky="w", padx=(2, 12), pady=(8, 0))
-        self._pole(karta_linku, textvariable=self.folder).grid(row=1, column=1, sticky="ew", pady=(8, 0))
+        self.pole_folder = self._pole(karta_linku, textvariable=self.folder)
+        self.pole_folder.grid(row=1, column=1, columnspan=3, sticky="ew", pady=(8, 0))
         self._przycisk(karta_linku, t("Wybierz…"), self._wybierz_folder, width=120, height=38).grid(
-            row=1, column=2, padx=(10, 0), pady=(8, 0))
+            row=1, column=4, padx=(10, 0), pady=(8, 0))
 
         # --- przyciski i pasek postępu ---
         przyciski = ctk.CTkFrame(self, fg_color="transparent")
@@ -752,13 +790,44 @@ class Aplikacja(ctk.CTk):
         if rozpoznaj_zrodlo(tekst) == "spotify":
             self.wczytaj_spotify(tekst)  # playlista/album -> od razu lista do przejrzenia
 
+    def _wideo(self) -> bool:
+        return self.tryb.get() == t("Wideo")
+
+    def _jakosc_wideo(self) -> str:
+        """Klucz z JAKOSCI_WIDEO dla napisu wybranego na liście."""
+        return next((klucz for klucz, napis in NAZWY_JAKOSCI.items() if napis == self.jakosc.get()), DOMYSLNA_JAKOSC)
+
+    def _zmienna_folderu(self) -> tk.StringVar:
+        """Pole „Zapisz do” pokazuje folder muzyki albo filmów - zależnie od przełącznika."""
+        return self.folder_wideo if self._wideo() else self.folder
+
+    def _zmien_tryb(self, zapisz: bool = True):
+        """Przełącznik „Muzyka / Wideo”: lista jakości i folder filmów tylko przy wideo, napis na „Pobierz”."""
+        wideo = self._wideo()
+        if wideo:
+            self.wybor_jakosci.grid()
+        else:
+            self.wybor_jakosci.grid_remove()
+        self.pole_folder.configure(textvariable=self._zmienna_folderu())
+        if not self.lista:  # w trybie listy przycisk ma swój napis („Pobierz zaznaczone (N)” / „Zatrzymaj”)
+            self.przycisk_pobierz.configure(text=t("Pobierz wideo") if wideo else t("Pobierz mp3"))
+        if zapisz:
+            self._zapisz_ustawienia_pobierania()
+
+    def _zapisz_ustawienia_pobierania(self):
+        aktualizacja_programu.zapisz_ustawienia({
+            "folder": self.folder.get().strip(), "folder_wideo": self.folder_wideo.get().strip(),
+            "pobieranie": "wideo" if self._wideo() else "muzyka", "jakosc_wideo": self._jakosc_wideo()})
+
     def _wybierz_folder(self):
-        wybrany = filedialog.askdirectory(initialdir=self.folder.get())
+        zmienna = self._zmienna_folderu()
+        wybrany = filedialog.askdirectory(initialdir=zmienna.get())
         if wybrany:
-            self.folder.set(wybrany)
+            zmienna.set(wybrany)
+            self._zapisz_ustawienia_pobierania()
 
     def _otworz_folder(self):
-        folder = Path(self.folder.get())
+        folder = Path(self._zmienna_folderu().get())
         folder.mkdir(parents=True, exist_ok=True)
         os.startfile(folder)
 
@@ -863,6 +932,11 @@ class Aplikacja(ctk.CTk):
     def _pokaz_liste(self, link: str, lista: spotify_lista.Lista):
         self._schowaj_postep()
         self.przycisk_pobierz.configure(state="normal")
+        if self._wideo():  # Spotify nie ma filmów, a dopasowany „teledysk” z YouTube Music to zwykle sama okładka
+            self.tryb.set(t("Muzyka"))
+            self._zmien_tryb()
+            self._dopisz(t("♫ Ze Spotify Nutka pobiera tylko muzykę (mp3) – przełączam na „Muzyka”."))
+        self.przelacznik_trybu.configure(state="disabled")  # lista zawsze mp3; wraca w zamknij_liste
         self.lista = lista
         self.wiersze_listy.clear()
         self.zaznaczone.clear()
@@ -989,6 +1063,7 @@ class Aplikacja(ctk.CTk):
         self._pokaz_kolumny(("tytul", "wykonawca", "album", "czas"))
         self.pasek_listy.grid_remove()
         self.przycisk_pobierz.configure(text=t("Pobierz mp3"))
+        self.przelacznik_trybu.configure(state="normal")
         self._pokaz_pusta()
 
     def _ustaw_zaznaczenie(self, iid: str, zaznacz: bool):
@@ -1211,13 +1286,18 @@ class Aplikacja(ctk.CTk):
         if rozpoznaj_zrodlo(link) == "spotify":  # Spotify zawsze przez listę: najpierw widzisz, co pobierzesz
             self.wczytaj_spotify(link)
             return
-        folder = Path(self.folder.get())
+        folder = Path(self._zmienna_folderu().get())
         folder.mkdir(parents=True, exist_ok=True)
+        self._zapisz_ustawienia_pobierania()  # folder mógł być wpisany ręcznie
+        jakosc = self._jakosc_wideo() if self._wideo() else None
 
         self.przycisk_pobierz.configure(state="disabled")
         self._ustaw_postep(None)
-        self._dopisz(t("▶ Start ({zrodlo}): {link}").format(zrodlo=rozpoznaj_zrodlo(link), link=link))
-        threading.Thread(target=self._uruchom, args=(zbuduj_komende(link, folder),), daemon=True).start()
+        if jakosc:
+            self._dopisz(t("▶ Start (wideo {jakosc}): {link}").format(jakosc=NAZWY_JAKOSCI[jakosc].lower(), link=link))
+        else:
+            self._dopisz(t("▶ Start ({zrodlo}): {link}").format(zrodlo=rozpoznaj_zrodlo(link), link=link))
+        threading.Thread(target=self._uruchom, args=(zbuduj_komende(link, folder, jakosc),), daemon=True).start()
 
     def _uruchom(self, komenda: list[str]):
         try:
@@ -1335,6 +1415,7 @@ class Aplikacja(ctk.CTk):
         self.postep_tekst.configure(text="")
 
     def _zamknij(self):
+        self._zapisz_ustawienia_pobierania()  # folder wpisany ręcznie
         self._zatrzymaj_odsluch()
         self.przerwij_liste.set()
         for p in [self.proces, *self.procesy_listy]:
@@ -1356,6 +1437,13 @@ def autotest():
     r = subprocess.run([*narzedzie("yt-dlp"), "--version"], capture_output=True, text=True, env=ENV_UTF8,
                        creationflags=BEZ_OKNA)
     print(f"yt-dlp   {r.stdout.strip() or 'BŁĄD: ' + r.stderr.strip()[-300:]}")
+    # wideo: czy YouTube nadal daje H.264 + AAC do 1080p (bez pobierania) - Big Buck Bunny, film na wolnej licencji
+    r = subprocess.run([*narzedzie("yt-dlp"), "--ignore-config", "--no-warnings", "-f", "bv*+ba/b",
+                        "-S", JAKOSCI_WIDEO["1080p"], "--merge-output-format", "mp4", "--simulate",
+                        "--print", "%(height)sp %(vcodec)s + %(acodec)s -> %(ext)s",
+                        "--", "https://www.youtube.com/watch?v=aqz-KE-bpKQ"],
+                       capture_output=True, text=True, env=ENV_UTF8, creationflags=BEZ_OKNA)
+    print(f"wideo    {r.stdout.strip() or 'BŁĄD: ' + r.stderr.strip()[-300:]}")
     try:
         wyniki = szukaj_yt_music("dawid podsiadło", "Utwory", 3)
         print(f"szukanie OK: {', '.join(w['tytul'] for w in wyniki)}")
