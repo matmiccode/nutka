@@ -1,0 +1,79 @@
+# Czujnik: codziennie rano uruchamia `app.py --autotest --pobierz` na najnowszych pakietach z PyPI - tych samych,
+# które zainstalowane Nutki dostają przez ciche aktualizacje. Gdy YouTube, YouTube Music, Spotify, PyPI albo GitHub
+# coś zmienią i Nutka przestanie działać, otwiera issue z etykietą „czujnik” (kolejne dni = komentarze w tym samym
+# issue); gdy znów działa, dopisuje komentarz i zamyka je.
+# Ręcznie: gh workflow run czujnik.yml. Uwaga: GitHub wyłącza harmonogram po 60 dniach bez commitów (przysyła mail) -
+# wtedy `gh workflow enable czujnik.yml`.
+name: Czujnik
+
+on:
+  schedule:
+    - cron: "17 5 * * *"   # codziennie 05:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency: czujnik
+
+jobs:
+  autotest:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Pakiety jak u użytkownika (najnowsze z PyPI, yt-dlp nightly)
+        run: |
+          python -m pip install -q --disable-pip-version-check -U -r requirements.txt
+          python -m pip install -q --disable-pip-version-check -U --pre "yt-dlp[default]"
+      - name: ffmpeg (ta sama paczka BtbN, co w instalatorze)
+        shell: pwsh
+        run: |
+          Invoke-WebRequest "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl-shared.zip" -OutFile ffmpeg.zip
+          tar -xf ffmpeg.zip
+          New-Item -ItemType Directory narzedzia | Out-Null
+          Copy-Item "$((Get-ChildItem -Directory 'ffmpeg-*-win64-gpl-shared')[0].FullName)\bin\*" narzedzia
+      - name: Autotest
+        id: autotest
+        shell: bash
+        env:
+          PYTHONUTF8: "1"
+        run: |
+          python app.py --autotest --pobierz 2>&1 | tee raport.txt
+          exit "${PIPESTATUS[0]}"
+      - name: Issue z etykietą „czujnik”
+        if: always() && (steps.autotest.outcome == 'success' || steps.autotest.outcome == 'failure')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          WYNIK: ${{ steps.autotest.outcome }}
+          PRZEBIEG: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          numer=$(gh issue list --label czujnik --state open --json number --jq '.[0].number // empty')
+          if [ "$WYNIK" = success ]; then
+            if [ -n "$numer" ]; then
+              gh issue comment "$numer" --body "✔ Dzisiejszy autotest przeszedł - wszystko znów działa. Przebieg: $PRZEBIEG"
+              gh issue close "$numer" --reason completed
+            fi
+            exit 0
+          fi
+          {
+            echo "Codzienny autotest (\`app.py --autotest --pobierz\` na najnowszych pakietach z PyPI) nie przeszedł."
+            echo "Zwykle znaczy to, że YouTube, YouTube Music, Spotify, PyPI albo GitHub coś zmieniły i trzeba poprawić Nutkę"
+            echo "albo poczekać na nowe yt-dlp / ytmusicapi / spotapi. Przebieg: $PRZEBIEG"
+            echo
+            echo '```'
+            cat raport.txt
+            echo '```'
+          } > tresc.md
+          if [ -n "$numer" ]; then
+            gh issue comment "$numer" --body-file tresc.md
+          else
+            gh label create czujnik --color e0479e --description "Codzienny autotest w Actions wykrył, że coś przestało działać" 2>/dev/null || true
+            gh issue create --title "Czujnik: coś przestało działać ($(date -u +%Y-%m-%d))" --label czujnik --body-file tresc.md
+          fi

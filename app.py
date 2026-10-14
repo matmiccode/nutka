@@ -1424,34 +1424,48 @@ class Aplikacja(ctk.CTk):
         self.destroy()
 
 
-def autotest():
-    """Nutka.exe --autotest > raport.txt - sprawdza, czy wszystkie części są na miejscu."""
+def autotest() -> int:
+    """Nutka.exe --autotest > raport.txt - sprawdza, czy wszystkie części są na miejscu i czy YouTube, Spotify, PyPI
+    i GitHub nadal współpracują. Kod wyjścia 1 = coś nie działa (to samo sprawdza codziennie czujnik w GitHub Actions,
+    .github/workflows/czujnik.yml). `--pobierz` = dodatkowo pełne pobranie jednego utworu z listy Spotify."""
     wyjscie_utf8()
+    bledy: list[str] = []
     print(f"Nutka {WERSJA} - autotest ({'exe' if SPAKOWANY else 'skrypt'}), {PODPIS}")
     print(f"pakiety  {aktualizacje.FOLDER} -> {aktualizacje._wczytaj_stan() or 'wbudowane w exe'}")
     log = aktualizacje.FOLDER / "aktualizacje.log"
     if log.exists():
         print("ostatnie aktualizacje:\n  " + "\n  ".join(log.read_text(encoding="utf-8").splitlines()[-5:]))
     for program in ("ffmpeg", "ffprobe", "ffplay", "deno"):
-        print(f"{program:8} {shutil.which(program) or 'BRAK!'}")
-    r = subprocess.run([*narzedzie("yt-dlp"), "--version"], capture_output=True, text=True, env=ENV_UTF8,
-                       creationflags=BEZ_OKNA)
-    print(f"yt-dlp   {r.stdout.strip() or 'BŁĄD: ' + r.stderr.strip()[-300:]}")
+        gdzie = shutil.which(program)
+        print(f"{program:8} {gdzie or 'BRAK!'}")
+        if not gdzie:
+            bledy.append(program)
+
+    def yt_dlp(nazwa: str, *argumenty: str):
+        r = subprocess.run([*narzedzie("yt-dlp"), *argumenty], capture_output=True, text=True, env=ENV_UTF8,
+                           creationflags=BEZ_OKNA)
+        print(f"{nazwa:8} {r.stdout.strip() or 'BŁĄD: ' + r.stderr.strip()[-300:]}")
+        if not r.stdout.strip():
+            bledy.append(nazwa)
+
+    yt_dlp("yt-dlp", "--version")
     # wideo: czy YouTube nadal daje H.264 + AAC do 1080p (bez pobierania) - Big Buck Bunny, film na wolnej licencji
-    r = subprocess.run([*narzedzie("yt-dlp"), "--ignore-config", "--no-warnings", "-f", "bv*+ba/b",
-                        "-S", JAKOSCI_WIDEO["1080p"], "--merge-output-format", "mp4", "--simulate",
-                        "--print", "%(height)sp %(vcodec)s + %(acodec)s -> %(ext)s",
-                        "--", "https://www.youtube.com/watch?v=aqz-KE-bpKQ"],
-                       capture_output=True, text=True, env=ENV_UTF8, creationflags=BEZ_OKNA)
-    print(f"wideo    {r.stdout.strip() or 'BŁĄD: ' + r.stderr.strip()[-300:]}")
+    yt_dlp("wideo", "--ignore-config", "--no-warnings", "-f", "bv*+ba/b", "-S", JAKOSCI_WIDEO["1080p"],
+           "--merge-output-format", "mp4", "--simulate", "--print", "%(height)sp %(vcodec)s + %(acodec)s -> %(ext)s",
+           "--", "https://www.youtube.com/watch?v=aqz-KE-bpKQ")
     try:
         wyniki = szukaj_yt_music("dawid podsiadło", "Utwory", 3)
+        if not wyniki:
+            raise ValueError("pusta lista wyników")
         print(f"szukanie OK: {', '.join(w['tytul'] for w in wyniki)}")
     except Exception as e:
         print(f"szukanie BŁĄD: {e!r}")
+        bledy.append("szukanie")
     try:
         lista = spotify_lista.wczytaj("https://open.spotify.com/album/00hXe7ttZI4gjjWYqKAdMX")
-        print(f"spotify OK: album „{lista.nazwa}”, {len(lista.utwory)} utw.")
+        if len(lista.utwory) < 3:
+            raise ValueError(f"album ma tylko {len(lista.utwory)} utw.")
+        print(f"spotify  OK: album „{lista.nazwa}”, {len(lista.utwory)} utw.")
         if "--pobierz" in sys.argv:  # pełna ścieżka listy: dopasuj -> yt-dlp -> tagi, 1 utwór do %TEMP%
             import tempfile
             from mutagen.id3 import ID3
@@ -1459,15 +1473,26 @@ def autotest():
             plik = spotify_lista.sciezka_pliku(utwor, lista, Path(tempfile.mkdtemp(prefix="nutka-test-")))
             plik.parent.mkdir(parents=True, exist_ok=True)
             print(f"dopasowanie: {spotify_lista.dopasuj(utwor, klient_yt_music())}")
-            r = subprocess.run(komenda_utworu(utwor.youtube_id, plik), capture_output=True, env=ENV_UTF8,
+            if not utwor.youtube_id:
+                raise ValueError("nie znaleziono utworu w YouTube Music")
+            r = subprocess.run(komenda_utworu(utwor.youtube_id, plik), capture_output=True, text=True, env=ENV_UTF8,
                                creationflags=BEZ_OKNA)
+            if r.returncode != 0 or not plik.exists():
+                raise ValueError(f"yt-dlp kod {r.returncode}: {r.stderr.strip()[-300:]}")
             spotify_lista.otaguj(plik, utwor, lista)
             tagi = ID3(plik)
             print(f"pobieranie OK: {plik.name}, {plik.stat().st_size // 1024} KB, tytuł={tagi.get('TIT2')}, "
-                  f"okładka={len(tagi.getall('APIC')[0].data) // 1024 if tagi.getall('APIC') else 0} KB (kod {r.returncode})")
+                  f"okładka={len(tagi.getall('APIC')[0].data) // 1024 if tagi.getall('APIC') else 0} KB")
             shutil.rmtree(plik.parent.parent, ignore_errors=True)
     except Exception as e:
-        print(f"spotify BŁĄD: {e!r}")
+        print(f"spotify  BŁĄD: {e!r}")
+        bledy.append("spotify")
+    try:  # ciche aktualizacje: czy PyPI odpowiada i czy wybór wersji (nightly yt-dlp) nadal działa
+        najnowsze = {p: aktualizacje._najnowsza(p) for p in aktualizacje.PAKIETY}
+        print("pypi     " + ", ".join(f"{p} {w}" for p, w in najnowsze.items()))
+    except Exception as e:
+        print(f"pypi     BŁĄD: {e!r}")
+        bledy.append("pypi")
     try:
         wydanie = aktualizacja_programu.najnowsze_wydanie(REPO_GITHUB)
         print(f"github   najnowsze wydanie: {wydanie['wersja'] if wydanie else 'brak'} (masz {WERSJA})")
@@ -1477,8 +1502,12 @@ def autotest():
             print(f"podpis   OK - wydanie {wydanie['wersja']} podpisane kluczem autora (SHA256 {suma[:16]}…)")
         elif wydanie:
             print("podpis   BRAK - wydanie bez Nutka-Setup.podpis.json, program go nie zaproponuje")
+            bledy.append("podpis")
     except Exception as e:
         print(f"github   BŁĄD: {e!r}")
+        bledy.append("github")
+    print(f"\nWYNIK    {'wszystko działa' if not bledy else 'NIE DZIAŁA: ' + ', '.join(bledy)}")
+    return 1 if bledy else 0
 
 
 if __name__ == "__main__":
@@ -1487,7 +1516,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "--yt-dlp":
         uruchom_narzedzie(sys.argv[1], sys.argv[2:])
     elif len(sys.argv) > 1 and sys.argv[1] == "--autotest":
-        autotest()
+        sys.exit(autotest())
     elif len(sys.argv) > 1 and sys.argv[1] == "--wersje":  # test kandydata w aktualizacje.py
         wyjscie_utf8()
         print(json.dumps(aktualizacje.wersje_importem()))

@@ -104,6 +104,13 @@ Budowanie: Python 3.12, [Inno Setup 6](https://jrsoftware.org/isinfo.php), potem
 Nowa wersja: podbij `WERSJA` w `app.py`, dopisz sekcję w [CHANGELOG.md](CHANGELOG.md), `zbuduj.ps1 -Wydanie`
 (podpisuje instalator kluczem z `podpis_wydania.py` i publikuje wydanie). Zasady bezpieczeństwa: [SECURITY.md](SECURITY.md).
 
+Testy: `python -m unittest discover -s testy -t .` (katalog `testy/`, bez sieci) – uruchamiane w GitHub Actions przy
+każdej zmianie kodu [![Testy](https://github.com/matmiccode/nutka/actions/workflows/testy.yml/badge.svg)](https://github.com/matmiccode/nutka/actions/workflows/testy.yml).
+Codziennie rano **czujnik** [![Czujnik](https://github.com/matmiccode/nutka/actions/workflows/czujnik.yml/badge.svg)](https://github.com/matmiccode/nutka/actions/workflows/czujnik.yml)
+uruchamia `app.py --autotest --pobierz` na najnowszych pakietach z PyPI (tych samych, które dostają zainstalowane
+Nutki) i otwiera [issue z etykietą „czujnik”](https://github.com/matmiccode/nutka/issues?q=label%3Aczujnik), gdy
+YouTube, Spotify albo PyPI coś zmienią.
+
 ## Wsparcie
 
 Nutka jest darmowa i taka zostanie. Jeśli oszczędziła Ci czasu, możesz [postawić autorowi kawę](https://buycoffee.to/matcode) –

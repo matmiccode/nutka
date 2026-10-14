@@ -1,0 +1,8 @@
+# Nowe wersje akcji z workflow (checkout, setup-python) jako PR raz w miesiącu. Pakiety Pythona nie mają tu
+# przypiętych wersji (requirements.txt bez ==; build bierze najnowsze), więc dla nich nie ma czego pilnować.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

@@ -120,9 +120,13 @@ def wczytaj(link: str) -> Lista:
 
 # ---------- dopasowanie w YouTube Music ----------
 
+# litery, których NFKD nie rozkłada na łacińską + znak (ascii „ignore” by je wyrzuciło: Małomiasteczkowy -> maomiasteczkowy)
+_BEZ_ROZKLADU = str.maketrans({"ł": "l", "ø": "o", "đ": "d", "ß": "ss", "æ": "ae", "œ": "oe"})
+
+
 def _norm(tekst: str) -> str:
     """Do porównań: małe litery, bez polskich znaków, bez dopisków typu (feat. …), - Remastered 2011."""
-    tekst = unicodedata.normalize("NFKD", tekst.lower()).encode("ascii", "ignore").decode()
+    tekst = unicodedata.normalize("NFKD", tekst.lower().translate(_BEZ_ROZKLADU)).encode("ascii", "ignore").decode()
     tekst = re.sub(r"[(\[].*?[)\]]", " ", tekst)
     tekst = re.sub(r"\s-\s.*(remaster|version|wersja|edit|mix|live).*$", " ", tekst)
     tekst = re.sub(r"\b(feat|ft)\.?\b.*$", " ", tekst)
