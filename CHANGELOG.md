@@ -3,6 +3,24 @@
 Format: najnowsze na górze. Sekcja wersji jest jednocześnie opisem „Co nowego”, który program pokazuje
 przy proponowaniu aktualizacji – pisz ją dla zwykłego użytkownika.
 
+## [1.6.0] – 2026-10-15
+
+- **Playlisty i albumy z YouTube pokazują się jako lista** – tak jak te ze Spotify. Wklej link do playlisty
+  albo albumu (albo kliknij album z wyszukiwarki), a zobaczysz wszystkie pozycje z ptaszkami: odznacz, czego
+  nie chcesz, i kliknij **Pobierz zaznaczone**. Nutka pobiera po 3 naraz, a przy każdej pozycji widać, co się
+  dzieje.
+- **Tylko nowe** – to, co już masz w folderze, jest oznaczone „masz już” i odznaczone. Wczytaj playlistę
+  jeszcze raz, żeby dobrać nowe utwory albo filmy.
+- **Muzyka albo wideo – jak chcesz.** Przełącznik **Muzyka / Wideo** działa też przy liście z YouTube: w trybie
+  „Muzyka” pozycje pobierają się jako mp3 z okładką i tagami, w trybie „Wideo” jako filmy mp4 w wybranej
+  jakości, do folderu filmów.
+- Drobne: lepsze dopasowywanie utworów ze Spotify z literą „ł” w tytule.
+
+In English: YouTube playlists and albums now open as a list, just like Spotify ones: paste the link (or pick
+an album in the search), untick what you don't want and click **Download selected**. Items you already have
+are marked “already yours”, so loading the playlist again picks up only the new ones. The **Music / Video**
+switch works here too: mp3 with cover art and tags, or mp4 videos in the chosen quality.
+
 ## [1.5.0] – 2026-10-14
 
 - **Nutka pobiera też filmy.** Obok pola „Link” jest przełącznik **Muzyka / Wideo**. W trybie „Wideo” link

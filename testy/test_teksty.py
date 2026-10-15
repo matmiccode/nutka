@@ -9,7 +9,7 @@ import teksty
 from teksty import EN, t
 
 KORZEN = Path(__file__).resolve().parent.parent
-MODULY = ("app.py", "spotify_lista.py", "aktualizacja_programu.py", "aktualizacje.py")
+MODULY = ("app.py", "spotify_lista.py", "youtube_lista.py", "aktualizacja_programu.py", "aktualizacje.py")
 
 
 def _literaly(wezel: ast.expr) -> list[str | None]:

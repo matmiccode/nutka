@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Nutka – user guide</title>
-<meta name="description" content="How to use Nutka: installation, the window, searching and listening, downloading mp3, YouTube videos, Spotify playlists, updates, troubleshooting.">
+<meta name="description" content="How to use Nutka: installation, the window, searching and listening, downloading mp3, YouTube videos, YouTube and Spotify playlists, updates, troubleshooting.">
 <link rel="icon" href="../favicon.ico">
 <link rel="alternate" hreflang="pl" href="https://matmiccode.github.io/nutka/instrukcja.html">
 <link rel="alternate" hreflang="en" href="https://matmiccode.github.io/nutka/en/instrukcja.html">
@@ -33,14 +33,14 @@
 
 <section class="wrap tytul">
   <h1>User guide</h1>
-  <p class="lead">Nutka searches YouTube Music, lets you listen first and saves the track as an mp3 with cover art and tags. It also downloads whole albums and playlists from Spotify, and videos from YouTube. This page explains everything in order; the same copy opens from the app, also without internet.</p>
+  <p class="lead">Nutka searches YouTube Music, lets you listen first and saves the track as an mp3 with cover art and tags. It also downloads whole albums and playlists from YouTube and Spotify, and videos from YouTube. This page explains everything in order; the same copy opens from the app, also without internet.</p>
   <ul class="spis" aria-label="Contents">
     <li><a href="#install">Installation</a></li>
     <li><a href="#window">The window</a></li>
     <li><a href="#search">Searching and listening</a></li>
     <li><a href="#download">Downloading mp3</a></li>
     <li><a href="#video">Videos from YouTube</a></li>
-    <li><a href="#spotify">Spotify playlists</a></li>
+    <li><a href="#spotify">Playlists and albums</a></li>
     <li><a href="#language">Language</a></li>
     <li><a href="#updates">Updates</a></li>
     <li><a href="#problems">When something doesn't work</a></li>
@@ -128,9 +128,9 @@
       <thead><tr><th scope="col">What you download</th><th scope="col">Where to get it</th><th scope="col">How</th></tr></thead>
       <tbody>
         <tr><th>A track</th><td data-l="Where">the search box</td><td data-l="How">double-click the result, or select it and click <strong>Download mp3</strong></td></tr>
-        <tr><th>An album</th><td data-l="Where">the search box, “Albums” switch</td><td data-l="How">as above; the whole album goes into a subfolder</td></tr>
+        <tr><th>An album</th><td data-l="Where">the search box, “Albums” switch</td><td data-l="How">a double-click opens the track list with tick boxes – <strong>Download selected</strong></td></tr>
         <tr><th>A track from YouTube</th><td data-l="Where">a <code>youtube.com/watch?v=…</code> link</td><td data-l="How">paste it into the “Link” field (the <strong>Paste</strong> button) and click <strong>Download mp3</strong></td></tr>
-        <tr><th>A YouTube playlist</th><td data-l="Where">a <code>youtube.com/playlist?list=…</code> link</td><td data-l="How">paste it into the “Link” field and click <strong>Download mp3</strong></td></tr>
+        <tr><th>A YouTube playlist or album</th><td data-l="Where">a <code>youtube.com/playlist?list=…</code> link, or an album from the search</td><td data-l="How">paste it into the search box and press Enter – you get a list with tick boxes, <a href="#spotify">details below</a></td></tr>
         <tr><th>A YouTube video (mp4)</th><td data-l="Where">a link to a video or a playlist</td><td data-l="How">switch to <strong>Video</strong>, paste it into the “Link” field and click <strong>Download video</strong>, <a href="#video">details below</a></td></tr>
         <tr><th>A track, album or playlist from Spotify</th><td data-l="Where">in Spotify: Share → Copy link</td><td data-l="How">paste it into the search box and press Enter, <a href="#spotify">details below</a></td></tr>
       </tbody>
@@ -154,6 +154,7 @@
       <div><dt>Quality</dt><dd>The list next to the switch: <strong>1080p</strong> (default), <strong>720p</strong>, <strong>480p</strong> or <strong>Highest</strong>. Up to 1080p Nutka picks H.264 video and AAC audio, so the mp4 plays on a computer, a phone and a TV without extra codecs. “Highest” also takes 1440p and 4K when the video has them – such files are several times bigger, and older TVs may not play them.</dd></div>
       <div><dt>Folder</dt><dd>Videos go to <strong>Videos \ Nutka</strong> (<code>C:\Users\&lt;you&gt;\Videos\Nutka</code>), separately from music. The “Save to” field shows the folder of whatever you are downloading right now; change it with the <span class="przycisk">Browse…</span> button.</dd></div>
       <div><dt>How much space</dt><dd>An hour of 1080p video is usually 1–2 GB, 720p about half of that. YouTube keeps picture and sound separately – Nutka downloads both (the progress bar runs twice) and joins them at the end without re-encoding, so during the download the file briefly takes twice the space on disk.</dd></div>
+      <div><dt>Playlists</dt><dd>A playlist link in “Video” mode opens a list of videos with tick boxes – <a href="#spotify">the same as for music</a>. The ticked ones are downloaded into a subfolder named after the playlist; those you already have are unticked.</dd></div>
       <div><dt>Search results</dt><dd>They work in “Video” mode too: select a result and click <strong>Download video</strong>. For YouTube Music tracks the “video” is often just the cover art.</dd></div>
       <div><dt>Spotify</dt><dd>Always music. After loading a Spotify list Nutka switches itself to “Music”.</dd></div>
     </dl>
@@ -163,11 +164,11 @@
 <section id="spotify">
   <div class="wrap">
     <div class="sekcja-naglowek">
-      <h2>Spotify playlists and albums</h2>
-      <p>A whole playlist or album takes three steps, and next time Nutka picks up only the new tracks.</p>
+      <h2>Playlists and albums – YouTube and Spotify</h2>
+      <p>A whole playlist or album – from YouTube, YouTube Music or Spotify – takes three steps, and next time Nutka picks up only the new tracks.</p>
     </div>
     <ol class="kroki">
-      <li><h3>Copy the link</h3><p>In Spotify, next to the playlist or album, click <strong>… → Share → Copy link</strong>.</p></li>
+      <li><h3>Copy the link</h3><p>On YouTube open the playlist or album and copy the address from the browser bar (<code>…/playlist?list=…</code>). In Spotify, next to the playlist or album, click <strong>… → Share → Copy link</strong>. An album found in Nutka just needs a double-click.</p></li>
       <li><h3>Paste it into Nutka</h3><p>Into the search box, then Enter. After a few seconds you see the track list with tick boxes.</p></li>
       <li><h3>Download selected</h3><p>Untick what you don't want (click the tick box or double-click the row) and click <span class="przycisk glowny">Download selected</span>.</p></li>
     </ol>
@@ -179,11 +180,12 @@
       <li>Every track shows its status: <em>searching</em>, <em>downloading 64&nbsp;%</em>, <strong>✓ done</strong> or <strong>✗ error</strong>. Nutka downloads 3 tracks at a time; <span class="przycisk">Stop</span> interrupts.</li>
       <li>Tracks you already have are marked <em>already yours</em> and unticked. Just load the playlist again to pick up the new ones.</li>
       <li>If something fails, those tracks stay ticked. Click <strong>Download selected</strong> again to retry.</li>
-      <li>A playlist goes into a subfolder with its name, an album with track numbers. The files carry the title, artist, album and cover art from Spotify.</li>
+      <li>A playlist goes into a subfolder with its name, an album with track numbers. The files carry the title, artist, album and cover art from Spotify or YouTube.</li>
+      <li>A YouTube list follows the <strong>Music / Video</strong> switch: in “Music” mode it downloads mp3, in “Video” mode mp4 videos in the chosen quality, into the videos folder. After switching, “already yours” is worked out again.</li>
       <li><span class="przycisk">Close list</span> goes back to normal searching.</li>
     </ul>
     <div class="uwaga odstep">
-      <p><strong>Nutka sees only public playlists.</strong> It can't load private playlists or “Liked Songs”. Make the playlist public or copy the tracks into a public one.</p>
+      <p><strong>Nutka sees only public playlists</strong> (on YouTube also “unlisted” ones, available via a link). It can't load private playlists or Spotify's “Liked Songs”. Make the playlist public or copy the tracks into a public one.</p>
     </div>
   </div>
 </section>
@@ -222,7 +224,7 @@
       <tr><th>Searching or downloading doesn't work</th><td>check your internet; close and reopen Nutka (it updates itself at start)</td></tr>
       <tr><th>One track won't download, the rest do</th><td>that video may be blocked on YouTube (e.g. age restriction); pick another result</td></tr>
       <tr><th>A different version of a track came from Spotify</th><td>search for the track in Nutka and pick the right version from the results</td></tr>
-      <tr><th>A Spotify playlist won't load</th><td>check that it is public; Nutka can't see private playlists or “Liked Songs”</td></tr>
+      <tr><th>A playlist won't load</th><td>check that it is public; Nutka can't see private playlists or “Liked Songs”</td></tr>
       <tr><th>A downloaded video won't play on the TV</th><td>pick <strong>1080p</strong> or lower – “Highest” gives 4K in the VP9 or AV1 codec, which older devices don't know</td></tr>
       <tr><th>Pasted text isn't treated as a link</th><td>Nutka accepts only real YouTube and Spotify addresses (starting with <code>https://</code> or the site name); other text goes to the search</td></tr>
       <tr><th>The app is in the wrong language</th><td>click the <strong>PL</strong> / <strong>EN</strong> button in the top-right corner</td></tr>

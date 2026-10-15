@@ -42,6 +42,7 @@ class Lista:
     nazwa: str
     rodzaj: str                 # "utwór" | "album" | "playlista"
     utwory: list[Utwor] = field(default_factory=list)
+    zrodlo: str = "spotify"     # "spotify" | "youtube" (youtube_lista.py) - skąd dane; dźwięk zawsze z YouTube
 
 
 def rozpoznaj(link: str) -> tuple[str, str] | None:
@@ -179,23 +180,26 @@ def bezpieczna_nazwa(tekst: str) -> str:
     return "_" + tekst if _ZASTRZEZONE.match(tekst) else tekst
 
 
-def sciezka_pliku(utwor: Utwor, lista: Lista, folder: Path) -> Path:
+def sciezka_pliku(utwor: Utwor, lista: Lista, folder: Path, rozszerzenie: str = "mp3") -> Path:
     """Stała nazwa pliku = rozpoznawanie, co już masz (synchronizacja playlisty).
-    Album: podfolder + numer utworu; playlista: podfolder bez numerów (kolejność w playliście się zmienia)."""
+    Album: podfolder + numer utworu; playlista: podfolder bez numerów (kolejność w playliście się zmienia).
+    Lista z YouTube w trybie „Wideo” dostaje rozszerzenie mp4 (i osobny folder filmów)."""
     nazwa = bezpieczna_nazwa(f"{utwor.wykonawcy[0] if utwor.wykonawcy else t('Nieznany')} - {utwor.tytul}")
     if lista.rodzaj == "utwór":
-        plik = folder / f"{nazwa}.mp3"
+        plik = folder / f"{nazwa}.{rozszerzenie}"
     else:
         if lista.rodzaj == "album" and utwor.numer:
             nazwa = f"{utwor.numer:02d} - {nazwa}"
-        plik = folder / bezpieczna_nazwa(lista.nazwa) / f"{nazwa}.mp3"
+        plik = folder / bezpieczna_nazwa(lista.nazwa) / f"{nazwa}.{rozszerzenie}"
     if not plik.resolve().is_relative_to(folder.resolve()):  # pas bezpieczeństwa - bezpieczna_nazwa() to gwarantuje
         raise ValueError(f"ścieżka poza folderem docelowym: {plik}")
     return plik
 
 
 def otaguj(plik: Path, utwor: Utwor, lista: Lista):
-    """Tagi ze Spotify (dokładniejsze niż z YouTube) + okładka albumu."""
+    """Tagi z listy (Spotify: dokładniejsze niż z YouTube; YouTube: tytuł, wykonawca, album i numer ze spisu
+    playlisty) + okładka albumu ze Spotify. Okładkę i resztę tagów wklejonych przez yt-dlp (lista z YouTube,
+    --embed-thumbnail --embed-metadata) zostawia."""
     import urllib.parse
     import urllib.request
 
@@ -205,10 +209,10 @@ def otaguj(plik: Path, utwor: Utwor, lista: Lista):
         tagi = ID3(plik)
     except ID3NoHeaderError:
         tagi = ID3()
-    tagi.delall("APIC")
     tagi.add(TIT2(encoding=3, text=utwor.tytul))
     tagi.add(TPE1(encoding=3, text=utwor.wykonawcy or [""]))
-    tagi.add(TALB(encoding=3, text=utwor.album))
+    if utwor.album:  # playlista z YouTube nie ma albumu - zostaje to, co ewentualnie wpisał yt-dlp
+        tagi.add(TALB(encoding=3, text=utwor.album))
     if utwor.wykonawca_albumu:
         tagi.add(TPE2(encoding=3, text=utwor.wykonawca_albumu))
     if utwor.rok:
@@ -220,7 +224,9 @@ def otaguj(plik: Path, utwor: Utwor, lista: Lista):
     if adres and adres.scheme == "https" and (adres.hostname or "").endswith((".scdn.co", ".spotifycdn.com")):
         try:
             with urllib.request.urlopen(utwor.okladka, timeout=15) as odp:
-                tagi.add(APIC(encoding=3, mime="image/jpeg", type=3, desc="Cover", data=odp.read()))
+                dane = odp.read()
+            tagi.delall("APIC")
+            tagi.add(APIC(encoding=3, mime="image/jpeg", type=3, desc="Cover", data=dane))
         except OSError:
             pass  # bez okładki, ale plik jest
     tagi.save(plik, v2_version=3)

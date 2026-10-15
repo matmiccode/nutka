@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Nutka – instrukcja</title>
-<meta name="description" content="Jak korzystać z Nutki: instalacja, okno programu, wyszukiwanie i odsłuch, pobieranie mp3, filmy z YouTube, playlisty ze Spotify, aktualizacje, rozwiązywanie problemów.">
+<meta name="description" content="Jak korzystać z Nutki: instalacja, okno programu, wyszukiwanie i odsłuch, pobieranie mp3, filmy z YouTube, playlisty z YouTube i Spotify, aktualizacje, rozwiązywanie problemów.">
 <link rel="icon" href="favicon.ico">
 <link rel="alternate" hreflang="pl" href="https://matmiccode.github.io/nutka/instrukcja.html">
 <link rel="alternate" hreflang="en" href="https://matmiccode.github.io/nutka/en/instrukcja.html">
@@ -33,14 +33,14 @@
 
 <section class="wrap tytul">
   <h1>Instrukcja</h1>
-  <p class="lead">Nutka wyszukuje muzykę w&nbsp;YouTube Music, pozwala ją odsłuchać i&nbsp;zapisuje jako mp3 z&nbsp;okładką i&nbsp;opisem utworu. Pobiera też całe albumy i&nbsp;playlisty ze Spotify oraz filmy z&nbsp;YouTube. Ta strona opisuje wszystko po kolei; ta sama kopia otwiera się z&nbsp;programu, także bez internetu.</p>
+  <p class="lead">Nutka wyszukuje muzykę w&nbsp;YouTube Music, pozwala ją odsłuchać i&nbsp;zapisuje jako mp3 z&nbsp;okładką i&nbsp;opisem utworu. Pobiera też całe albumy i&nbsp;playlisty z&nbsp;YouTube i&nbsp;ze Spotify oraz filmy z&nbsp;YouTube. Ta strona opisuje wszystko po kolei; ta sama kopia otwiera się z&nbsp;programu, także bez internetu.</p>
   <ul class="spis" aria-label="Spis treści">
     <li><a href="#instalacja">Instalacja</a></li>
     <li><a href="#okno">Okno programu</a></li>
     <li><a href="#szukanie">Wyszukiwanie i&nbsp;odsłuch</a></li>
     <li><a href="#pobieranie">Pobieranie mp3</a></li>
     <li><a href="#wideo">Filmy z&nbsp;YouTube</a></li>
-    <li><a href="#spotify">Playlisty ze Spotify</a></li>
+    <li><a href="#spotify">Playlisty i&nbsp;albumy</a></li>
     <li><a href="#jezyk">Język</a></li>
     <li><a href="#aktualizacje">Aktualizacje</a></li>
     <li><a href="#problemy">Gdy coś nie działa</a></li>
@@ -128,9 +128,9 @@
       <thead><tr><th scope="col">Co pobierasz</th><th scope="col">Skąd wziąć</th><th scope="col">Jak</th></tr></thead>
       <tbody>
         <tr><th>Utwór</th><td data-l="Skąd">wyszukiwarka</td><td data-l="Jak">dwuklik na wyniku albo zaznacz i&nbsp;<strong>Pobierz mp3</strong></td></tr>
-        <tr><th>Album</th><td data-l="Skąd">wyszukiwarka, przełącznik „Albumy”</td><td data-l="Jak">jak wyżej, pobiera się cały album do podfolderu</td></tr>
+        <tr><th>Album</th><td data-l="Skąd">wyszukiwarka, przełącznik „Albumy”</td><td data-l="Jak">dwuklik otwiera listę utworów z&nbsp;ptaszkami – <strong>Pobierz zaznaczone</strong></td></tr>
         <tr><th>Utwór z&nbsp;YouTube</th><td data-l="Skąd">link <code>youtube.com/watch?v=…</code></td><td data-l="Jak">wklej w&nbsp;pole „Link” (przycisk <strong>Wklej</strong>) i&nbsp;<strong>Pobierz mp3</strong></td></tr>
-        <tr><th>Playlista z&nbsp;YouTube</th><td data-l="Skąd">link <code>youtube.com/playlist?list=…</code></td><td data-l="Jak">wklej w&nbsp;pole „Link” i&nbsp;<strong>Pobierz mp3</strong></td></tr>
+        <tr><th>Playlista lub album z&nbsp;YouTube</th><td data-l="Skąd">link <code>youtube.com/playlist?list=…</code> albo album z&nbsp;wyszukiwarki</td><td data-l="Jak">wklej w&nbsp;pole wyszukiwania i&nbsp;naciśnij Enter – zobaczysz listę z&nbsp;ptaszkami, <a href="#spotify">szczegóły niżej</a></td></tr>
         <tr><th>Film z&nbsp;YouTube (wideo)</th><td data-l="Skąd">link do filmu albo playlisty</td><td data-l="Jak">przełącz na <strong>Wideo</strong>, wklej w&nbsp;pole „Link” i&nbsp;<strong>Pobierz wideo</strong>, <a href="#wideo">szczegóły niżej</a></td></tr>
         <tr><th>Utwór, album lub playlista ze Spotify</th><td data-l="Skąd">w&nbsp;Spotify: Udostępnij → Kopiuj link</td><td data-l="Jak">wklej w&nbsp;pole wyszukiwania i&nbsp;naciśnij Enter, <a href="#spotify">szczegóły niżej</a></td></tr>
       </tbody>
@@ -154,6 +154,7 @@
       <div><dt>Jakość</dt><dd>Lista obok przełącznika: <strong>1080p</strong> (domyślnie), <strong>720p</strong>, <strong>480p</strong> albo <strong>Najwyższa</strong>. Do 1080p Nutka bierze obraz H.264 i&nbsp;dźwięk AAC, więc plik mp4 gra na komputerze, telefonie i&nbsp;telewizorze bez dodatkowych kodeków. „Najwyższa” bierze też 1440p i&nbsp;4K, jeśli film je ma – takie pliki są kilka razy większe, a&nbsp;starsze telewizory mogą ich nie odtworzyć.</dd></div>
       <div><dt>Folder</dt><dd>Filmy trafiają do <strong>Filmy \ Pobrane</strong> (<code>C:\Users\&lt;Ty&gt;\Videos\Pobrane</code>), osobno od muzyki. Pole „Zapisz do” pokazuje folder tego, co właśnie pobierasz; zmienisz go przyciskiem <span class="przycisk">Wybierz…</span>.</dd></div>
       <div><dt>Ile to zajmuje</dt><dd>Godzina filmu w&nbsp;1080p to zwykle 1–2 GB, w&nbsp;720p około połowa tego. YouTube trzyma obraz i&nbsp;dźwięk osobno – Nutka pobiera oba (pasek postępu leci dwa razy) i&nbsp;skleja je na końcu bez przekodowania, więc w&nbsp;trakcie plik zajmuje na dysku chwilowo dwa razy więcej.</dd></div>
+      <div><dt>Playlisty</dt><dd>Link do playlisty w&nbsp;trybie „Wideo” otwiera listę filmów z&nbsp;ptaszkami – <a href="#spotify">tak samo jak przy muzyce</a>. Pobierają się zaznaczone, do podfolderu z&nbsp;nazwą playlisty; te, które już masz, są odznaczone.</dd></div>
       <div><dt>Wyniki wyszukiwania</dt><dd>Działają też w&nbsp;trybie „Wideo”: zaznacz wynik i&nbsp;kliknij <strong>Pobierz wideo</strong>. Przy utworach z&nbsp;YouTube Music „film” to często sama okładka.</dd></div>
       <div><dt>Spotify</dt><dd>Zawsze muzyka. Po wczytaniu listy ze Spotify Nutka sama przełącza się na „Muzyka”.</dd></div>
     </dl>
@@ -163,11 +164,11 @@
 <section id="spotify">
   <div class="wrap">
     <div class="sekcja-naglowek">
-      <h2>Playlisty i&nbsp;albumy ze Spotify</h2>
-      <p>Całą playlistę albo album pobierzesz w&nbsp;trzech krokach, a&nbsp;przy kolejnym razie Nutka dobierze tylko nowe utwory.</p>
+      <h2>Playlisty i&nbsp;albumy – z&nbsp;YouTube i&nbsp;ze Spotify</h2>
+      <p>Całą playlistę albo album – z&nbsp;YouTube, YouTube Music albo Spotify – pobierzesz w&nbsp;trzech krokach, a&nbsp;przy kolejnym razie Nutka dobierze tylko nowe utwory.</p>
     </div>
     <ol class="kroki">
-      <li><h3>Skopiuj link</h3><p>W&nbsp;Spotify przy playliście lub albumie kliknij <strong>… → Udostępnij → Kopiuj link</strong>.</p></li>
+      <li><h3>Skopiuj link</h3><p>W&nbsp;YouTube otwórz playlistę albo album i&nbsp;skopiuj adres z&nbsp;paska przeglądarki (<code>…/playlist?list=…</code>). W&nbsp;Spotify przy playliście lub albumie kliknij <strong>… → Udostępnij → Kopiuj link</strong>. Album znaleziony w&nbsp;Nutce wystarczy kliknąć dwa razy.</p></li>
       <li><h3>Wklej w&nbsp;Nutce</h3><p>W&nbsp;pole wyszukiwania, potem Enter. Po kilku sekundach zobaczysz listę utworów z&nbsp;ptaszkami.</p></li>
       <li><h3>Pobierz zaznaczone</h3><p>Odznacz to, czego nie chcesz (klik w&nbsp;ptaszek albo dwuklik na wierszu), i&nbsp;kliknij <span class="przycisk glowny">Pobierz zaznaczone</span>.</p></li>
     </ol>
@@ -179,11 +180,12 @@
       <li>Przy każdym utworze widać jego stan: <em>szukam</em>, <em>pobieram 64&nbsp;%</em>, <strong>✓ pobrano</strong> albo <strong>✗ błąd</strong>. Nutka pobiera po 3 utwory naraz; <span class="przycisk">Zatrzymaj</span> przerywa.</li>
       <li>Utwory, które już masz, są oznaczone <em>masz już</em> i&nbsp;odznaczone. Wystarczy wczytać playlistę ponownie, żeby dobrać nowe.</li>
       <li>Jeśli coś się nie uda, te utwory zostają zaznaczone. Kliknij <strong>Pobierz zaznaczone</strong> jeszcze raz, żeby spróbować ponownie.</li>
-      <li>Playlista trafia do podfolderu z&nbsp;jej nazwą, album z&nbsp;numerami utworów. Pliki mają tytuł, wykonawcę, album i&nbsp;okładkę ze Spotify.</li>
+      <li>Playlista trafia do podfolderu z&nbsp;jej nazwą, album z&nbsp;numerami utworów. Pliki mają tytuł, wykonawcę, album i&nbsp;okładkę ze Spotify albo z&nbsp;YouTube.</li>
+      <li>Lista z&nbsp;YouTube słucha przełącznika <strong>Muzyka / Wideo</strong>: w&nbsp;trybie „Muzyka” pobiera mp3, w&nbsp;trybie „Wideo” filmy mp4 w&nbsp;wybranej jakości, do folderu filmów. Po przełączeniu „masz już” liczy się na nowo.</li>
       <li><span class="przycisk">Zamknij listę</span> wraca do zwykłego wyszukiwania.</li>
     </ul>
     <div class="uwaga odstep">
-      <p><strong>Nutka widzi tylko publiczne playlisty.</strong> Prywatnych playlist i&nbsp;„Polubionych utworów” nie wczyta. Ustaw playlistę jako publiczną albo skopiuj utwory do publicznej.</p>
+      <p><strong>Nutka widzi tylko publiczne playlisty</strong> (w&nbsp;YouTube także „niepubliczne”, dostępne z&nbsp;linku). Prywatnych playlist i&nbsp;„Polubionych utworów” ze Spotify nie wczyta. Ustaw playlistę jako publiczną albo skopiuj utwory do publicznej.</p>
     </div>
   </div>
 </section>
@@ -222,7 +224,7 @@
       <tr><th>Wyszukiwanie lub pobieranie nie działa</th><td>sprawdź internet; zamknij i&nbsp;otwórz Nutkę (przy starcie sama się zaktualizuje)</td></tr>
       <tr><th>Jeden utwór się nie pobiera, reszta tak</th><td>ten film może być zablokowany na YouTube (np. ograniczenie wiekowe); wybierz inny wynik</td></tr>
       <tr><th>Ze Spotify przyszła inna wersja utworu</th><td>wyszukaj utwór w&nbsp;Nutce i&nbsp;wybierz właściwą wersję z&nbsp;wyników</td></tr>
-      <tr><th>Playlista ze Spotify się nie wczytuje</th><td>sprawdź, czy jest publiczna; prywatnych playlist i&nbsp;„Polubionych utworów” Nutka nie widzi</td></tr>
+      <tr><th>Playlista się nie wczytuje</th><td>sprawdź, czy jest publiczna; prywatnych playlist i&nbsp;„Polubionych utworów” Nutka nie widzi</td></tr>
       <tr><th>Pobrany film nie odtwarza się na telewizorze</th><td>wybierz jakość <strong>1080p</strong> albo niższą – „Najwyższa” daje 4K w&nbsp;kodeku VP9 lub AV1, którego starsze urządzenia nie znają</td></tr>
       <tr><th>Program jest w&nbsp;złym języku</th><td>kliknij pigułkę <strong>EN</strong> / <strong>PL</strong> w&nbsp;prawym górnym rogu</td></tr>
       <tr><th>Wklejony tekst nie jest traktowany jak link</th><td>Nutka przyjmuje tylko prawdziwe adresy z&nbsp;YouTube i&nbsp;Spotify (zaczynające się od <code>https://</code> albo nazwy strony); inny tekst trafia do wyszukiwarki</td></tr>

@@ -108,6 +108,13 @@ EN = {
     "utw.": "tracks",
     "{n} już masz": "{n} already yours",
     "masz już": "already yours",
+    "poz.": "items",
+    "Wczytuję listę z YouTube…": "Loading the list from YouTube…",
+    "✖ Nie udało się wczytać listy z YouTube ({e}). Czy playlista jest publiczna?":
+        "✖ Couldn't load the list from YouTube ({e}). Is the playlist public?",
+    "Przełącznikiem „Muzyka / Wideo” wybierasz, czy lista pobierze się jako mp3, czy jako filmy mp4.":
+        "The “Music / Video” switch decides whether the list downloads as mp3 or as mp4 videos.",
+    "yt-dlp nic nie zwrócił": "yt-dlp returned nothing",
     "♫ {opis} Odznacz, czego nie chcesz, i kliknij „Pobierz zaznaczone”.":
         "♫ {opis} Untick what you don't want and click “Download selected”.",
     " – {n} już masz, są odznaczone.": " – {n} already yours, unticked.",

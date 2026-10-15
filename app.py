@@ -2,6 +2,7 @@
 
 YouTube  -> yt-dlp pobiera audio i konwertuje do mp3 (ffmpeg); w trybie „Wideo” obraz + dźwięk sklejone do mp4.
 Spotify  -> lista utworów (spotapi), każdy dopasowany w YouTube Music i stamtąd pobrany (spotify_lista.py).
+Playlista/album z YouTube -> ta sama lista z ptaszkami (youtube_lista.py), mp3 albo mp4 wg przełącznika.
 Szukaj   -> wyniki z YouTube Music (ytmusicapi), odsłuch przez ffplay.
 Exe sam po cichu aktualizuje yt-dlp, ytmusicapi i spotapi (aktualizacje.py), a nową wersję programu
 proponuje z GitHub Releases (aktualizacja_programu.py).
@@ -31,12 +32,13 @@ import aktualizacja_programu
 import aktualizacje
 import spotify_lista
 import teksty
+import youtube_lista
 from teksty import t
 
 # język interfejsu: NUTKA_JEZYK (testy) > wybór z przełącznika w nagłówku (ustawienia.json) > język Windows
 teksty.ustaw(os.environ.get("NUTKA_JEZYK") or aktualizacja_programu.czytaj_ustawienia().get("jezyk"))
 
-WERSJA = "1.5.0"  # jedyne źródło wersji: czyta ją zbuduj.ps1 (instalator, wydanie na GitHubie) i aktualizacja_programu
+WERSJA = "1.6.0"  # jedyne źródło wersji: czyta ją zbuduj.ps1 (instalator, wydanie na GitHubie) i aktualizacja_programu
 REPO_GITHUB = "matmiccode/nutka"  # skąd program bierze informację o nowych wersjach (GitHub Releases)
 BUYCOFFEE_URL = "https://buycoffee.to/matcode"  # profil na buycoffee.to - pusty = przycisk „Postaw kawę” się nie pokazuje
 STRONA_INSTRUKCJI = "https://matmiccode.github.io/nutka/instrukcja.html"  # ta sama strona co docs/instrukcja.html obok exe
@@ -181,15 +183,47 @@ def zbuduj_komende(link: str, folder: Path, jakosc_wideo: str | None = None) -> 
     raise ValueError(t("Nieznany link - obsługiwane są YouTube i Spotify."))  # Spotify idzie przez tryb listy
 
 
-def komenda_utworu(video_id: str, plik: Path) -> list[str]:
-    """Jeden utwór z listy Spotify: dopasowany film YouTube Music -> dokładnie ten plik mp3 (tagi dopisze otaguj())."""
+# wspólne opcje pobierania jednej pozycji listy: cicho, tylko znacznik postępu dla kolumny STATUS
+_OPCJE_POZYCJI = ["-q", "--no-warnings", "--ignore-config", "--color", "never", "--no-playlist", "--progress",
+                  "--newline", "--progress-template", "download:POSTEP %(progress._percent_str)s"]
+
+
+def _szablon_pliku(plik: Path) -> list[str]:
+    """yt-dlp ma zapisać dokładnie ten plik (rozszerzenie dopisze sam); % w tytule ≠ pole szablonu yt-dlp."""
+    return ["-o", str(plik.with_suffix("")).replace("%", "%%") + ".%(ext)s"]
+
+
+def komenda_utworu(video_id: str, plik: Path, z_okladka: bool = False) -> list[str]:
+    """Jeden utwór z listy -> dokładnie ten plik mp3. Lista Spotify: tagi i okładkę dopisze otaguj(). Lista
+    z YouTube (z_okladka): okładkę i tagi wkleja yt-dlp, a otaguj() poprawia tytuł, wykonawcę, album i numer."""
     return [
         *narzedzie("yt-dlp"), "-x", "--audio-format", "mp3", "--audio-quality", "0",
-        "-q", "--no-warnings", "--ignore-config", "--color", "never", "--no-playlist", "--progress", "--newline",
-        "--progress-template", "download:POSTEP %(progress._percent_str)s",
-        "-o", str(plik.with_suffix("")).replace("%", "%%") + ".%(ext)s",  # % w tytule ≠ pole szablonu yt-dlp
+        *(["--embed-thumbnail", "--embed-metadata"] if z_okladka else []),
+        *_OPCJE_POZYCJI, *_szablon_pliku(plik),
         "--", f"https://music.youtube.com/watch?v={video_id}",
     ]
+
+
+def komenda_wideo(video_id: str, plik: Path, jakosc: str) -> list[str]:
+    """Jeden film z listy YouTube -> dokładnie ten plik mp4 w podanej jakości (klucz z JAKOSCI_WIDEO);
+    format jak w zbuduj_komende()."""
+    return [
+        *narzedzie("yt-dlp"), "-f", "bv*+ba/b", "-S", JAKOSCI_WIDEO[jakosc], "--merge-output-format", "mp4",
+        "--embed-metadata", *_OPCJE_POZYCJI, *_szablon_pliku(plik),
+        "--", f"https://www.youtube.com/watch?v={video_id}",
+    ]
+
+
+def lista_youtube(link: str) -> spotify_lista.Lista:
+    """Playlista albo album z YouTube jako Lista (youtube_lista.z_danych): sam spis pozycji z yt-dlp
+    (--flat-playlist, bez wchodzenia na strony filmów, ~2 s), nic nie pobiera."""
+    r = subprocess.run([*narzedzie("yt-dlp"), "-q", "--no-warnings", "--ignore-config", "--flat-playlist", "-J",
+                        "--", link], capture_output=True, text=True, encoding="utf-8", errors="replace",
+                       env=ENV_UTF8, creationflags=BEZ_OKNA)
+    if r.returncode != 0 or not r.stdout.strip():
+        blad = r.stderr.strip().splitlines()
+        raise ValueError(blad[-1] if blad else t("yt-dlp nic nie zwrócił"))
+    return youtube_lista.z_danych(json.loads(r.stdout))
 
 
 _watki = threading.local()
@@ -787,8 +821,7 @@ class Aplikacja(ctk.CTk):
         except tk.TclError:
             return
         self.link.set(tekst)
-        if rozpoznaj_zrodlo(tekst) == "spotify":
-            self.wczytaj_spotify(tekst)  # playlista/album -> od razu lista do przejrzenia
+        self._wczytaj_liste(tekst)  # Spotify albo playlista/album z YouTube -> od razu lista do przejrzenia
 
     def _wideo(self) -> bool:
         return self.tryb.get() == t("Wideo")
@@ -811,6 +844,8 @@ class Aplikacja(ctk.CTk):
         self.pole_folder.configure(textvariable=self._zmienna_folderu())
         if not self.lista:  # w trybie listy przycisk ma swój napis („Pobierz zaznaczone (N)” / „Zatrzymaj”)
             self.przycisk_pobierz.configure(text=t("Pobierz wideo") if wideo else t("Pobierz mp3"))
+        elif self.lista.zrodlo == "youtube" and not self.pobieranie_listy:
+            self._oznacz_posiadane()  # lista z YouTube: mp3 albo mp4, inny folder - inne „masz już”
         if zapisz:
             self._zapisz_ustawienia_pobierania()
 
@@ -846,8 +881,7 @@ class Aplikacja(ctk.CTk):
         # wklejony link w polu szukania = od razu do pola "Link" (Spotify: wczytanie listy utworów)
         if rozpoznaj_zrodlo(fraza):
             self.link.set(fraza)
-            if rozpoznaj_zrodlo(fraza) == "spotify":
-                self.wczytaj_spotify(fraza)
+            self._wczytaj_liste(fraza)
             return
         self.przycisk_szukaj.configure(state="disabled")
         self._dopisz(t("🔍 Szukam: {fraza}").format(fraza=fraza))
@@ -906,7 +940,38 @@ class Aplikacja(ctk.CTk):
             if wiersz:
                 self._przelacz(wiersz)
 
-    # ---------- tryb listy (playlista / album / utwór ze Spotify) ----------
+    # ---------- tryb listy (playlista / album / utwór ze Spotify, playlista / album z YouTube) ----------
+
+    def _wczytaj_liste(self, link: str) -> bool:
+        """Spotify (zawsze) i playlista/album z YouTube idą przez tryb listy: najpierw widzisz, co pobierzesz.
+        Zwraca False, gdy link to nie lista (pojedynczy film z YouTube pobiera się od razu)."""
+        zrodlo = rozpoznaj_zrodlo(link)
+        if zrodlo == "spotify":
+            self.wczytaj_spotify(link)
+        elif zrodlo == "youtube" and to_playlista_yt(link):
+            self.wczytaj_youtube(link)
+        else:
+            return False
+        return True
+
+    def wczytaj_youtube(self, link: str):
+        """Playlista albo album z YouTube -> ten sam tryb listy co Spotify (youtube_lista.py); przełącznik
+        „Muzyka / Wideo” decyduje, czy pozycje pobiorą się jako mp3, czy jako filmy mp4."""
+        if self.pobieranie_listy:
+            self._dopisz(t("Trwa pobieranie listy - poczekaj albo kliknij „Zatrzymaj”."))
+            return
+        self._dopisz(t("Wczytuję listę z YouTube…"))
+        self.przycisk_pobierz.configure(state="disabled")
+        self._ustaw_postep(None)
+
+        def w_tle():
+            try:
+                self.kolejka.put(("lista", (link, lista_youtube(link))))
+            except Exception as e:
+                self.kolejka.put(("log", t("✖ Nie udało się wczytać listy z YouTube ({e}). Czy playlista jest "
+                                           "publiczna?").format(e=e)))
+                self.kolejka.put(("koniec", None))
+        threading.Thread(target=w_tle, daemon=True).start()
 
     def wczytaj_spotify(self, link: str):
         if self.pobieranie_listy:
@@ -932,32 +997,53 @@ class Aplikacja(ctk.CTk):
     def _pokaz_liste(self, link: str, lista: spotify_lista.Lista):
         self._schowaj_postep()
         self.przycisk_pobierz.configure(state="normal")
-        if self._wideo():  # Spotify nie ma filmów, a dopasowany „teledysk” z YouTube Music to zwykle sama okładka
-            self.tryb.set(t("Muzyka"))
-            self._zmien_tryb()
-            self._dopisz(t("♫ Ze Spotify Nutka pobiera tylko muzykę (mp3) – przełączam na „Muzyka”."))
-        self.przelacznik_trybu.configure(state="disabled")  # lista zawsze mp3; wraca w zamknij_liste
+        if lista.zrodlo == "spotify":
+            if self._wideo():  # Spotify nie ma filmów, a dopasowany „teledysk” z YouTube Music to zwykle sama okładka
+                self.tryb.set(t("Muzyka"))
+                self._zmien_tryb()
+                self._dopisz(t("♫ Ze Spotify Nutka pobiera tylko muzykę (mp3) – przełączam na „Muzyka”."))
+            self.przelacznik_trybu.configure(state="disabled")  # lista Spotify zawsze mp3; wraca w zamknij_liste
         self.lista = lista
         self.wiersze_listy.clear()
         self.zaznaczone.clear()
         self._wyczysc_tabele()
         self._pokaz_kolumny(("wybor", "tytul", "wykonawca", "album", "czas", "status"))
         self.pusta_tabela.place_forget()
-        folder = Path(self.folder.get())
-        masz = 0
         for i, utwor in enumerate(lista.utwory):
-            jest = spotify_lista.sciezka_pliku(utwor, lista, folder).exists()  # synchronizacja: to już masz
-            masz += jest
-            iid = self._wstaw_wiersz(i, utwor.tytul, utwor.wykonawca, utwor.album, utwor.czas, t("masz już") if jest else "")
-            self.wiersze_listy[iid] = utwor
-            self._ustaw_zaznaczenie(iid, not jest)
+            self.wiersze_listy[self._wstaw_wiersz(i, utwor.tytul, utwor.wykonawca, utwor.album, utwor.czas)] = utwor
         self.pasek_listy.grid()
-        rodzaj = {"playlista": t("Playlista"), "album": t("Album"), "utwór": t("Utwór")}[lista.rodzaj]
-        ile = f"{len(lista.utwory)} {t('utw.')}"
-        opis = f"{rodzaj} {t('„')}{lista.nazwa}”  ·  {ile}" + (t(" – {n} już masz, są odznaczone.").format(n=masz) if masz else "")
-        self._ustaw_opis_listy(rodzaj, lista.nazwa, ile + (f"  ·  {t('{n} już masz').format(n=masz)}" if masz else ""),
-                               postep="")
+        masz = self._oznacz_posiadane()
+        opis = f"{self._rodzaj_listy()} {t('„')}{lista.nazwa}”  ·  {self._ile_pozycji()}" + (
+            t(" – {n} już masz, są odznaczone.").format(n=masz) if masz else "")
         self._dopisz(t("♫ {opis} Odznacz, czego nie chcesz, i kliknij „Pobierz zaznaczone”.").format(opis=opis))
+        if lista.zrodlo == "youtube":
+            self._dopisz(t("Przełącznikiem „Muzyka / Wideo” wybierasz, czy lista pobierze się jako mp3, czy jako filmy mp4."))
+
+    def _rodzaj_listy(self) -> str:
+        return {"playlista": t("Playlista"), "album": t("Album"), "utwór": t("Utwór")}[self.lista.rodzaj]
+
+    def _ile_pozycji(self) -> str:
+        return f"{len(self.lista.utwory)} {t('poz.') if self._wideo() else t('utw.')}"
+
+    def _rozszerzenie(self) -> str:
+        """Lista z YouTube w trybie „Wideo” to pliki mp4; wszystko inne mp3."""
+        return "mp4" if self._wideo() else "mp3"
+
+    def _oznacz_posiadane(self) -> int:
+        """Synchronizacja: pozycje, których plik już leży w folderze (mp3 albo mp4 wg trybu), dostają „masz już”
+        i są odznaczone, reszta zaznaczona. Zwraca liczbę posiadanych. Wołane przy wczytaniu listy i przy
+        przełączeniu Muzyka / Wideo przy liście z YouTube (inny folder i rozszerzenie = inne „masz już”)."""
+        lista, folder = self.lista, Path(self._zmienna_folderu().get())
+        masz = 0
+        for iid, utwor in self.wiersze_listy.items():
+            jest = spotify_lista.sciezka_pliku(utwor, lista, folder, self._rozszerzenie()).exists()
+            masz += jest
+            self._ustaw_status(iid, t("masz już") if jest else "")
+            self._ustaw_zaznaczenie(iid, not jest)
+        self._ustaw_opis_listy(self._rodzaj_listy(), lista.nazwa,
+                               self._ile_pozycji() + (f"  ·  {t('{n} już masz').format(n=masz)}" if masz else ""),
+                               postep="")
+        return masz
 
     def _ogranicz_szerokosc(self, zdarzenie):
         """Nadmiar ponad MAKS_SZEROKOSC (po DPI) idzie po równo do pustych kolumn 0 i 2. Wagę ma tylko kolumna
@@ -1062,8 +1148,8 @@ class Aplikacja(ctk.CTk):
         self._wyczysc_tabele()
         self._pokaz_kolumny(("tytul", "wykonawca", "album", "czas"))
         self.pasek_listy.grid_remove()
-        self.przycisk_pobierz.configure(text=t("Pobierz mp3"))
         self.przelacznik_trybu.configure(state="normal")
+        self._zmien_tryb(zapisz=False)  # napis na „Pobierz” wg trybu
         self._pokaz_pusta()
 
     def _ustaw_zaznaczenie(self, iid: str, zaznacz: bool):
@@ -1090,7 +1176,8 @@ class Aplikacja(ctk.CTk):
         self._zaznacz_wszystko(len(self.zaznaczone) < len(self.wiersze_listy))
 
     def pobierz_liste(self):
-        """Zaznaczone utwory: dopasowanie w YouTube Music -> mp3 -> tagi i okładka ze Spotify, po kilka naraz."""
+        """Zaznaczone pozycje po kilka naraz. Spotify: dopasowanie w YouTube Music -> mp3 -> tagi i okładka ze
+        Spotify. YouTube: film już znany -> mp3 (okładka i tagi z yt-dlp, poprawione ze spisu) albo mp4 wg trybu."""
         if self.pobieranie_listy:  # przycisk jest wtedy „Zatrzymaj”
             self.przerwij_liste.set()
             for p in list(self.procesy_listy):
@@ -1101,10 +1188,13 @@ class Aplikacja(ctk.CTk):
         if not do_pobrania:
             messagebox.showinfo(t("Pobieranie"), t("Nic nie jest zaznaczone."))
             return
-        lista, folder = self.lista, Path(self.folder.get())
+        lista, folder = self.lista, Path(self._zmienna_folderu().get())
+        wideo, jakosc = self._wideo(), self._jakosc_wideo()  # lista z YouTube: mp3 albo mp4 wg przełącznika
+        self._zapisz_ustawienia_pobierania()  # folder mógł być wpisany ręcznie
         self.pobieranie_listy = True
         self.przerwij_liste.clear()
         self.przycisk_pobierz.configure(text=t("Zatrzymaj"))
+        self.przelacznik_trybu.configure(state="disabled")  # w trakcie nie zmieniamy formatu ani folderu
         for iid in do_pobrania:
             self._ustaw_status(iid, t("w kolejce"))
         self._dopisz(t("▶ Pobieram {n} utw. z „{nazwa}” (po {k} naraz)…").format(
@@ -1115,17 +1205,22 @@ class Aplikacja(ctk.CTk):
             if self.przerwij_liste.is_set():
                 return False
             utwor = self.wiersze_listy[iid]
-            plik = spotify_lista.sciezka_pliku(utwor, lista, folder)
+            plik = spotify_lista.sciezka_pliku(utwor, lista, folder, "mp4" if wideo else "mp3")
             try:
                 if plik.exists():
                     self.kolejka.put(("status", (iid, t("masz już"))))
                     return True
-                self.kolejka.put(("status", (iid, t("szukam…"))))
-                if not (utwor.youtube_id or spotify_lista.dopasuj(utwor, klient_yt_music())):
-                    self.kolejka.put(("status", (iid, "✗ " + t("brak na YouTube"))))
-                    return False
+                if not utwor.youtube_id:  # Spotify: dopiero teraz szukamy odpowiednika w YouTube Music
+                    self.kolejka.put(("status", (iid, t("szukam…"))))
+                    if not spotify_lista.dopasuj(utwor, klient_yt_music()):
+                        self.kolejka.put(("status", (iid, "✗ " + t("brak na YouTube"))))
+                        return False
                 plik.parent.mkdir(parents=True, exist_ok=True)
-                proces = subprocess.Popen(komenda_utworu(utwor.youtube_id, plik), stdout=subprocess.PIPE,
+                if wideo:
+                    komenda = komenda_wideo(utwor.youtube_id, plik, jakosc)
+                else:
+                    komenda = komenda_utworu(utwor.youtube_id, plik, z_okladka=lista.zrodlo == "youtube")
+                proces = subprocess.Popen(komenda, stdout=subprocess.PIPE,
                                           stderr=subprocess.STDOUT, env=ENV_UTF8, creationflags=BEZ_OKNA)
                 self.procesy_listy.add(proces)
                 for linia in proces.stdout:
@@ -1137,8 +1232,9 @@ class Aplikacja(ctk.CTk):
                 if kod != 0 or not plik.exists():
                     self.kolejka.put(("status", (iid, "✗ " + t("przerwano" if self.przerwij_liste.is_set() else "błąd"))))
                     return False
-                self.kolejka.put(("status", (iid, t("zapisuję…"))))
-                spotify_lista.otaguj(plik, utwor, lista)
+                if not wideo:  # mp3: tagi i okładka ze Spotify albo poprawka tagów po yt-dlp (YouTube)
+                    self.kolejka.put(("status", (iid, t("zapisuję…"))))
+                    spotify_lista.otaguj(plik, utwor, lista)
                 self.kolejka.put(("status", (iid, "✓ " + t("pobrano"))))
                 return True
             except Exception as e:
@@ -1169,6 +1265,8 @@ class Aplikacja(ctk.CTk):
             self._dopisz(t("Nie udało się {n} – zostały zaznaczone; kliknij „Pobierz zaznaczone”, "
                            "żeby spróbować jeszcze raz.").format(n=len(nieudane)))
         self.przycisk_pobierz.configure(text=t("Pobierz zaznaczone ({n})").format(n=len(self.zaznaczone)))
+        if self.lista and self.lista.zrodlo == "youtube":
+            self.przelacznik_trybu.configure(state="normal")  # lista Spotify zostaje przy mp3
 
     # ---------- odsłuch ----------
 
@@ -1283,8 +1381,7 @@ class Aplikacja(ctk.CTk):
         if not rozpoznaj_zrodlo(link):
             messagebox.showwarning(t("Zły link"), t("Wybierz coś z wyników albo wklej link z YouTube lub Spotify."))
             return
-        if rozpoznaj_zrodlo(link) == "spotify":  # Spotify zawsze przez listę: najpierw widzisz, co pobierzesz
-            self.wczytaj_spotify(link)
+        if self._wczytaj_liste(link):  # Spotify i playlisty/albumy z YouTube zawsze przez listę
             return
         folder = Path(self._zmienna_folderu().get())
         folder.mkdir(parents=True, exist_ok=True)
@@ -1475,6 +1572,16 @@ def autotest() -> int:
     except Exception as e:
         print(f"szukanie BŁĄD: {e!r}")
         bledy.append("szukanie")
+    try:  # playlista/album z YouTube w trybie listy (yt-dlp --flat-playlist): ten sam album, co niżej ze Spotify
+        lista_yt = lista_youtube("https://music.youtube.com/playlist?list=OLAK5uy_lVDcOS2vGKJxdNAMxFIsoR6SeaGwPZaJo")
+        if len(lista_yt.utwory) < 3:
+            raise ValueError(f"lista ma tylko {len(lista_yt.utwory)} poz.")
+        print(f"lista_yt OK: {lista_yt.rodzaj} „{lista_yt.nazwa}” ({lista_yt.utwory[0].rok}), {len(lista_yt.utwory)} poz., "
+              f"1. {lista_yt.utwory[0].wykonawca} - {lista_yt.utwory[0].tytul}")
+    except Exception as e:
+        if not blokada_youtube("lista_yt", str(e)):
+            print(f"lista_yt BŁĄD: {e!r}")
+            bledy.append("lista_yt")
     lista = None
     try:
         lista = spotify_lista.wczytaj("https://open.spotify.com/album/00hXe7ttZI4gjjWYqKAdMX")

@@ -23,8 +23,8 @@
 
 - **Wyszukiwarka YouTube Music** – wpisz wykonawcę albo tytuł, wybierz utwór albo cały album.
 - **Odsłuch przed pobraniem** – pojedynczy utwór albo cały album po kolei.
-- **Playlisty i albumy ze Spotify** – wklej link, zobacz listę utworów, odznacz, czego nie chcesz, pobierz resztę.
-  Przy kolejnym wczytaniu tej samej playlisty Nutka pobiera tylko nowe utwory.
+- **Playlisty i albumy z YouTube i ze Spotify** – wklej link, zobacz listę utworów, odznacz, czego nie chcesz,
+  pobierz resztę. Przy kolejnym wczytaniu tej samej playlisty Nutka pobiera tylko nowe utwory.
 - **Filmy z YouTube** – przełącz **Muzyka / Wideo** na **Wideo**, wklej link do filmu albo playlisty i wybierz
   jakość (1080p, 720p, 480p albo najwyższa). Wielogodzinne nagrania też. Filmy mają osobny folder.
 - **Dobra jakość i porządek** – mp3 VBR ~250–270 kbps z okładką i tagami (tytuł, wykonawca, album, numer, rok).
@@ -56,6 +56,7 @@ Wymagania: Windows 10 lub 11 (64-bit), ~400 MB miejsca, internet do wyszukiwania
 | pobrać album | przełącz na **Albumy**, wyszukaj → dwuklik |
 | najpierw posłuchać | zaznacz wynik → **▶ Odsłuchaj** (**Następny** / **■ Stop**) |
 | pobrać playlistę ze Spotify | w Spotify: **… → Udostępnij → Kopiuj link**, wklej w wyszukiwarkę → Enter → **Pobierz zaznaczone** |
+| pobrać playlistę albo album z YouTube | wklej link do playlisty w wyszukiwarkę → Enter → **Pobierz zaznaczone** (w trybie **Wideo** pobiorą się filmy) |
 | dociągnąć nowe utwory z playlisty | wczytaj ją jeszcze raz – to, co już masz, jest odznaczone |
 | pobrać z linku YouTube | wklej link w pole **Link** → **Pobierz mp3** |
 | pobrać film z YouTube | przełącz **Muzyka / Wideo** na **Wideo**, wybierz jakość, wklej link → **Pobierz wideo** |
