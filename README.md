@@ -58,7 +58,7 @@ Wymagania: Windows 10 lub 11 (64-bit), ~400 MB miejsca, internet do wyszukiwania
 | pobrać playlistę ze Spotify | w Spotify: **… → Udostępnij → Kopiuj link**, wklej w wyszukiwarkę → Enter → **Pobierz zaznaczone** |
 | pobrać playlistę albo album z YouTube | wklej link do playlisty w wyszukiwarkę → Enter → **Pobierz zaznaczone** (w trybie **Wideo** pobiorą się filmy) |
 | dociągnąć nowe utwory z playlisty | wczytaj ją jeszcze raz – to, co już masz, jest odznaczone |
-| pobrać z linku YouTube | wklej link w pole **Link** → **Pobierz mp3** |
+| pobrać z linku YouTube | wklej link w pole u góry (przycisk **Wklej**) → **Pobierz mp3** |
 | pobrać film z YouTube | przełącz **Muzyka / Wideo** na **Wideo**, wybierz jakość, wklej link → **Pobierz wideo** |
 
 Pliki trafiają do `Muzyka\Pobrane`, filmy do `Filmy\Pobrane` (zmienisz to przyciskiem **Wybierz…**).
@@ -83,8 +83,9 @@ Nieudane utwory zostają zaznaczone – kliknij **Pobierz zaznaczone**, żeby sp
 Historia ochrony → wybierz zablokowany plik → Akcje → Zezwalaj na urządzeniu. Kod programu jest w całości
 jawny w tym repozytorium.
 
-**Coś nie działa.** W folderze programu (`%LOCALAPPDATA%\Programs\Nutka`) uruchom
-`Nutka.exe --autotest > raport.txt` i dołącz `raport.txt` do [zgłoszenia](https://github.com/matmiccode/nutka/issues).
+**Coś nie działa.** Kliknij **Zgłoś problem** w lewym dolnym rogu okna: Nutka sprawdzi, co działa, skopiuje raport
+do schowka i otworzy stronę [zgłoszenia](https://github.com/matmiccode/nutka/issues) z raportem w treści. Bez konta
+GitHub: w folderze programu (`%LOCALAPPDATA%\Programs\Nutka`) uruchom `Nutka.exe --autotest > raport.txt`.
 
 ## Dla programistów
 

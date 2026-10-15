@@ -14,12 +14,23 @@ przy proponowaniu aktualizacji – pisz ją dla zwykłego użytkownika.
 - **Muzyka albo wideo – jak chcesz.** Przełącznik **Muzyka / Wideo** działa też przy liście z YouTube: w trybie
   „Muzyka” pozycje pobierają się jako mp3 z okładką i tagami, w trybie „Wideo” jako filmy mp4 w wybranej
   jakości, do folderu filmów.
+- **Jedno pole na wszystko.** Pole „Link” zniknęło – tytuł do wyszukania albo link z YouTube czy Spotify wpisujesz
+  w to samo pole u góry (przycisk **Wklej** wkleja link ze schowka i od razu go sprawdza). Link do jednego filmu
+  pokazuje się jako wiersz w tabeli, więc widzisz, co się pobierze. Przełącznik **Muzyka / Wideo** i jakość są
+  teraz przy polu „Zapisz do”.
+- **Prawy klik na wierszu** – kopiuj link, otwórz w YouTube albo Spotify, pokaż pobrany plik w folderze.
+- **Zgłoś problem** w lewym dolnym rogu – Nutka sama sprawdza, co działa, kopiuje raport do schowka i otwiera
+  stronę zgłoszenia na GitHubie z raportem w treści.
 - Drobne: lepsze dopasowywanie utworów ze Spotify z literą „ł” w tytule.
 
 In English: YouTube playlists and albums now open as a list, just like Spotify ones: paste the link (or pick
 an album in the search), untick what you don't want and click **Download selected**. Items you already have
 are marked “already yours”, so loading the playlist again picks up only the new ones. The **Music / Video**
-switch works here too: mp3 with cover art and tags, or mp4 videos in the chosen quality.
+switch works here too: mp3 with cover art and tags, or mp4 videos in the chosen quality. The “Link” field is gone:
+titles and links go into the same box on top (the **Paste** button pastes and checks a link right away), a single
+video shows up as a row in the table, and the **Music / Video** switch sits next to “Save to”. Right-click a row to
+copy its link, open it in YouTube or Spotify or show the downloaded file. **Report a problem** in the bottom-left
+corner runs a self-check and opens a GitHub issue page with the report inside.
 
 ## [1.5.0] – 2026-10-14
 

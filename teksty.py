@@ -115,6 +115,20 @@ EN = {
     "Przełącznikiem „Muzyka / Wideo” wybierasz, czy lista pobierze się jako mp3, czy jako filmy mp4.":
         "The “Music / Video” switch decides whether the list downloads as mp3 or as mp4 videos.",
     "yt-dlp nic nie zwrócił": "yt-dlp returned nothing",
+    "Sprawdzam link…": "Checking the link…",
+    "✖ Nie udało się odczytać linku ({e}).": "✖ Couldn't read the link ({e}).",
+    "Kopiuj link": "Copy link",
+    "Otwórz w YouTube": "Open in YouTube",
+    "Otwórz w Spotify": "Open in Spotify",
+    "Pokaż plik w folderze": "Show file in folder",
+    "Skopiowano: {tekst}": "Copied: {tekst}",
+    "Zgłoś problem": "Report a problem",
+    "Sprawdzam, co działa, a co nie – to potrwa kilkanaście sekund…":
+        "Checking what works and what doesn't – this takes a dozen seconds or so…",
+    "Raport jest w schowku, a w przeglądarce otworzyła się strona nowego zgłoszenia z raportem w treści – dopisz, co nie działa, i kliknij „Submit new issue”.":
+        "The report is in your clipboard and a new-issue page with the report inside has opened in your browser – describe what doesn't work and click “Submit new issue”.",
+    "**Co nie działa / co kliknąłem:**\n\n(opisz tutaj)\n\n**Raport autotestu:**":
+        "**What doesn't work / what I clicked:**\n\n(describe here)\n\n**Autotest report:**",
     "♫ {opis} Odznacz, czego nie chcesz, i kliknij „Pobierz zaznaczone”.":
         "♫ {opis} Untick what you don't want and click “Download selected”.",
     " – {n} już masz, są odznaczone.": " – {n} already yours, unticked.",

@@ -3,7 +3,8 @@
 YouTube  -> yt-dlp pobiera audio i konwertuje do mp3 (ffmpeg); w trybie „Wideo” obraz + dźwięk sklejone do mp4.
 Spotify  -> lista utworów (spotapi), każdy dopasowany w YouTube Music i stamtąd pobrany (spotify_lista.py).
 Playlista/album z YouTube -> ta sama lista z ptaszkami (youtube_lista.py), mp3 albo mp4 wg przełącznika.
-Szukaj   -> wyniki z YouTube Music (ytmusicapi), odsłuch przez ffplay.
+Szukaj   -> wyniki z YouTube Music (ytmusicapi), odsłuch przez ffplay. Jedno pole: fraza albo link (od 1.6.0);
+            link do jednego filmu pokazuje się jako wiersz w tabeli, żeby było widać, co się pobierze.
 Exe sam po cichu aktualizuje yt-dlp, ytmusicapi i spotapi (aktualizacje.py), a nową wersję programu
 proponuje z GitHub Releases (aktualizacja_programu.py).
 
@@ -22,7 +23,7 @@ import threading
 import tkinter as tk
 import webbrowser
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import urlencode, urlsplit
 from tkinter import filedialog, messagebox, ttk
 from tkinter import font as tkfont
 
@@ -42,6 +43,7 @@ WERSJA = "1.6.0"  # jedyne źródło wersji: czyta ją zbuduj.ps1 (instalator, w
 REPO_GITHUB = "matmiccode/nutka"  # skąd program bierze informację o nowych wersjach (GitHub Releases)
 BUYCOFFEE_URL = "https://buycoffee.to/matcode"  # profil na buycoffee.to - pusty = przycisk „Postaw kawę” się nie pokazuje
 STRONA_INSTRUKCJI = "https://matmiccode.github.io/nutka/instrukcja.html"  # ta sama strona co docs/instrukcja.html obok exe
+STRONA_ZGLOSZEN = f"https://github.com/{REPO_GITHUB}/issues/new"  # „Zgłoś problem” w stopce (raport autotestu w treści)
 DOMYSLNY_FOLDER = Path.home() / "Music" / t("Pobrane")  # po angielsku Music\Nutka
 DOMYSLNY_FOLDER_WIDEO = Path.home() / "Videos" / t("Pobrane")  # filmy osobno od muzyki: Filmy\Pobrane (en: Videos\Nutka)
 # jakość wideo: klucz w ustawieniach -> kolejność formatów yt-dlp (-S). Do 1080p wolimy H.264 + AAC, bo taki mp4 gra
@@ -226,6 +228,37 @@ def lista_youtube(link: str) -> spotify_lista.Lista:
     return youtube_lista.z_danych(json.loads(r.stdout))
 
 
+def opis_filmu(link: str) -> dict:
+    """Jeden film/utwór z YouTube jako wiersz tabeli (youtube_lista.wiersz_filmu): yt-dlp -J bez pobierania, ~2 s."""
+    r = subprocess.run([*narzedzie("yt-dlp"), "-q", "--no-warnings", "--ignore-config", "--no-playlist", "-J", "--", link],
+                       capture_output=True, text=True, encoding="utf-8", errors="replace", env=ENV_UTF8,
+                       creationflags=BEZ_OKNA)
+    if r.returncode != 0 or not r.stdout.strip():
+        blad = r.stderr.strip().splitlines()
+        raise ValueError(blad[-1] if blad else t("yt-dlp nic nie zwrócił"))
+    return youtube_lista.wiersz_filmu(json.loads(r.stdout), link)
+
+
+def linki_utworu(utwor: spotify_lista.Utwor, plik: Path | None = None) -> dict:
+    """Adresy wiersza listy do menu prawego klawisza: film w YouTube (gdy znany), utwór w Spotify (gdy stamtąd),
+    pobrany plik (gdy już leży w folderze)."""
+    return {"youtube": f"https://www.youtube.com/watch?v={utwor.youtube_id}" if utwor.youtube_id else "",
+            "spotify": f"https://open.spotify.com/track/{utwor.spotify_id}" if utwor.spotify_id else "",
+            "plik": plik if plik and plik.exists() else None}
+
+
+def bez_nazwy_uzytkownika(tekst: str) -> str:
+    """Ścieżki w raporcie autotestu zawierają nazwę konta Windows - w zgłoszeniu zastępujemy ją „~”."""
+    dom = str(Path.home())
+    return tekst.replace(dom, "~").replace(dom.replace("\\", "/"), "~")
+
+
+def adres_zgloszenia(raport: str) -> str:
+    """Strona nowego zgłoszenia na GitHubie z tytułem i raportem autotestu w treści (opis dopisuje użytkownik)."""
+    tresc = t("**Co nie działa / co kliknąłem:**\n\n(opisz tutaj)\n\n**Raport autotestu:**") + f"\n```\n{raport.strip()}\n```"
+    return STRONA_ZGLOSZEN + "?" + urlencode({"title": f"Nutka {WERSJA}: ", "body": tresc})
+
+
 _watki = threading.local()
 
 
@@ -353,6 +386,7 @@ class Aplikacja(ctk.CTk):
         self.przerwij_liste = threading.Event()
         self.procesy_listy: set[subprocess.Popen] = set()
         self.okno_aktualizacji: ctk.CTkToplevel | None = None
+        self._raport_w_toku = False  # „Zgłoś problem”: autotest w tle już leci
 
         self._zbuduj_ui()
         self._zmien_tryb(zapisz=False)  # jakość i folder wideo widać tylko w trybie „Wideo”
@@ -560,13 +594,15 @@ class Aplikacja(ctk.CTk):
         self.pole_szukaj.grid(row=0, column=0, sticky="ew")
         self.pole_szukaj.bind("<Return>", lambda _: self.szukaj())
         self.after(300, self.pole_szukaj.focus)
+        # jedno pole na wszystko (od 1.6.0): fraza do wyszukania albo link; „Wklej” = schowek do pola + Enter
+        self._przycisk(wiersz_szukaj, t("Wklej"), self._wklej, width=90, height=38).grid(row=0, column=1, padx=(10, 0))
         ctk.CTkSegmentedButton(
             wiersz_szukaj, values=[t("Utwory"), t("Albumy")], variable=self.rodzaj, height=38, corner_radius=10,
             fg_color=POLE, unselected_color=POLE, unselected_hover_color=OBRYS, selected_color=WYBRANY,
             selected_hover_color=WYBRANY_NAJECHANY, text_color=TEKST, font=ctk.CTkFont(FONT, 13),
-        ).grid(row=0, column=1, padx=(10, 0))
+        ).grid(row=0, column=2, padx=(10, 0))
         self.przycisk_szukaj = self._przycisk(wiersz_szukaj, t("Szukaj"), self.szukaj, glowny=True, width=110, height=38)
-        self.przycisk_szukaj.grid(row=0, column=2, padx=(10, 0))
+        self.przycisk_szukaj.grid(row=0, column=3, padx=(10, 0))
 
         # --- wyniki ---
         karta_wynikow = ctk.CTkFrame(self, fg_color=KARTA, corner_radius=14)
@@ -617,6 +653,7 @@ class Aplikacja(ctk.CTk):
         self.wyniki.bind("<<TreeviewSelect>>", self._wybrano_wynik)
         self.wyniki.bind("<Double-1>", self._dwuklik)
         self.wyniki.bind("<Button-1>", self._klik_w_tabeli, add="+")
+        self.wyniki.bind("<Button-3>", self._menu_tabeli)  # kopiuj link, otwórz w YouTube/Spotify, pokaż plik
         self.wyniki.bind("<Configure>", lambda _: self._dopasuj_kolumny(), add="+")
         # pusta tabela = zachęta: co zrobić najpierw, pod spodem jak obsługiwać wyniki
         # zasłania całą kartę razem z nagłówkami kolumn (nagłówki nad pustką wyglądały na niedokończone)
@@ -631,36 +668,31 @@ class Aplikacja(ctk.CTk):
         self.pusta_opis.pack()
         self._pokaz_pusta()
 
-        # --- link i folder ---
-        karta_linku = ctk.CTkFrame(self, fg_color="transparent")
-        karta_linku.grid(row=3, column=1, sticky="ew", padx=margines, pady=(12, 0))
-        karta_linku.columnconfigure(1, weight=1)
+        # --- folder i tryb (od 1.6.0 bez osobnego pola „Link”: link wkleja się w pole u góry) ---
+        karta_zapisu = ctk.CTkFrame(self, fg_color="transparent")
+        karta_zapisu.grid(row=3, column=1, sticky="ew", padx=margines, pady=(12, 0))
+        karta_zapisu.columnconfigure(1, weight=1)
         opis = dict(text_color=TEKST_SZARY, font=ctk.CTkFont(FONT, 13))
-        ctk.CTkLabel(karta_linku, text=t("Link"), **opis).grid(row=0, column=0, sticky="w", padx=(2, 12))
-        pole_link = self._pole(karta_linku, textvariable=self.link)
-        pole_link.grid(row=0, column=1, sticky="ew")
-        pole_link.bind("<Return>", lambda _: self.pobierz())
-        # „Muzyka / Wideo” przy linku (jak Utwory/Albumy przy wyszukiwarce): co ma wyjść z pobrania; przy wideo obok
-        # lista jakości, a pole „Zapisz do” pokazuje osobny folder na filmy (_zmien_tryb)
+        ctk.CTkLabel(karta_zapisu, text=t("Zapisz do"), **opis).grid(row=0, column=0, sticky="w", padx=(2, 12))
+        self.pole_folder = self._pole(karta_zapisu, textvariable=self.folder)
+        self.pole_folder.grid(row=0, column=1, sticky="ew")
+        # „Muzyka / Wideo” przy folderze: co ma wyjść z pobrania; przy wideo obok lista jakości, a pole „Zapisz do”
+        # pokazuje osobny folder na filmy (_zmien_tryb)
         self.przelacznik_trybu = ctk.CTkSegmentedButton(
-            karta_linku, values=[t("Muzyka"), t("Wideo")], variable=self.tryb, command=lambda _: self._zmien_tryb(),
+            karta_zapisu, values=[t("Muzyka"), t("Wideo")], variable=self.tryb, command=lambda _: self._zmien_tryb(),
             height=38, corner_radius=10, fg_color=POLE, unselected_color=POLE, unselected_hover_color=OBRYS,
             selected_color=WYBRANY, selected_hover_color=WYBRANY_NAJECHANY, text_color=TEKST,
             text_color_disabled=TEKST_SZARY, font=ctk.CTkFont(FONT, 13))
         self.przelacznik_trybu.grid(row=0, column=2, padx=(10, 0))
         self.wybor_jakosci = ctk.CTkOptionMenu(
-            karta_linku, values=list(NAZWY_JAKOSCI.values()), variable=self.jakosc, width=112, height=38,
+            karta_zapisu, values=list(NAZWY_JAKOSCI.values()), variable=self.jakosc, width=112, height=38,
             corner_radius=10, fg_color=POLE, button_color=POLE, button_hover_color=OBRYS, text_color=TEKST,
             dropdown_fg_color=KARTA, dropdown_hover_color=WYBRANY, dropdown_text_color=TEKST,
             font=ctk.CTkFont(FONT, 13), dropdown_font=ctk.CTkFont(FONT, 13),
             command=lambda _: self._zapisz_ustawienia_pobierania())
         self.wybor_jakosci.grid(row=0, column=3, padx=(10, 0))
-        self._przycisk(karta_linku, t("Wklej"), self._wklej, width=120, height=38).grid(row=0, column=4, padx=(10, 0))
-        ctk.CTkLabel(karta_linku, text=t("Zapisz do"), **opis).grid(row=1, column=0, sticky="w", padx=(2, 12), pady=(8, 0))
-        self.pole_folder = self._pole(karta_linku, textvariable=self.folder)
-        self.pole_folder.grid(row=1, column=1, columnspan=3, sticky="ew", pady=(8, 0))
-        self._przycisk(karta_linku, t("Wybierz…"), self._wybierz_folder, width=120, height=38).grid(
-            row=1, column=4, padx=(10, 0), pady=(8, 0))
+        self._przycisk(karta_zapisu, t("Wybierz…"), self._wybierz_folder, width=120, height=38).grid(
+            row=0, column=4, padx=(10, 0))
 
         # --- przyciski i pasek postępu ---
         przyciski = ctk.CTkFrame(self, fg_color="transparent")
@@ -705,6 +737,12 @@ class Aplikacja(ctk.CTk):
         link.bind("<Button-1>", lambda _: self.sprawdz_wersje_programu(recznie=True))
         link.bind("<Enter>", lambda _: link.configure(font=podkreslona))
         link.bind("<Leave>", lambda _: link.configure(font=zwykla))
+        # „Zgłoś problem” = autotest w tle, raport do schowka i strona nowego zgłoszenia na GitHubie z raportem w treści
+        zglos = ctk.CTkLabel(stopka, text=t("Zgłoś problem"), cursor="hand2", text_color=LINK, font=zwykla)
+        zglos.pack(side="left", padx=(14, 0))
+        zglos.bind("<Button-1>", lambda _: self._zglos_problem())
+        zglos.bind("<Enter>", lambda _: zglos.configure(font=podkreslona))
+        zglos.bind("<Leave>", lambda _: zglos.configure(font=zwykla))
         ctk.CTkLabel(stopka, text=PODPIS, **maly).pack(side="right")
 
     @staticmethod
@@ -816,12 +854,14 @@ class Aplikacja(ctk.CTk):
     # ---------- schowek, folder, log ----------
 
     def _wklej(self):
+        """Schowek do pola u góry i od razu Enter: link = lista albo podgląd filmu, zwykły tekst = wyszukiwanie."""
         try:
             tekst = self.clipboard_get().strip()
         except tk.TclError:
             return
-        self.link.set(tekst)
-        self._wczytaj_liste(tekst)  # Spotify albo playlista/album z YouTube -> od razu lista do przejrzenia
+        self.pole_szukaj.delete(0, "end")
+        self.pole_szukaj.insert(0, tekst)
+        self.szukaj()
 
     def _wideo(self) -> bool:
         return self.tryb.get() == t("Wideo")
@@ -878,10 +918,10 @@ class Aplikacja(ctk.CTk):
         fraza = self.pole_szukaj.get().strip()
         if not fraza:
             return
-        # wklejony link w polu szukania = od razu do pola "Link" (Spotify: wczytanie listy utworów)
-        if rozpoznaj_zrodlo(fraza):
+        if rozpoznaj_zrodlo(fraza):  # link: lista (Spotify, playlista/album z YouTube) albo podgląd jednego filmu
             self.link.set(fraza)
-            self._wczytaj_liste(fraza)
+            if not self._wczytaj_liste(fraza):
+                self.wczytaj_film(fraza)
             return
         self.przycisk_szukaj.configure(state="disabled")
         self._dopisz(t("🔍 Szukam: {fraza}").format(fraza=fraza))
@@ -911,6 +951,8 @@ class Aplikacja(ctk.CTk):
             self.linki_wynikow[iid] = w["link"]
         if wyniki:
             self.pusta_tabela.place_forget()
+            if len(wyniki) == 1:  # podgląd wklejonego linku (wczytaj_film): od razu zaznaczony = cel „Pobierz”
+                self.wyniki.selection_set(iid)
         else:
             self._pokaz_pusta(t("Nic nie znaleziono"), t("Sprawdź pisownię albo wpisz samego wykonawcę.\n"
                                                           "Szukasz całej płyty? Przełącz na „Albumy”."))
@@ -939,6 +981,100 @@ class Aplikacja(ctk.CTk):
             wiersz = self.wyniki.identify_row(zdarzenie.y)
             if wiersz:
                 self._przelacz(wiersz)
+
+    def _menu_tabeli(self, zdarzenie):
+        """Prawy klik na wierszu: kopiuj link, otwórz w YouTube / Spotify, pokaż pobrany plik w folderze."""
+        iid = self.wyniki.identify_row(zdarzenie.y)
+        if not iid:
+            return
+        self.wyniki.selection_set(iid)
+        linki = self._linki_wiersza(iid)
+        if not (linki["youtube"] or linki["spotify"]):
+            return
+        menu = tk.Menu(self, tearoff=0, bg=KARTA, fg=TEKST, activebackground=WYBRANY, activeforeground=TEKST,
+                       relief="flat", bd=0, font=(FONT, 10))
+        menu.add_command(label=t("Kopiuj link"), command=lambda: self._do_schowka(linki["youtube"] or linki["spotify"]))
+        if linki["youtube"]:
+            menu.add_command(label=t("Otwórz w YouTube"), command=lambda: webbrowser.open(linki["youtube"]))
+        if linki["spotify"]:
+            menu.add_command(label=t("Otwórz w Spotify"), command=lambda: webbrowser.open(linki["spotify"]))
+        if linki["plik"]:
+            menu.add_separator()
+            menu.add_command(label=t("Pokaż plik w folderze"),
+                             command=lambda: subprocess.Popen(f'explorer /select,"{linki["plik"]}"'))
+        try:
+            menu.tk_popup(zdarzenie.x_root, zdarzenie.y_root)
+        finally:
+            menu.grab_release()
+
+    def _linki_wiersza(self, iid: str) -> dict:
+        """youtube / spotify / plik dla wiersza: wynik wyszukiwania ma link z YouTube Music; wiersz listy - film
+        z YouTube (gdy znany), utwór ze Spotify (gdy stamtąd) i pobrany plik (gdy już leży w folderze)."""
+        if self.lista:
+            utwor = self.wiersze_listy.get(iid)
+            if utwor is None:
+                return {"youtube": "", "spotify": "", "plik": None}
+            plik = spotify_lista.sciezka_pliku(utwor, self.lista, Path(self._zmienna_folderu().get()), self._rozszerzenie())
+            return linki_utworu(utwor, plik)
+        return {"youtube": self.linki_wynikow.get(iid, ""), "spotify": "", "plik": None}
+
+    def _do_schowka(self, tekst: str):
+        self.clipboard_clear()
+        self.clipboard_append(tekst)
+        self._dopisz(t("Skopiowano: {tekst}").format(tekst=tekst))
+
+    def _link_do_pobrania(self) -> str:
+        """Co pobrać/odsłuchać: link wpisany w pole u góry (ostatnia intencja), inaczej zaznaczony wynik (self.link)."""
+        w_polu = self.pole_szukaj.get().strip()
+        return w_polu if rozpoznaj_zrodlo(w_polu) else self.link.get().strip()
+
+    def wczytaj_film(self, link: str):
+        """Link do jednego filmu/utworu z YouTube -> jeden wiersz w tabeli (tytuł, wykonawca, czas), od razu
+        zaznaczony, żeby „Pobierz” i „Odsłuchaj” działały jak dla wyniku wyszukiwania i było widać, co się pobierze."""
+        if self.lista:
+            if self.pobieranie_listy:
+                self._dopisz(t("Najpierw poczekaj na koniec pobierania listy (albo kliknij „Zatrzymaj”)."))
+                return
+            self.zamknij_liste()
+        self._dopisz(t("Sprawdzam link…"))
+        self.przycisk_szukaj.configure(state="disabled")
+        self._ustaw_postep(None)
+
+        def w_tle():
+            try:
+                self.kolejka.put(("wyniki", [opis_filmu(link)]))
+            except Exception as e:
+                self.kolejka.put(("log", t("✖ Nie udało się odczytać linku ({e}).").format(e=e)))
+                self.kolejka.put(("wyniki", None))
+            self.kolejka.put(("koniec", None))
+        threading.Thread(target=w_tle, daemon=True).start()
+
+    def _zglos_problem(self):
+        """Autotest w tle -> raport (bez nazwy konta w ścieżkach) do schowka + strona nowego zgłoszenia na GitHubie
+        z raportem w treści. Nie przeszkadza trwającemu pobieraniu."""
+        if self._raport_w_toku:
+            return
+        self._raport_w_toku = True
+        self._dopisz(t("Sprawdzam, co działa, a co nie – to potrwa kilkanaście sekund…"))
+
+        def w_tle():
+            try:
+                komenda = [sys.executable, "--autotest"] if SPAKOWANY else [sys.executable, str(FOLDER_PROGRAMU / "app.py"), "--autotest"]
+                r = subprocess.run(komenda, capture_output=True, text=True, encoding="utf-8", errors="replace",
+                                   env=ENV_UTF8, creationflags=BEZ_OKNA, timeout=240)
+                raport = r.stdout + r.stderr
+            except Exception as e:
+                raport = f"autotest nie zadziałał: {e!r}"
+            self.kolejka.put(("raport", bez_nazwy_uzytkownika(raport)))
+        threading.Thread(target=w_tle, daemon=True).start()
+
+    def _pokaz_raport(self, raport: str):
+        self._raport_w_toku = False
+        self.clipboard_clear()
+        self.clipboard_append(raport)
+        webbrowser.open(adres_zgloszenia(raport))
+        self._dopisz(t("Raport jest w schowku, a w przeglądarce otworzyła się strona nowego zgłoszenia z raportem "
+                       "w treści – dopisz, co nie działa, i kliknij „Submit new issue”."))
 
     # ---------- tryb listy (playlista / album / utwór ze Spotify, playlista / album z YouTube) ----------
 
@@ -1109,6 +1245,7 @@ class Aplikacja(ctk.CTk):
     def _wyczysc_tabele(self):
         self.wyniki.delete(*self.wyniki.get_children())
         self._pelne_teksty.clear()
+        self.link.set("")  # bez pola „Link” cel pobierania nie jest widoczny - nie może przeżyć starych wierszy
 
     def _skroc_wiersze(self, wiersze=None):
         """Treeview obcina za długi tekst w pół litery - zamiast tego „…” po ostatnim mieszczącym się znaku."""
@@ -1285,7 +1422,7 @@ class Aplikacja(ctk.CTk):
                 return
             utwor, link = self.wiersze_listy[wybrane[0]], ""
         else:
-            link = self.link.get().strip()
+            link = self._link_do_pobrania()
             if rozpoznaj_zrodlo(link) != "youtube":
                 messagebox.showinfo(t("Odsłuch"), t("Wybierz utwór z wyników albo wklej link z YouTube."))
                 return
@@ -1377,7 +1514,7 @@ class Aplikacja(ctk.CTk):
             return
         if self.proces:
             return
-        link = self.link.get().strip()
+        link = self._link_do_pobrania()
         if not rozpoznaj_zrodlo(link):
             messagebox.showwarning(t("Zły link"), t("Wybierz coś z wyników albo wklej link z YouTube lub Spotify."))
             return
@@ -1458,6 +1595,8 @@ class Aplikacja(ctk.CTk):
                     self._ustaw_opis_listy(postep=f"{zrobione}/{wszystkie}")
                 elif rodzaj == "lista_koniec":
                     self._koniec_listy(*wartosc)
+                elif rodzaj == "raport":
+                    self._pokaz_raport(wartosc)
                 elif rodzaj == "nowa_wersja":
                     self._pokaz_nowa_wersje(wartosc)
                 elif rodzaj == "aktualizacja_postep":

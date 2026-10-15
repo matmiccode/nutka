@@ -48,6 +48,16 @@ def z_danych(dane: dict) -> Lista:
     return lista
 
 
+def wiersz_filmu(dane: dict, link: str) -> dict:
+    """Jeden film/utwór (JSON z yt-dlp -J) jako wiersz tabeli wyników - klucze jak w app.szukaj_yt_music():
+    tytuł utworu (gdy YouTube Music go zna) albo filmu, wykonawca (artyści albo kanał), album, czas, link."""
+    sekundy = int(dane.get("duration") or 0)
+    wykonawca = ", ".join(dane.get("artists") or []) or _bez_topic(dane.get("channel") or dane.get("uploader") or "")
+    return {"tytul": dane.get("track") or dane.get("title") or "", "wykonawca": wykonawca,
+            "album": dane.get("album") or "", "czas": f"{sekundy // 60}:{sekundy % 60:02d}" if sekundy else "",
+            "link": link}
+
+
 def _bez_topic(kanal: str) -> str:
     """Kanały utworów YouTube Music nazywają się „Wykonawca - Topic”."""
     return re.sub(r"\s*-\s*Topic$", "", kanal).strip()
