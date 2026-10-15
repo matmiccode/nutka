@@ -7,6 +7,7 @@ from pathlib import Path
 import app
 import spotify_lista as sl
 import youtube_lista
+from teksty import t  # na angielskim Windowsie (runner GitHuba) t("Playlista") = "Playlist"
 
 
 def wpis(ident: str, tytul: str, kanal: str | None = "Dawid Podsiadło", sekundy: int | None = 200) -> dict:
@@ -52,7 +53,7 @@ class ZDanych(unittest.TestCase):
 
     def test_przedrostki_i_puste(self):
         for tytul, rodzaj, nazwa in (("Single - Sezon", "album", "Sezon"), ("EP - Ep", "album", "Ep"),
-                                     ("Album - Sezon 2 ", "album", "Sezon 2"), ("", "playlista", "Playlista"),
+                                     ("Album - Sezon 2 ", "album", "Sezon 2"), ("", "playlista", t("Playlista")),
                                      ("Albumy lata", "playlista", "Albumy lata"), ("Album-x", "playlista", "Album-x")):
             with self.subTest(tytul=tytul):
                 lista = youtube_lista.z_danych({"title": tytul, "entries": []})
