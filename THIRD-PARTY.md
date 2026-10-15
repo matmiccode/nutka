@@ -13,6 +13,7 @@ pod poniższymi adresami. Część z nich jest na licencji GPL, dlatego cały ko
 | FFmpeg (ffmpeg, ffprobe, ffplay) | konwersja do mp3, odsłuch | GPL-3.0 (build BtbN) | https://github.com/BtbN/FFmpeg-Builds, https://ffmpeg.org |
 | ytmusicapi | wyszukiwarka YouTube Music | MIT | https://github.com/sigma67/ytmusicapi |
 | spotapi | odczyt playlist i albumów Spotify | GPL-3.0 | https://pypi.org/project/spotapi/ (kod w paczce źródłowej) |
+| pymongo, dnspython, redis | importowane przez spotapi przy starcie (Nutka z nich nie korzysta) | Apache-2.0 / ISC / MIT | https://pypi.org |
 | mutagen | tagi i okładki w plikach mp3 | GPL-2.0-or-later | https://github.com/quodlibet/mutagen |
 | CustomTkinter | wygląd okna | CC0-1.0 | https://github.com/TomSchimansky/CustomTkinter |
 | Pillow | grafika | MIT-CMU | https://github.com/python-pillow/Pillow |

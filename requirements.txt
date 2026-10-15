@@ -1,6 +1,10 @@
 yt-dlp
 ytmusicapi
 spotapi
+# spotapi 1.2.8 importuje je przy starcie (spotapi/utils/saver.py), choć ich nie deklaruje - bez nich „No module named
+# 'pymongo'”. W repozytorium spotapi już poprawione; gdy wyjdzie nowsza wersja na PyPI, można usunąć.
+pymongo
+redis
 mutagen
 deno
 customtkinter

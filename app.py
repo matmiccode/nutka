@@ -1427,9 +1427,12 @@ class Aplikacja(ctk.CTk):
 def autotest() -> int:
     """Nutka.exe --autotest > raport.txt - sprawdza, czy wszystkie części są na miejscu i czy YouTube, Spotify, PyPI
     i GitHub nadal współpracują. Kod wyjścia 1 = coś nie działa (to samo sprawdza codziennie czujnik w GitHub Actions,
-    .github/workflows/czujnik.yml). `--pobierz` = dodatkowo pełne pobranie jednego utworu z listy Spotify."""
+    .github/workflows/czujnik.yml). `--pobierz` = dodatkowo pełne pobranie jednego utworu z listy Spotify.
+    Gdy YouTube odrzuca ten adres („Sign in to confirm you're not a bot” - tak traktuje serwerownie, w tym runnery
+    GitHuba), linie wideo/pobieranie kończą się jako „nie dało się sprawdzić” i nie liczą się do kodu wyjścia."""
     wyjscie_utf8()
     bledy: list[str] = []
+    nie_sprawdzono: list[str] = []
     print(f"Nutka {WERSJA} - autotest ({'exe' if SPAKOWANY else 'skrypt'}), {PODPIS}")
     print(f"pakiety  {aktualizacje.FOLDER} -> {aktualizacje._wczytaj_stan() or 'wbudowane w exe'}")
     log = aktualizacje.FOLDER / "aktualizacje.log"
@@ -1441,11 +1444,22 @@ def autotest() -> int:
         if not gdzie:
             bledy.append(program)
 
+    def blokada_youtube(nazwa: str, stderr: str) -> bool:
+        """„Sign in to confirm you're not a bot” - YouTube odrzuca adresy serwerowni (m.in. runnery GitHub Actions,
+        na których chodzi czujnik). To nie jest błąd Nutki, więc nie liczy się do wyniku - tylko „nie sprawdzono”."""
+        if "confirm you" not in stderr or "not a bot" not in stderr:
+            return False
+        print(f"{nazwa:8} NIE SPRAWDZONO: YouTube żąda logowania z tego adresu (tak traktuje serwerownie)")
+        nie_sprawdzono.append(nazwa)
+        return True
+
     def yt_dlp(nazwa: str, *argumenty: str):
         r = subprocess.run([*narzedzie("yt-dlp"), *argumenty], capture_output=True, text=True, env=ENV_UTF8,
                            creationflags=BEZ_OKNA)
-        print(f"{nazwa:8} {r.stdout.strip() or 'BŁĄD: ' + r.stderr.strip()[-300:]}")
-        if not r.stdout.strip():
+        if r.stdout.strip():
+            print(f"{nazwa:8} {r.stdout.strip()}")
+        elif not blokada_youtube(nazwa, r.stderr):
+            print(f"{nazwa:8} BŁĄD: {r.stderr.strip()[-300:]}")
             bledy.append(nazwa)
 
     yt_dlp("yt-dlp", "--version")
@@ -1461,16 +1475,22 @@ def autotest() -> int:
     except Exception as e:
         print(f"szukanie BŁĄD: {e!r}")
         bledy.append("szukanie")
+    lista = None
     try:
         lista = spotify_lista.wczytaj("https://open.spotify.com/album/00hXe7ttZI4gjjWYqKAdMX")
         if len(lista.utwory) < 3:
             raise ValueError(f"album ma tylko {len(lista.utwory)} utw.")
         print(f"spotify  OK: album „{lista.nazwa}”, {len(lista.utwory)} utw.")
-        if "--pobierz" in sys.argv:  # pełna ścieżka listy: dopasuj -> yt-dlp -> tagi, 1 utwór do %TEMP%
-            import tempfile
-            from mutagen.id3 import ID3
+    except Exception as e:
+        print(f"spotify  BŁĄD: {e!r}")
+        bledy.append("spotify")
+    if lista is not None and "--pobierz" in sys.argv:  # pełna ścieżka listy: dopasuj -> yt-dlp -> tagi, 1 utwór do %TEMP%
+        import tempfile
+        from mutagen.id3 import ID3
+        folder = Path(tempfile.mkdtemp(prefix="nutka-test-"))
+        try:
             utwor = lista.utwory[2]
-            plik = spotify_lista.sciezka_pliku(utwor, lista, Path(tempfile.mkdtemp(prefix="nutka-test-")))
+            plik = spotify_lista.sciezka_pliku(utwor, lista, folder)
             plik.parent.mkdir(parents=True, exist_ok=True)
             print(f"dopasowanie: {spotify_lista.dopasuj(utwor, klient_yt_music())}")
             if not utwor.youtube_id:
@@ -1478,15 +1498,17 @@ def autotest() -> int:
             r = subprocess.run(komenda_utworu(utwor.youtube_id, plik), capture_output=True, text=True, env=ENV_UTF8,
                                creationflags=BEZ_OKNA)
             if r.returncode != 0 or not plik.exists():
-                raise ValueError(f"yt-dlp kod {r.returncode}: {r.stderr.strip()[-300:]}")
-            spotify_lista.otaguj(plik, utwor, lista)
-            tagi = ID3(plik)
-            print(f"pobieranie OK: {plik.name}, {plik.stat().st_size // 1024} KB, tytuł={tagi.get('TIT2')}, "
-                  f"okładka={len(tagi.getall('APIC')[0].data) // 1024 if tagi.getall('APIC') else 0} KB")
-            shutil.rmtree(plik.parent.parent, ignore_errors=True)
-    except Exception as e:
-        print(f"spotify  BŁĄD: {e!r}")
-        bledy.append("spotify")
+                if not blokada_youtube("pobieranie", r.stderr):
+                    raise ValueError(f"yt-dlp kod {r.returncode}: {r.stderr.strip()[-300:]}")
+            else:
+                spotify_lista.otaguj(plik, utwor, lista)
+                tagi = ID3(plik)
+                print(f"pobieranie OK: {plik.name}, {plik.stat().st_size // 1024} KB, tytuł={tagi.get('TIT2')}, "
+                      f"okładka={len(tagi.getall('APIC')[0].data) // 1024 if tagi.getall('APIC') else 0} KB")
+        except Exception as e:
+            print(f"pobieranie BŁĄD: {e!r}")
+            bledy.append("pobieranie")
+        shutil.rmtree(folder, ignore_errors=True)
     try:  # ciche aktualizacje: czy PyPI odpowiada i czy wybór wersji (nightly yt-dlp) nadal działa
         najnowsze = {p: aktualizacje._najnowsza(p) for p in aktualizacje.PAKIETY}
         print("pypi     " + ", ".join(f"{p} {w}" for p, w in najnowsze.items()))
@@ -1506,7 +1528,10 @@ def autotest() -> int:
     except Exception as e:
         print(f"github   BŁĄD: {e!r}")
         bledy.append("github")
-    print(f"\nWYNIK    {'wszystko działa' if not bledy else 'NIE DZIAŁA: ' + ', '.join(bledy)}")
+    stan = "NIE DZIAŁA: " + ", ".join(bledy) if bledy else ("działa" if nie_sprawdzono else "wszystko działa")
+    if nie_sprawdzono:
+        stan += " (nie dało się sprawdzić: " + ", ".join(nie_sprawdzono) + ")"
+    print(f"\nWYNIK    {stan}")
     return 1 if bledy else 0
 
 

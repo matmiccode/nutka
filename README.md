@@ -109,7 +109,8 @@ każdej zmianie kodu [![Testy](https://github.com/matmiccode/nutka/actions/workf
 Codziennie rano **czujnik** [![Czujnik](https://github.com/matmiccode/nutka/actions/workflows/czujnik.yml/badge.svg)](https://github.com/matmiccode/nutka/actions/workflows/czujnik.yml)
 uruchamia `app.py --autotest --pobierz` na najnowszych pakietach z PyPI (tych samych, które dostają zainstalowane
 Nutki) i otwiera [issue z etykietą „czujnik”](https://github.com/matmiccode/nutka/issues?q=label%3Aczujnik), gdy
-YouTube, Spotify albo PyPI coś zmienią.
+YouTube Music, Spotify, PyPI albo GitHub coś zmienią. Samego pobierania z YouTube nie da się sprawdzić z serwerów
+GitHuba (YouTube żąda tam logowania), więc tę część autotest tam pomija.
 
 ## Wsparcie
 
