@@ -1,9 +1,8 @@
 """Teksty piosenek z LRCLIB (https://lrclib.net) - otwarta, społecznościowa baza tekstów, bez kluczy i kont (MATCODE).
 
 Do mp3 trafia zwykły tekst (tag USLT - pokazuje go prawie każdy odtwarzacz) i tekst z czasami linijek (tag SYLT),
-a obok mp3 plik .lrc o tej samej nazwie - z niego tekst przewijany w rytm piosenki biorą odtwarzacze na telefonie
-(Samsung Music, Poweramp) i na PC (AIMP, MusicBee, foobar2000). Brak tekstu albo brak sieci = plik bez tekstu,
-pobieranie się nie psuje.
+a obok mp3 plik .lrc o tej samej nazwie - z niego tekst przewijany w rytm piosenki biorą odtwarzacze, np. Poweramp
+na telefonie, AIMP i MusicBee na PC. Brak tekstu albo brak sieci = plik bez tekstu, pobieranie się nie psuje.
 
 Do LRCLIB idą tylko dane utworu: wykonawca, tytuł, album i długość.
 """

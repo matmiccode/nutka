@@ -96,7 +96,7 @@
       <div><dt>▶ Listen</dt><dd>Plays the selected track without downloading. While playing it turns into <span class="przycisk">■ Stop</span>, and <span class="przycisk">Next ›</span> appears next to it.</dd></div>
       <div><dt>Open folder</dt><dd>Opens the folder with the downloaded files in Explorer.</dd></div>
       <div><dt>Box at the bottom</dt><dd>Short messages: what is happening right now and whether it worked.</dd></div>
-      <div><dt>Bottom-left corner</dt><dd>The version number, the <strong>Check for updates</strong> link and <strong>Report a problem</strong> – Nutka checks what works, copies the report to the clipboard and opens a GitHub issue page with the report inside.</dd></div>
+      <div><dt>Bar at the bottom</dt><dd>The version number on the left. On the right: <strong>Check for updates</strong>, <strong>About</strong> (version, program website and licenses) and <strong>Report a problem</strong> – Nutka checks what works, copies the report to the clipboard and opens a GitHub issue page with the report inside.</dd></div>
       <div><dt>Top-right corner</dt><dd><span class="przycisk">Guide</span> opens this page, also without internet. <span class="przycisk">Buy the author a coffee</span> opens a page where you can support the author if you like. <span class="przycisk">PL</span> switches the app to Polish.</dd></div>
     </dl>
   </div>
@@ -137,6 +137,7 @@
     </table>
     <p class="odstep">Files go to the <strong>Music \ Nutka</strong> folder (<code>C:\Users\&lt;you&gt;\Music\Nutka</code>). Change the folder with the <span class="przycisk">Browse…</span> button and open it with <span class="przycisk">Open folder</span>. An album and a playlist land in their own subfolder, an album with track numbers.</p>
     <p>The music always comes from YouTube, also with Spotify links: Nutka takes only the title, artist and cover art from Spotify and downloads the audio from YouTube. That's why you occasionally get a different version of a track, e.g. a live one. The quality is mp3 at roughly 250–270 kbps.</p>
+    <p><strong>Song lyrics.</strong> Nutka adds the lyrics to every new mp3 from the open <a href="https://lrclib.net">LRCLIB</a> database, if it finds them there – your player shows them with the track. When the database also knows the line timings, an <code>.lrc</code> file with the same name appears next to the mp3. It lets the lyrics scroll in time with the song, e.g. in Poweramp on a phone or in AIMP and MusicBee on a computer; when you move your music, take it along with the mp3. Not every song is in the database, and missing lyrics don't break anything.</p>
   </div>
 </section>
 
@@ -208,7 +209,7 @@
     </div>
     <p>YouTube changes its site now and then, so at every start and every 6 hours the app quietly checks for a newer “download engine” and swaps it in. Without internet, or if the update fails, the app keeps working on the version it has.</p>
     <p>When a new version of the whole app is out, Nutka shows a window with the list of changes. Click <span class="przycisk glowny">Update now</span>: the app downloads the new version, installs it and restarts (about a minute). <span class="przycisk">Remind me later</span> closes the window until the next start, and <span class="przycisk">Skip this version</span> stops reminding you about it.</p>
-    <p>You can check manually with the <strong>Check for updates</strong> link in the bottom-left corner of the window. Your version number is next to it.</p>
+    <p>You can check manually with the <strong>Check for updates</strong> link in the bottom-right corner of the window. Your version number is in the bottom-left corner.</p>
     <p class="muted">Every release is digitally signed with the author's key. Nutka verifies the signature and the checksum before running the installer, and downloads it only from the official releases page on GitHub.</p>
   </div>
 </section>
@@ -230,7 +231,7 @@
       <tr><th>The app is in the wrong language</th><td>click the <strong>PL</strong> / <strong>EN</strong> button in the top-right corner</td></tr>
     </table>
     <div class="uwaga odstep">
-      <p><strong>The problem keeps coming back? Click <em>Report a problem</em></strong> in the bottom-left corner of the window. Nutka checks what works, copies the report to the clipboard and opens an <a href="https://github.com/matmiccode/nutka/issues">issue page on GitHub</a> in your browser with the report inside – describe what doesn't work and submit it (a GitHub account is needed). Without an account: open the app folder (<code>%LOCALAPPDATA%\Programs\Nutka</code>), click the Explorer address bar, type <code>cmd</code>, press Enter, then in the black window type <code>Nutka.exe --autotest &gt; report.txt</code> – the file <code>report.txt</code> shows what is missing.</p>
+      <p><strong>The problem keeps coming back? Click <em>Report a problem</em></strong> in the bottom-right corner of the window. Nutka checks what works, copies the report to the clipboard and opens an <a href="https://github.com/matmiccode/nutka/issues">issue page on GitHub</a> in your browser with the report inside – describe what doesn't work and submit it (a GitHub account is needed). Without an account: open the app folder (<code>%LOCALAPPDATA%\Programs\Nutka</code>), click the Explorer address bar, type <code>cmd</code>, press Enter, then in the black window type <code>Nutka.exe --autotest &gt; report.txt</code> – the file <code>report.txt</code> shows what is missing.</p>
     </div>
   </div>
 </section>

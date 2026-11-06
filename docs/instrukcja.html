@@ -96,7 +96,7 @@
       <div><dt>▶ Odsłuchaj</dt><dd>Gra zaznaczony utwór bez pobierania. W&nbsp;trakcie zmienia się w&nbsp;<span class="przycisk">■ Stop</span>, a&nbsp;obok pojawia się <span class="przycisk">Następny ›</span>.</dd></div>
       <div><dt>Otwórz folder</dt><dd>Otwiera folder z&nbsp;pobranymi plikami w&nbsp;Eksploratorze.</dd></div>
       <div><dt>Okienko na dole</dt><dd>Krótkie komunikaty: co się właśnie dzieje i&nbsp;czy się udało.</dd></div>
-      <div><dt>Lewy dolny róg</dt><dd>Numer wersji, link <strong>Sprawdź aktualizacje</strong> i&nbsp;<strong>Zgłoś problem</strong> – Nutka sama sprawdza, co działa, kopiuje raport do schowka i&nbsp;otwiera stronę zgłoszenia na GitHubie z&nbsp;raportem w&nbsp;treści.</dd></div>
+      <div><dt>Pasek na dole</dt><dd>Po lewej numer wersji. Po prawej <strong>Sprawdź aktualizacje</strong>, <strong>O&nbsp;programie</strong> (wersja, strona programu i&nbsp;licencje) i&nbsp;<strong>Zgłoś problem</strong> – Nutka sama sprawdza, co działa, kopiuje raport do schowka i&nbsp;otwiera stronę zgłoszenia na GitHubie z&nbsp;raportem w&nbsp;treści.</dd></div>
       <div><dt>Prawy górny róg</dt><dd><span class="przycisk">Instrukcja</span> otwiera tę stronę, także bez internetu. <span class="przycisk">Postaw kawę autorowi</span> otwiera stronę, na której możesz dobrowolnie wesprzeć autora. <span class="przycisk">EN</span> przełącza program na angielski.</dd></div>
     </dl>
   </div>
@@ -137,6 +137,7 @@
     </table>
     <p class="odstep">Pliki trafiają do folderu <strong>Muzyka \ Pobrane</strong> (<code>C:\Users\&lt;Ty&gt;\Music\Pobrane</code>). Folder zmienisz przyciskiem <span class="przycisk">Wybierz…</span>, a&nbsp;otworzysz przyciskiem <span class="przycisk">Otwórz folder</span>. Album i&nbsp;playlista lądują w&nbsp;osobnym podfolderze, album z&nbsp;numerami utworów.</p>
     <p>Muzyka zawsze pochodzi z&nbsp;YouTube, także przy linkach ze Spotify: Nutka bierze ze Spotify tylko tytuł, wykonawcę i&nbsp;okładkę, a&nbsp;dźwięk pobiera z&nbsp;YouTube. Dlatego czasem trafi się inna wersja utworu, np. na żywo. Jakość to mp3 około 250–270 kbps.</p>
+    <p><strong>Teksty piosenek.</strong> Do każdego nowego mp3 Nutka dopisuje tekst piosenki z&nbsp;otwartej bazy <a href="https://lrclib.net">LRCLIB</a>, jeśli go tam znajdzie – odtwarzacz pokaże go przy utworze. Gdy baza zna też czasy linijek, obok mp3 pojawia się plik <code>.lrc</code> o&nbsp;tej samej nazwie. Z&nbsp;niego tekst przewija się w&nbsp;rytm piosenki, np. w&nbsp;Poweramp na telefonie albo w&nbsp;AIMP i&nbsp;MusicBee na komputerze; przenosząc muzykę, bierz go razem z&nbsp;mp3. Nie każdy utwór jest w&nbsp;bazie, a&nbsp;brak tekstu niczego nie psuje.</p>
   </div>
 </section>
 
@@ -208,7 +209,7 @@
     </div>
     <p>YouTube co jakiś czas zmienia swoją stronę, więc program przy każdym starcie i&nbsp;co 6 godzin sprawdza w&nbsp;tle, czy jest nowszy „silnik pobierania”, i&nbsp;po cichu go podmienia. Bez internetu albo gdy aktualizacja się nie uda, program działa dalej na dotychczasowej wersji.</p>
     <p>Gdy pojawi się nowa wersja całego programu, Nutka pokaże okienko z&nbsp;opisem zmian. Kliknij <span class="przycisk glowny">Zaktualizuj teraz</span>: program sam pobierze nową wersję, zainstaluje ją i&nbsp;uruchomi się ponownie (około minuty). <span class="przycisk">Przypomnij później</span> zamyka okienko do następnego uruchomienia, a&nbsp;<span class="przycisk">Pomiń tę wersję</span> nie będzie już o&nbsp;niej przypominać.</p>
-    <p>Ręcznie sprawdzisz to linkiem <strong>Sprawdź aktualizacje</strong> w&nbsp;lewym dolnym rogu okna. Obok stoi numer Twojej wersji.</p>
+    <p>Ręcznie sprawdzisz to linkiem <strong>Sprawdź aktualizacje</strong> w&nbsp;prawym dolnym rogu okna. Numer Twojej wersji stoi w&nbsp;lewym dolnym rogu.</p>
     <p class="muted">Każde wydanie jest podpisane cyfrowo kluczem autora. Nutka sprawdza podpis i&nbsp;sumę kontrolną, zanim uruchomi instalator, i&nbsp;pobiera go wyłącznie z&nbsp;oficjalnej strony wydań na GitHubie.</p>
   </div>
 </section>
@@ -230,7 +231,7 @@
       <tr><th>Wklejony tekst nie jest traktowany jak link</th><td>Nutka przyjmuje tylko prawdziwe adresy z&nbsp;YouTube i&nbsp;Spotify (zaczynające się od <code>https://</code> albo nazwy strony); inny tekst trafia do wyszukiwarki</td></tr>
     </table>
     <div class="uwaga odstep">
-      <p><strong>Problem się powtarza? Kliknij <em>Zgłoś problem</em></strong> w&nbsp;lewym dolnym rogu okna. Nutka sama sprawdzi, co działa, skopiuje raport do schowka i&nbsp;otworzy w&nbsp;przeglądarce stronę <a href="https://github.com/matmiccode/nutka/issues">zgłoszenia na GitHubie</a> z&nbsp;raportem w&nbsp;treści – dopisz, co nie działa, i&nbsp;wyślij (potrzebne jest konto GitHub). Bez konta: otwórz folder programu (<code>%LOCALAPPDATA%\Programs\Nutka</code>), kliknij pasek adresu Eksploratora, wpisz <code>cmd</code>, Enter, a&nbsp;w&nbsp;czarnym oknie <code>Nutka.exe --autotest &gt; raport.txt</code> – plik <code>raport.txt</code> pokaże, czego brakuje.</p>
+      <p><strong>Problem się powtarza? Kliknij <em>Zgłoś problem</em></strong> w&nbsp;prawym dolnym rogu okna. Nutka sama sprawdzi, co działa, skopiuje raport do schowka i&nbsp;otworzy w&nbsp;przeglądarce stronę <a href="https://github.com/matmiccode/nutka/issues">zgłoszenia na GitHubie</a> z&nbsp;raportem w&nbsp;treści – dopisz, co nie działa, i&nbsp;wyślij (potrzebne jest konto GitHub). Bez konta: otwórz folder programu (<code>%LOCALAPPDATA%\Programs\Nutka</code>), kliknij pasek adresu Eksploratora, wpisz <code>cmd</code>, Enter, a&nbsp;w&nbsp;czarnym oknie <code>Nutka.exe --autotest &gt; raport.txt</code> – plik <code>raport.txt</code> pokaże, czego brakuje.</p>
     </div>
   </div>
 </section>

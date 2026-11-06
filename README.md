@@ -29,6 +29,8 @@
   jakość (1080p, 720p, 480p albo najwyższa). Wielogodzinne nagrania też. Filmy mają osobny folder.
 - **Dobra jakość i porządek** – mp3 VBR ~250–270 kbps z okładką i tagami (tytuł, wykonawca, album, numer, rok).
   Albumy i playlisty trafiają do osobnych folderów.
+- **Teksty piosenek** – do mp3 trafia tekst z otwartej bazy [LRCLIB](https://lrclib.net), a obok plik .lrc,
+  z którego odtwarzacz przewija tekst w rytm piosenki.
 - **Sam się aktualizuje** – silnik pobierania odświeża się po cichu, a o nowej wersji programu Nutka
   powie Ci sama i zainstaluje ją jednym kliknięciem.
 - **Instrukcja pod ręką** – przycisk **Instrukcja** w prawym górnym rogu otwiera poradnik, także bez internetu.

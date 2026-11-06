@@ -3,6 +3,24 @@
 Format: najnowsze na górze. Sekcja wersji jest jednocześnie opisem „Co nowego”, który program pokazuje
 przy proponowaniu aktualizacji – pisz ją dla zwykłego użytkownika.
 
+## [1.7.0] – 2026-11-06
+
+- **Teksty piosenek.** Do każdego nowego mp3 Nutka dopisuje tekst piosenki z otwartej bazy LRCLIB, więc
+  odtwarzacz pokaże go przy utworze. Gdy baza zna też czasy linijek, obok mp3 pojawia się plik .lrc, z którego
+  tekst przewija się w rytm piosenki (np. w Poweramp albo AIMP). Nie każdy utwór jest w bazie – wtedy plik
+  zostaje po prostu bez tekstu.
+- **Silnik pobierania znowu aktualizuje się sam.** Od końca października Nutka po cichu odrzucała nowe wersje
+  silnika pobierania, a bez nich YouTube prędzej czy później przestaje działać. Naprawione – po tej
+  aktualizacji silnik znów odświeża się w tle.
+- **O programie** – nowy link na dole okna: wersja, strona programu i licencje. Dolny pasek wygląda teraz jak
+  w innych programach MATCODE: wersja po lewej, linki po prawej.
+
+In English: **Song lyrics** – every new mp3 gets the lyrics from the open LRCLIB database, and when the line
+timings are known, an .lrc file next to it lets your player (e.g. Poweramp or AIMP) scroll the lyrics in time
+with the song. **The download engine updates itself again** – since late October Nutka quietly rejected new
+versions of it, which sooner or later breaks YouTube downloads; fixed. **About** – a new link at the bottom of
+the window with the version, the program website and licenses.
+
 ## [1.6.0] – 2026-10-15
 
 - **Playlisty i albumy z YouTube pokazują się jako lista** – tak jak te ze Spotify. Wklej link do playlisty

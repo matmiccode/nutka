@@ -40,7 +40,7 @@ from teksty import t
 # język interfejsu: NUTKA_JEZYK (testy) > wybór z przełącznika w nagłówku (ustawienia.json) > język Windows
 teksty.ustaw(os.environ.get("NUTKA_JEZYK") or aktualizacja_programu.czytaj_ustawienia().get("jezyk"))
 
-WERSJA = "1.6.0"  # jedyne źródło wersji: czyta ją zbuduj.ps1 (instalator, wydanie na GitHubie) i aktualizacja_programu
+WERSJA = "1.7.0"  # jedyne źródło wersji: czyta ją zbuduj.ps1 (instalator, wydanie na GitHubie) i aktualizacja_programu
 REPO_GITHUB = "matmiccode/nutka"  # skąd program bierze informację o nowych wersjach (GitHub Releases)
 BUYCOFFEE_URL = "https://buycoffee.to/matcode"  # profil na buycoffee.to - pusty = przycisk „Postaw kawę” się nie pokazuje
 STRONA_PROGRAMU = "https://matmiccode.github.io/nutka/"  # link „Strona programu” w oknie „O programie” (en: /nutka/en/)
