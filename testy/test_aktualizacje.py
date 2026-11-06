@@ -13,14 +13,71 @@ import aktualizacje as ak
 
 
 class Wersje(unittest.TestCase):
-    def test_nightly_nowsze_od_stabilnego(self):
-        self.assertGreater(ak._jako_liczby("2026.10.10.233141.dev0"), ak._jako_liczby("2026.10.7"))
-        self.assertGreater(ak._jako_liczby("1.12.3"), ak._jako_liczby("1.9.9"))
-        self.assertEqual(ak._jako_liczby("1.12.3"), (1, 12, 3))
-        self.assertEqual(ak._jako_liczby("0"), (0,))
-
     def test_wersja_nieznanego_pakietu(self):
         self.assertEqual(ak.wersja("pakiet-ktorego-na-pewno-nie-ma"), "0")
+
+    def test_ten_sam_numer_w_dwoch_zapisach(self):
+        # od 2026-10 PyPI podaje nightly yt-dlp jako „….dev0”, a rozpakowany pakiet mówi o sobie „…dev”
+        self.assertEqual(ak._klucz_wersji("2026.10.23.233055dev"), ak._klucz_wersji("2026.10.23.233055.dev0"))
+        self.assertEqual(ak._klucz_wersji("2026.10.23.233055.dev"), ak._klucz_wersji("2026.10.23.233055dev0"))
+        self.assertEqual(ak._klucz_wersji("1.0"), ak._klucz_wersji("1"))
+
+    def test_kolejnosc(self):
+        k = ak._klucz_wersji
+        self.assertGreater(k("2026.11.4.232659.dev0"), k("2026.10.23.233055dev"))
+        self.assertGreater(k("2026.10.10.233141.dev0"), k("2026.10.7"))
+        self.assertGreater(k("1.12.3"), k("1.9.9"))
+        self.assertGreater(k("1.0.1"), k("1.0"))
+        self.assertGreater(k("2026.10.10"), k("2026.10.10.dev0"))  # wydanie stabilne po swoim nightly
+        self.assertGreater(k("1.2.8"), k("0"))
+
+
+class Aktualizuj(unittest.TestCase):
+    """Cały tor aktualizuj() bez sieci: PyPI, rozpakowanie i test w procesie podstawione."""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="nutka-test-akt-"))
+        self.addCleanup(shutil.rmtree, self.tmp, True)
+        self.wersje = {"yt-dlp": "2026.10.10.233141.dev0", "ytmusicapi": "1.12.3", "spotapi": "1.2.8"}
+        self.najnowsze = dict(self.wersje, **{"yt-dlp": "2026.11.4.232659.dev0"})
+        self.rozpakowane = []
+        sciezka = list(sys.path)
+        self.addCleanup(lambda: sys.path.__setitem__(slice(None), sciezka))  # zastosuj() dopisuje do sys.path
+
+        def rozpakuj(pakiet, wer):
+            katalog = self.tmp / f"{pakiet}-{wer}"
+            katalog.mkdir()
+            self.rozpakowane.append(pakiet)
+            return katalog
+        for nazwa, atrapa in {"FOLDER": self.tmp, "STAN": self.tmp / "aktywne.json",
+                              "_najnowsza": lambda p: self.najnowsze[p], "wersja": lambda p: self.wersje.get(p, "0"),
+                              "_rozpakuj_wheel": rozpakuj, "_wymagany_ejs": lambda _k: None}.items():
+            patch = mock.patch.object(ak, nazwa, atrapa)
+            patch.start()
+            self.addCleanup(patch.stop)
+
+    def test_nowy_nightly_w_innym_zapisie_przechodzi(self):
+        # kandydat w procesie testowym przedstawia się „…dev” - to ta sama wersja, aktualizacja ma wejść
+        wynik_testu = dict(self.wersje, **{"yt-dlp": "2026.11.4.232659dev", "yt-dlp-ejs": "0.8.0"})
+        with mock.patch.object(ak, "_sprawdz_w_procesie", return_value=wynik_testu):
+            self.assertEqual(ak.aktualizuj(["exe"]), {"yt-dlp": "2026.11.4.232659.dev0"})
+        stan = json.loads((self.tmp / "aktywne.json").read_text(encoding="utf-8"))
+        self.assertTrue(Path(stan["yt-dlp"]).is_dir())
+
+    def test_zepsuty_kandydat_wycofany(self):
+        with mock.patch.object(ak, "_sprawdz_w_procesie", return_value={}):  # import w nowym procesie padł
+            with self.assertRaises(RuntimeError):
+                ak.aktualizuj(["exe"])
+        self.assertFalse((self.tmp / "aktywne.json").exists())
+        self.assertFalse((self.tmp / "yt-dlp-2026.11.4.232659.dev0").exists())
+
+    def test_zainstalowana_w_innym_zapisie_to_nie_nowa(self):
+        # po udanej aktualizacji pakiet mówi „…dev”, a PyPI dalej „….dev0” - nie pobieramy go co 6 godzin od nowa
+        self.wersje["yt-dlp"] = "2026.11.4.232659dev"
+        with mock.patch.object(ak, "_sprawdz_w_procesie") as test:
+            self.assertEqual(ak.aktualizuj(["exe"]), {})
+        test.assert_not_called()
+        self.assertEqual(self.rozpakowane, [])
 
 
 class Tymczasowy(unittest.TestCase):

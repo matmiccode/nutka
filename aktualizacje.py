@@ -73,8 +73,16 @@ def wersja(pakiet: str) -> str:
         return "0"
 
 
-def _jako_liczby(w: str) -> tuple[int, ...]:
-    return tuple(int(x) for x in re.findall(r"\d+", w))
+def _klucz_wersji(w: str) -> tuple:
+    """Numer wersji do porównań (PEP 440 w zakresie, którego używają nasze pakiety). Ten sam numer bywa zapisany
+    różnie: od 2026-10 PyPI podaje nightly yt-dlp jako „2026.10.23.233055.dev0”, a rozpakowany pakiet mówi o sobie
+    „2026.10.23.233055dev” - porównanie napisów odrzucało każdą aktualizację. „1.0” == „1”; nightly (.devN) jest
+    starszy od wydania o tym samym numerze."""
+    m = re.match(r"\s*v?(\d+(?:\.\d+)*)", w or "")
+    liczby = [int(x) for x in m[1].split(".")] if m else [0]
+    liczby += [0] * (8 - len(liczby))  # stała długość: (1, 0, 0…) == „1.0” == „1”, a „1.0.1” > „1.0”
+    dev = re.search(r"dev[._-]?(\d*)", (w or "")[m.end():] if m else "", re.I)
+    return tuple(liczby), 0 if dev else 1, int(dev[1] or 0) if dev else 0
 
 
 def _pobierz(url: str) -> bytes:
@@ -89,7 +97,7 @@ def _najnowsza(pakiet: str) -> str:
         return info["info"]["version"]
     z_wheelem = [w for w, pliki in info["releases"].items()
                  if any(p["packagetype"] == "bdist_wheel" and not p.get("yanked") for p in pliki)]
-    return max(z_wheelem, key=_jako_liczby)
+    return max(z_wheelem, key=_klucz_wersji)
 
 
 def _rozpakuj_wheel(pakiet: str, wer: str) -> Path:
@@ -160,7 +168,7 @@ def aktualizuj(exe: list[str]) -> dict[str, str]:
     oczekiwane = {}
     for pakiet in PAKIETY:
         najnowsza = _najnowsza(pakiet)
-        if _jako_liczby(najnowsza) <= _jako_liczby(wersja(pakiet)):
+        if _klucz_wersji(najnowsza) <= _klucz_wersji(wersja(pakiet)):
             continue
         katalog = _rozpakuj_wheel(pakiet, najnowsza)
         nowy[pakiet] = str(katalog)
@@ -174,7 +182,7 @@ def aktualizuj(exe: list[str]) -> dict[str, str]:
         return {}
 
     wynik = _sprawdz_w_procesie(exe, nowy)
-    if any(wynik.get(p) != w for p, w in oczekiwane.items()):
+    if any(p not in wynik or _klucz_wersji(wynik[p]) != _klucz_wersji(w) for p, w in oczekiwane.items()):
         # nowa wersja nie wstaje w tym exe (np. potrzebuje czegoś, czego nie spakowaliśmy) - wycofujemy
         for p in oczekiwane:
             shutil.rmtree(nowy[p], ignore_errors=True)
