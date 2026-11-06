@@ -130,6 +130,14 @@ class Sprzatanie(Tymczasowy):
         self.assertFalse(self.stary.exists())
         self.assertTrue(self.plik.exists())  # pliki zostają
 
+    def test_czas_katalogu_z_przyszlosci(self):
+        # znacznik czasu świeżego katalogu bywa o ułamek sekundy „z przyszłości” względem time.time()
+        # (u nas ~1 na 10) - bez limitu wieku i tak ma zniknąć (stąd losowe porażki testu wyżej)
+        przyszlosc = self.stary.stat().st_mtime - 0.01
+        with mock.patch.object(ak.time, "time", return_value=przyszlosc):
+            ak._posprzataj({"yt-dlp": str(self.uzywany)})
+        self.assertFalse(self.stary.exists())
+
     def test_swieze_zostaje(self):
         ak._posprzataj({}, starsze_niz_s=3600)  # może je właśnie rozpakowywać drugie okno
         self.assertTrue(self.stary.is_dir())

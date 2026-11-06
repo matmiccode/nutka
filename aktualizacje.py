@@ -126,8 +126,9 @@ def _posprzataj(stan: dict[str, str], starsze_niz_s: float = 0):
     zablokowane - wtedy zniknie przy następnej okazji)."""
     teraz = time.time()
     for katalog in FOLDER.iterdir():
+        # starsze_niz_s=0 = bez limitu wieku: czas świeżego katalogu bywa o ułamek sekundy „z przyszłości”
         if (katalog.is_dir() and str(katalog) not in stan.values()
-                and teraz - katalog.stat().st_mtime >= starsze_niz_s):
+                and (starsze_niz_s <= 0 or teraz - katalog.stat().st_mtime >= starsze_niz_s)):
             shutil.rmtree(katalog, ignore_errors=True)
 
 
