@@ -84,9 +84,15 @@ EN = {
     "Otwórz folder": "Open folder",
     "Pobierz zaznaczone ({n})": "Download selected ({n})",
     "Zatrzymaj": "Stop",
-    # stopka
+    # stopka i „O programie” (napisy wspólne dla apek MATCODE - APKI.md w centrali)
+    "MATCODE · wersja {wersja}": "MATCODE · version {wersja}",
     "Sprawdź aktualizacje": "Check for updates",
-    "silnik yt-dlp": "yt-dlp engine",
+    "O programie": "About",
+    "wersja {wersja}": "version {wersja}",
+    "Wpisz tytuł albo wklej link z YouTube lub Spotify, a dostaniesz mp3 z okładką albo film mp4.":
+        "Type a title or paste a YouTube or Spotify link and get an mp3 with cover art, or an mp4 video.",
+    "Strona programu": "Program website",
+    "Licencje": "Licenses",
     # dziennik i komunikaty
     "🔍 Szukam: {fraza}": "🔍 Searching: {fraza}",
     "✖ Wyszukiwanie nie wyszło: {e}": "✖ Search failed: {e}",

@@ -42,6 +42,7 @@ teksty.ustaw(os.environ.get("NUTKA_JEZYK") or aktualizacja_programu.czytaj_ustaw
 WERSJA = "1.6.0"  # jedyne źródło wersji: czyta ją zbuduj.ps1 (instalator, wydanie na GitHubie) i aktualizacja_programu
 REPO_GITHUB = "matmiccode/nutka"  # skąd program bierze informację o nowych wersjach (GitHub Releases)
 BUYCOFFEE_URL = "https://buycoffee.to/matcode"  # profil na buycoffee.to - pusty = przycisk „Postaw kawę” się nie pokazuje
+STRONA_PROGRAMU = "https://matmiccode.github.io/nutka/"  # link „Strona programu” w oknie „O programie” (en: /nutka/en/)
 STRONA_INSTRUKCJI = "https://matmiccode.github.io/nutka/instrukcja.html"  # ta sama strona co docs/instrukcja.html obok exe
 STRONA_ZGLOSZEN = f"https://github.com/{REPO_GITHUB}/issues/new"  # „Zgłoś problem” w stopce (raport autotestu w treści)
 DOMYSLNY_FOLDER = Path.home() / "Music" / t("Pobrane")  # po angielsku Music\Nutka
@@ -53,7 +54,6 @@ JAKOSCI_WIDEO = {"najwyzsza": "res,vcodec:h264,acodec:aac", "1080p": "res:1080,v
                  "720p": "res:720,vcodec:h264,acodec:aac", "480p": "res:480,vcodec:h264,acodec:aac"}
 NAZWY_JAKOSCI = {"najwyzsza": t("Najwyższa"), "1080p": "1080p", "720p": "720p", "480p": "480p"}  # napisy na liście
 DOMYSLNA_JAKOSC = "1080p"
-PODPIS = "MATCODE"
 ROWNOLEGLE_POBIERANIA = 3  # lista Spotify: ile utworów naraz
 # wklejony tekst trafia jako argument do yt-dlp, więc „link” = tylko http(s) na jednym z tych hostów (rozpoznaj_zrodlo)
 HOSTY_YOUTUBE = {"youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com", "youtu.be", "www.youtu.be"}
@@ -259,6 +259,45 @@ def adres_zgloszenia(raport: str) -> str:
     return STRONA_ZGLOSZEN + "?" + urlencode({"title": f"Nutka {WERSJA}: ", "body": tresc})
 
 
+def podpis_stopki() -> str:
+    """Lewy dół okna - ten sam podpis we wszystkich apkach MATCODE (APKI.md w centrali)."""
+    return t("MATCODE · wersja {wersja}").format(wersja=WERSJA)
+
+
+def strona_programu() -> str:
+    """Link „Strona programu” w oknie „O programie” - strona w języku okna."""
+    return STRONA_PROGRAMU + "en/" if teksty.jezyk() == "en" else STRONA_PROGRAMU
+
+
+def _markdown_na_tekst(tekst: str) -> str:
+    """THIRD-PARTY.md do okna „Licencje”: bez znaczników, tabela składników jako lista „• nazwa – licencja (do czego)”
+    z adresem kodu pod spodem."""
+    wiersze, naglowek_tabeli = [], True
+    for linia in tekst.replace("`", "").splitlines():
+        if linia.startswith("|"):
+            komorki = [k.strip() for k in linia.strip("|").split("|")]
+            if naglowek_tabeli or set(komorki[0]) <= set("-: "):  # pierwszy wiersz tabeli i linia „| --- |”
+                naglowek_tabeli = False
+                continue
+            nazwa, do_czego, licencja, kod = (komorki + [""] * 4)[:4]
+            wiersze.append(f"•  {nazwa} – {licencja} ({do_czego})\n     {kod}")
+        else:
+            wiersze.append(linia.lstrip("# ") if linia.startswith("#") else linia)
+    return "\n".join(wiersze).strip()
+
+
+def tekst_licencji(folder: Path) -> str:
+    """Licencja Nutki (LICENSE) i składników z instalatora (THIRD-PARTY.md) - zbuduj.ps1 kładzie oba pliki obok
+    Nutka.exe. Gdyby ich nie było, zostają adresy tych plików na GitHubie."""
+    czesci = []
+    for nazwa in ("LICENSE", "THIRD-PARTY.md"):
+        try:
+            czesci.append(_markdown_na_tekst((folder / nazwa).read_text(encoding="utf-8")))
+        except OSError:
+            czesci.append(f"https://github.com/{REPO_GITHUB}/blob/master/{nazwa}")
+    return "\n\n\n".join(czesci)
+
+
 _watki = threading.local()
 
 
@@ -386,6 +425,8 @@ class Aplikacja(ctk.CTk):
         self.przerwij_liste = threading.Event()
         self.procesy_listy: set[subprocess.Popen] = set()
         self.okno_aktualizacji: ctk.CTkToplevel | None = None
+        self.okno_o_programie: ctk.CTkToplevel | None = None
+        self.okno_licencji: ctk.CTkToplevel | None = None
         self._raport_w_toku = False  # „Zgłoś problem”: autotest w tle już leci
 
         self._zbuduj_ui()
@@ -545,6 +586,56 @@ class Aplikacja(ctk.CTk):
                 webbrowser.open(plik.resolve().as_uri())
                 return
         webbrowser.open(STRONA_INSTRUKCJI.replace("/nutka/", "/nutka/en/") if teksty.jezyk() == "en" else STRONA_INSTRUKCJI)
+
+    def _okienko(self, tytul: str, rozmiar: str, zmienne: bool = False) -> ctk.CTkToplevel:
+        """Okno dialogowe w kolorach Nutki, nad głównym, z ikoną (CTk podmienia ją po ~200 ms, stąd after)."""
+        okno = ctk.CTkToplevel(self, fg_color=TLO)
+        okno.title(tytul)
+        okno.geometry(rozmiar)
+        okno.resizable(zmienne, zmienne)
+        okno.transient(self)
+        okno.after(250, lambda: (okno.iconbitmap(str(ZASOBY / "ikona.ico")) if (ZASOBY / "ikona.ico").exists() else None,
+                                 okno.lift(), okno.focus_force()))
+        return okno
+
+    @staticmethod
+    def _juz_otwarte(okno: ctk.CTkToplevel | None) -> bool:
+        """Drugi klik w link nie mnoży okien - otwarte wychodzi na wierzch."""
+        if okno is not None and okno.winfo_exists():
+            okno.lift()
+            okno.focus_force()
+            return True
+        return False
+
+    def _pokaz_o_programie(self):
+        """Krótkie okno ze standardu apek MATCODE: nazwa, wersja, jedno zdanie, „MATCODE · Strona programu”, „Licencje”."""
+        if self._juz_otwarte(self.okno_o_programie):
+            return
+        okno = self.okno_o_programie = self._okienko(t("O programie"), "480x240")
+        ctk.CTkLabel(okno, text="Nutka", text_color=TEKST, font=ctk.CTkFont(FONT, 22, "bold")).pack(
+            anchor="w", padx=24, pady=(20, 0))
+        ctk.CTkLabel(okno, text=t("wersja {wersja}").format(wersja=WERSJA), text_color=TEKST_SZARY,
+                     font=ctk.CTkFont(FONT, 13)).pack(anchor="w", padx=24)
+        ctk.CTkLabel(okno, text=t("Wpisz tytuł albo wklej link z YouTube lub Spotify, a dostaniesz mp3 z okładką "
+                                  "albo film mp4."),
+                     text_color=TEKST, font=ctk.CTkFont(FONT, 13), wraplength=430, justify="left").pack(
+            anchor="w", padx=24, pady=(14, 0))
+        dol = ctk.CTkFrame(okno, fg_color="transparent")
+        dol.pack(fill="x", side="bottom", padx=24, pady=(0, 20))
+        ctk.CTkLabel(dol, text="MATCODE  ·", text_color=TEKST_SZARY, font=ctk.CTkFont(FONT, 13)).pack(side="left")
+        self._link(dol, t("Strona programu"), lambda: webbrowser.open(strona_programu()), 13).pack(side="left", padx=(7, 0))
+        self._przycisk(dol, t("Licencje"), self._pokaz_licencje, width=120, height=34).pack(side="right")
+
+    def _pokaz_licencje(self):
+        """LICENSE i THIRD-PARTY.md w oknie z przewijaniem (plik .md nie ma w Windows domyślnego programu)."""
+        if self._juz_otwarte(self.okno_licencji):
+            return
+        okno = self.okno_licencji = self._okienko(t("Licencje"), "720x560", zmienne=True)
+        tresc = ctk.CTkTextbox(okno, corner_radius=10, fg_color=KARTA, text_color=TEKST_SZARY,
+                               font=ctk.CTkFont(FONT, 13), wrap="word")
+        tresc.pack(fill="both", expand=True, padx=16, pady=16)
+        tresc.insert("end", tekst_licencji(FOLDER_PROGRAMU))
+        tresc.configure(state="disabled")
 
     def _styl_tabeli(self):
         """Tabela wyników to ttk.Treeview (CustomTkinter nie ma tabeli) - ubieramy ją w te same kolory."""
@@ -724,31 +815,30 @@ class Aplikacja(ctk.CTk):
                                   scrollbar_button_color=OBRYS, scrollbar_button_hover_color=AKCENT)
         self.log.grid(row=5, column=1, sticky="ew", padx=margines)
 
-        # --- stopka ---
+        # --- stopka: wspólny układ apek MATCODE - podpis z wersją po lewej, linki po prawej ---
+        # (wersja yt-dlp nie jest już na ekranie - ma ją raport autotestu z „Zgłoś problem”)
         stopka = ctk.CTkFrame(self, fg_color="transparent")
         stopka.grid(row=6, column=1, sticky="ew", padx=margines + 2, pady=(8, 10))
         maly = dict(text_color=TEKST_SZARY, font=ctk.CTkFont(FONT, 12))
-        self.stopka_wersja = ctk.CTkLabel(stopka, text=self._opis_wersji(), **maly)
-        self.stopka_wersja.pack(side="left")
-        # link „Sprawdź aktualizacje” = ręczne sprawdzenie; wygląda jak link (kolor, podkreślenie po najechaniu)
-        zwykla, podkreslona = ctk.CTkFont(FONT, 12), ctk.CTkFont(FONT, 12, underline=True)
-        link = ctk.CTkLabel(stopka, text=t("Sprawdź aktualizacje"), cursor="hand2", text_color=LINK, font=zwykla)
-        link.pack(side="left", padx=(14, 0))
-        link.bind("<Button-1>", lambda _: self.sprawdz_wersje_programu(recznie=True))
-        link.bind("<Enter>", lambda _: link.configure(font=podkreslona))
-        link.bind("<Leave>", lambda _: link.configure(font=zwykla))
-        # „Zgłoś problem” = autotest w tle, raport do schowka i strona nowego zgłoszenia na GitHubie z raportem w treści
-        zglos = ctk.CTkLabel(stopka, text=t("Zgłoś problem"), cursor="hand2", text_color=LINK, font=zwykla)
-        zglos.pack(side="left", padx=(14, 0))
-        zglos.bind("<Button-1>", lambda _: self._zglos_problem())
-        zglos.bind("<Enter>", lambda _: zglos.configure(font=podkreslona))
-        zglos.bind("<Leave>", lambda _: zglos.configure(font=zwykla))
-        ctk.CTkLabel(stopka, text=PODPIS, **maly).pack(side="right")
+        ctk.CTkLabel(stopka, text=podpis_stopki(), **maly).pack(side="left")
+        linki = [(t("Sprawdź aktualizacje"), lambda: self.sprawdz_wersje_programu(recznie=True)),
+                 (t("O programie"), self._pokaz_o_programie),
+                 # autotest w tle, raport do schowka i strona nowego zgłoszenia na GitHubie z raportem w treści
+                 (t("Zgłoś problem"), self._zglos_problem)]
+        for nr, (napis, akcja) in enumerate(reversed(linki)):  # side="right" układa od prawej krawędzi
+            if nr:
+                ctk.CTkLabel(stopka, text="·", **maly).pack(side="right", padx=7)
+            self._link(stopka, napis, akcja).pack(side="right")
 
     @staticmethod
-    def _opis_wersji() -> str:
-        wersja = aktualizacje.wersja("yt-dlp")  # nightly: 2026.9.27.232945.dev0 -> "2026.9.27"
-        return f"Nutka {WERSJA}  ·  {t('silnik yt-dlp')} {'.'.join(wersja.split('.')[:3])}"
+    def _link(rodzic, tekst: str, akcja, rozmiar: int = 12) -> ctk.CTkLabel:
+        """Napis, który działa jak link: jaśniejszy róż, podkreślenie po najechaniu."""
+        zwykla, podkreslona = ctk.CTkFont(FONT, rozmiar), ctk.CTkFont(FONT, rozmiar, underline=True)
+        link = ctk.CTkLabel(rodzic, text=tekst, cursor="hand2", text_color=LINK, font=zwykla)
+        link.bind("<Button-1>", lambda _: akcja())
+        link.bind("<Enter>", lambda _: link.configure(font=podkreslona))
+        link.bind("<Leave>", lambda _: link.configure(font=zwykla))
+        return link
 
     # ---------- ciche aktualizacje (tylko exe) ----------
 
@@ -762,7 +852,6 @@ class Aplikacja(ctk.CTk):
             nowe = aktualizacje.aktualizuj(narzedzie("yt-dlp")[:1])
             if nowe:
                 aktualizacje.zapisz_log(f"zaktualizowano: {nowe}")
-                self.kolejka.put(("wersja", self._opis_wersji()))
         except Exception as e:
             # brak internetu / PyPI zablokowane / zła wersja - zostaje to, co działa
             aktualizacje.zapisz_log(f"bez zmian, błąd: {e!r}")
@@ -770,7 +859,7 @@ class Aplikacja(ctk.CTk):
     # ---------- aktualizacja samego programu (GitHub Releases) ----------
 
     def sprawdz_wersje_programu(self, recznie: bool = False):
-        """Automatycznie: w tle i po cichu. Ręcznie (klik w wersję w stopce): z komunikatem także, gdy brak nowej."""
+        """Automatycznie: w tle i po cichu. Ręcznie (link w stopce): z komunikatem także, gdy brak nowej."""
         def w_tle():
             try:
                 wydanie = aktualizacja_programu.do_zaproponowania(REPO_GITHUB, WERSJA, recznie)
@@ -790,13 +879,7 @@ class Aplikacja(ctk.CTk):
     def _pokaz_nowa_wersje(self, wydanie: dict):
         if self.okno_aktualizacji is not None and self.okno_aktualizacji.winfo_exists():
             return
-        okno = self.okno_aktualizacji = ctk.CTkToplevel(self, fg_color=TLO)
-        okno.title(t("Aktualizacja Nutki"))
-        okno.geometry("560x430")
-        okno.resizable(False, False)
-        okno.transient(self)
-        okno.after(250, lambda: (okno.iconbitmap(str(ZASOBY / "ikona.ico")) if (ZASOBY / "ikona.ico").exists() else None,
-                                 okno.lift(), okno.focus_force()))
+        okno = self.okno_aktualizacji = self._okienko(t("Aktualizacja Nutki"), "560x430")
         ctk.CTkLabel(okno, text=t("Dostępna jest nowa wersja Nutki {wersja}").format(wersja=wydanie["wersja"]),
                      text_color=TEKST, font=ctk.CTkFont(FONT, 18, "bold")).pack(anchor="w", padx=22, pady=(20, 2))
         ctk.CTkLabel(okno, text=t("Masz wersję {wersja}. Aktualizacja zajmie około minuty, Twoje pliki zostają.").format(wersja=WERSJA),
@@ -1583,8 +1666,6 @@ class Aplikacja(ctk.CTk):
                     self._pokaz_wyniki(wartosc)
                 elif rodzaj == "odsluch_koniec":
                     self._pokaz_odsluch(False)
-                elif rodzaj == "wersja":
-                    self.stopka_wersja.configure(text=wartosc)
                 elif rodzaj == "lista":
                     self._pokaz_liste(*wartosc)
                 elif rodzaj == "status":

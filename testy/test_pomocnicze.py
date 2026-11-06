@@ -1,12 +1,15 @@
 """Pomocnicze funkcje okna (app.py, youtube_lista.py) bez sieci: podgląd jednego filmu jako wiersz tabeli,
-adresy do menu prawego klawisza, raport do zgłoszenia bez nazwy konta Windows, adres strony zgłoszenia."""
+adresy do menu prawego klawisza, raport do zgłoszenia bez nazwy konta Windows, adres strony zgłoszenia,
+stopka i okno „O programie” (podpis, strona programu, licencje) w obu językach."""
 
+import tempfile
 import unittest
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
 import app
 import spotify_lista as sl
+import teksty
 import youtube_lista
 
 
@@ -62,6 +65,44 @@ class Zgloszenie(unittest.TestCase):
         self.assertIn("```\nNutka 1.6.0 - autotest\nWYNIK    NIE DZIAŁA: spotify\n```", tresc)
         self.assertIn("**", tresc)  # nagłówki do wypełnienia przez użytkownika
         self.assertLess(len(adres), 8000)
+
+
+class OProgramie(unittest.TestCase):
+    """Standard MATCODE: stopka „MATCODE · wersja X”, w „O programie” link do strony programu i „Licencje”."""
+
+    def setUp(self):
+        self._jezyk = teksty.jezyk()
+        self.addCleanup(teksty.ustaw, self._jezyk)
+
+    def test_podpis_stopki(self):
+        teksty.ustaw("pl")
+        self.assertEqual(app.podpis_stopki(), f"MATCODE · wersja {app.WERSJA}")
+        teksty.ustaw("en")
+        self.assertEqual(app.podpis_stopki(), f"MATCODE · version {app.WERSJA}")
+
+    def test_strona_programu(self):
+        teksty.ustaw("pl")
+        self.assertEqual(app.strona_programu(), "https://matmiccode.github.io/nutka/")
+        teksty.ustaw("en")
+        self.assertEqual(app.strona_programu(), "https://matmiccode.github.io/nutka/en/")
+
+    def test_licencje_obok_programu(self):
+        # zbuduj.ps1 kopiuje LICENSE i THIRD-PARTY.md obok Nutka.exe; w repo leżą w korzeniu
+        tresc = app.tekst_licencji(Path(app.__file__).parent)
+        self.assertIn("MIT License", tresc)
+        self.assertIn("MATCODE", tresc)
+        self.assertIn("FFmpeg", tresc)  # składniki z THIRD-PARTY.md
+        self.assertIn("https://github.com/quodlibet/mutagen", tresc)
+        # w oknie zwykły tekst: tabela z markdownu zamieniona na listę, bez znaczników
+        self.assertNotIn("| --- |", tresc)
+        self.assertNotIn("`", tresc)
+        self.assertNotIn("# ", tresc)
+
+    def test_licencje_brak_plikow(self):
+        with tempfile.TemporaryDirectory() as pusty:
+            tresc = app.tekst_licencji(Path(pusty))
+        self.assertIn(f"https://github.com/{app.REPO_GITHUB}/blob/master/LICENSE", tresc)
+        self.assertIn(f"https://github.com/{app.REPO_GITHUB}/blob/master/THIRD-PARTY.md", tresc)
 
 
 if __name__ == "__main__":
