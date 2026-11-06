@@ -84,6 +84,12 @@ EN = {
     "Otwórz folder": "Open folder",
     "Pobierz zaznaczone ({n})": "Download selected ({n})",
     "Zatrzymaj": "Stop",
+    # teksty piosenek (LRCLIB)
+    "📝 Teksty piosenek: {n} z {m} nowych utworów (z LRCLIB).": "📝 Lyrics: {n} of {m} new songs (from LRCLIB).",
+    "📝 Dodałem tekst piosenki z czasami linijek (plik .lrc obok mp3).":
+        "📝 Added the lyrics with line timings (.lrc file next to the mp3).",
+    "📝 Dodałem tekst piosenki.": "📝 Added the lyrics.",
+    "Nie znalazłem tekstu tej piosenki.": "Couldn't find lyrics for this song.",
     # stopka i „O programie” (napisy wspólne dla apek MATCODE - APKI.md w centrali)
     "MATCODE · wersja {wersja}": "MATCODE · version {wersja}",
     "Sprawdź aktualizacje": "Check for updates",

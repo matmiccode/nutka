@@ -33,6 +33,7 @@ import aktualizacja_programu
 import aktualizacje
 import spotify_lista
 import teksty
+import teksty_piosenek
 import youtube_lista
 from teksty import t
 
@@ -45,6 +46,7 @@ BUYCOFFEE_URL = "https://buycoffee.to/matcode"  # profil na buycoffee.to - pusty
 STRONA_PROGRAMU = "https://matmiccode.github.io/nutka/"  # link „Strona programu” w oknie „O programie” (en: /nutka/en/)
 STRONA_INSTRUKCJI = "https://matmiccode.github.io/nutka/instrukcja.html"  # ta sama strona co docs/instrukcja.html obok exe
 STRONA_ZGLOSZEN = f"https://github.com/{REPO_GITHUB}/issues/new"  # „Zgłoś problem” w stopce (raport autotestu w treści)
+teksty_piosenek.AGENT = f"Nutka/{WERSJA} (https://github.com/{REPO_GITHUB})"  # LRCLIB prosi o nazwę i wersję programu
 DOMYSLNY_FOLDER = Path.home() / "Music" / t("Pobrane")  # po angielsku Music\Nutka
 DOMYSLNY_FOLDER_WIDEO = Path.home() / "Videos" / t("Pobrane")  # filmy osobno od muzyki: Filmy\Pobrane (en: Videos\Nutka)
 # jakość wideo: klucz w ustawieniach -> kolejność formatów yt-dlp (-S). Do 1080p wolimy H.264 + AAC, bo taki mp4 gra
@@ -1420,6 +1422,7 @@ class Aplikacja(ctk.CTk):
         self._dopisz(t("▶ Pobieram {n} utw. z „{nazwa}” (po {k} naraz)…").format(
             n=len(do_pobrania), nazwa=lista.nazwa, k=ROWNOLEGLE_POBIERANIA))
         self._ustaw_postep(0, f"0/{len(do_pobrania)}")
+        nowe_mp3, z_tekstem = [], []  # do podsumowania tekstów piosenek (list.append jest bezpieczne między wątkami)
 
         def jeden(iid: str) -> bool:
             if self.przerwij_liste.is_set():
@@ -1452,9 +1455,13 @@ class Aplikacja(ctk.CTk):
                 if kod != 0 or not plik.exists():
                     self.kolejka.put(("status", (iid, "✗ " + t("przerwano" if self.przerwij_liste.is_set() else "błąd"))))
                     return False
-                if not wideo:  # mp3: tagi i okładka ze Spotify albo poprawka tagów po yt-dlp (YouTube)
+                if not wideo:  # mp3: tagi i okładka ze Spotify albo poprawka tagów po yt-dlp (YouTube) + tekst piosenki
                     self.kolejka.put(("status", (iid, t("zapisuję…"))))
                     spotify_lista.otaguj(plik, utwor, lista)
+                    nowe_mp3.append(iid)
+                    if teksty_piosenek.dodaj(plik, utwor.wykonawcy[0] if utwor.wykonawcy else "", utwor.tytul,
+                                             utwor.album, utwor.sekundy):
+                        z_tekstem.append(iid)
                 self.kolejka.put(("status", (iid, "✓ " + t("pobrano"))))
                 return True
             except Exception as e:
@@ -1470,6 +1477,9 @@ class Aplikacja(ctk.CTk):
                 for i, zadanie in enumerate(as_completed(zadania), 1):
                     (udane if zadanie.result() else nieudane).append(zadania[zadanie])
                     self.kolejka.put(("postep_listy", (i, len(do_pobrania))))
+            if nowe_mp3:
+                self.kolejka.put(("log", t("📝 Teksty piosenek: {n} z {m} nowych utworów (z LRCLIB).").format(
+                    n=len(z_tekstem), m=len(nowe_mp3))))
             self.kolejka.put(("lista_koniec", (udane, nieudane)))
         threading.Thread(target=w_tle, daemon=True).start()
 
@@ -1625,11 +1635,25 @@ class Aplikacja(ctk.CTk):
                 env=ENV_UTF8,
                 creationflags=BEZ_OKNA,
             )
+            pliki = []
             for linia in self.proces.stdout:
                 tekst = linia.decode("utf-8", errors="replace").rstrip()
                 if tekst:
                     self._przetworz_linie(tekst)
+                    if tekst.startswith("PLIK "):
+                        pliki.append(Path(tekst[5:].strip()))
             kod = self.proces.wait()
+            if kod == 0:
+                for plik in pliki:  # mp3: tekst piosenki z LRCLIB po tagach, które wpisał yt-dlp (film mp4 bez tekstu)
+                    if plik.suffix.lower() == ".mp3" and plik.exists():
+                        slowa = teksty_piosenek.dodaj_z_tagow(plik)
+                        if not slowa:
+                            opis = t("Nie znalazłem tekstu tej piosenki.")
+                        elif slowa.z_czasami:
+                            opis = t("📝 Dodałem tekst piosenki z czasami linijek (plik .lrc obok mp3).")
+                        else:
+                            opis = t("📝 Dodałem tekst piosenki.")
+                        self.kolejka.put(("log", opis))
             self.kolejka.put(("log", t("✔ Gotowe.") if kod == 0 else t("✖ Błąd (kod {kod}) - szczegóły wyżej.").format(kod=kod)))
         except Exception as e:
             self.kolejka.put(("log", t("✖ Nie udało się uruchomić: {e}").format(e=e)))
@@ -1750,7 +1774,7 @@ def autotest() -> int:
     wyjscie_utf8()
     bledy: list[str] = []
     nie_sprawdzono: list[str] = []
-    print(f"Nutka {WERSJA} - autotest ({'exe' if SPAKOWANY else 'skrypt'}), {PODPIS}")
+    print(f"Nutka {WERSJA} - autotest ({'exe' if SPAKOWANY else 'skrypt'}), MATCODE")
     print(f"pakiety  {aktualizacje.FOLDER} -> {aktualizacje._wczytaj_stan() or 'wbudowane w exe'}")
     log = aktualizacje.FOLDER / "aktualizacje.log"
     if log.exists():
@@ -1829,13 +1853,23 @@ def autotest() -> int:
                     raise ValueError(f"yt-dlp kod {r.returncode}: {r.stderr.strip()[-300:]}")
             else:
                 spotify_lista.otaguj(plik, utwor, lista)
+                slowa = teksty_piosenek.dodaj(plik, utwor.wykonawcy[0], utwor.tytul, utwor.album, utwor.sekundy)
                 tagi = ID3(plik)
                 print(f"pobieranie OK: {plik.name}, {plik.stat().st_size // 1024} KB, tytuł={tagi.get('TIT2')}, "
-                      f"okładka={len(tagi.getall('APIC')[0].data) // 1024 if tagi.getall('APIC') else 0} KB")
+                      f"okładka={len(tagi.getall('APIC')[0].data) // 1024 if tagi.getall('APIC') else 0} KB, "
+                      f"tekst={'z czasami' if slowa and slowa.z_czasami else 'zwykły' if slowa else 'brak'}")
         except Exception as e:
             print(f"pobieranie BŁĄD: {e!r}")
             bledy.append("pobieranie")
         shutil.rmtree(folder, ignore_errors=True)
+    try:  # teksty piosenek: czy LRCLIB odpowiada i czy nadal oddaje tekst z czasami linijek dla znanego utworu
+        slowa = teksty_piosenek.znajdz("Queen", "Bohemian Rhapsody", "A Night At The Opera", 355)
+        if not (slowa and slowa.z_czasami):
+            raise ValueError("brak tekstu z czasami dla „Bohemian Rhapsody”")
+        print(f"teksty   OK: LRCLIB, „Bohemian Rhapsody” - {len(teksty_piosenek.linie(slowa.z_czasami))} linijek z czasami")
+    except Exception as e:
+        print(f"teksty   BŁĄD: {e!r}")
+        bledy.append("teksty")
     try:  # ciche aktualizacje: czy PyPI odpowiada i czy wybór wersji (nightly yt-dlp) nadal działa
         najnowsze = {p: aktualizacje._najnowsza(p) for p in aktualizacje.PAKIETY}
         print("pypi     " + ", ".join(f"{p} {w}" for p, w in najnowsze.items()))

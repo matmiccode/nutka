@@ -24,4 +24,7 @@ pod poniższymi adresami. Część z nich jest na licencji GPL, dlatego cały ko
 Pełne teksty licencji: w katalogach poszczególnych bibliotek w folderze programu (`_internal\*.dist-info`)
 oraz `narzedzia\LICENSE-ffmpeg.txt`.
 
+Teksty piosenek pochodzą z LRCLIB (https://lrclib.net) – otwartej bazy tekstów tworzonej przez użytkowników.
+Nutka wysyła tam tylko wykonawcę, tytuł, album i długość utworu.
+
 Nutka nie jest powiązana z YouTube, Google ani Spotify. Nazwy i znaki towarowe należą do ich właścicieli.
