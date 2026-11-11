@@ -41,6 +41,7 @@
     <li><a href="#pobieranie">Pobieranie mp3</a></li>
     <li><a href="#wideo">Filmy z&nbsp;YouTube</a></li>
     <li><a href="#spotify">Playlisty i&nbsp;albumy</a></li>
+    <li><a href="#karaoke">Teksty i&nbsp;karaoke</a></li>
     <li><a href="#jezyk">Język</a></li>
     <li><a href="#aktualizacje">Aktualizacje</a></li>
     <li><a href="#problemy">Gdy coś nie działa</a></li>
@@ -137,7 +138,7 @@
     </table>
     <p class="odstep">Pliki trafiają do folderu <strong>Muzyka \ Pobrane</strong> (<code>C:\Users\&lt;Ty&gt;\Music\Pobrane</code>). Folder zmienisz przyciskiem <span class="przycisk">Wybierz…</span>, a&nbsp;otworzysz przyciskiem <span class="przycisk">Otwórz folder</span>. Album i&nbsp;playlista lądują w&nbsp;osobnym podfolderze, album z&nbsp;numerami utworów.</p>
     <p>Muzyka zawsze pochodzi z&nbsp;YouTube, także przy linkach ze Spotify: Nutka bierze ze Spotify tylko tytuł, wykonawcę i&nbsp;okładkę, a&nbsp;dźwięk pobiera z&nbsp;YouTube. Dlatego czasem trafi się inna wersja utworu, np. na żywo. Jakość to mp3 około 250–270 kbps.</p>
-    <p><strong>Teksty piosenek.</strong> Do każdego nowego mp3 Nutka dopisuje tekst piosenki z&nbsp;otwartej bazy <a href="https://lrclib.net">LRCLIB</a>, jeśli go tam znajdzie – odtwarzacz pokaże go przy utworze. Gdy baza zna też czasy linijek, obok mp3 pojawia się plik <code>.lrc</code> o&nbsp;tej samej nazwie. Z&nbsp;niego tekst przewija się w&nbsp;rytm piosenki, np. w&nbsp;Poweramp na telefonie albo w&nbsp;AIMP i&nbsp;MusicBee na komputerze; przenosząc muzykę, bierz go razem z&nbsp;mp3. Nie każdy utwór jest w&nbsp;bazie, a&nbsp;brak tekstu niczego nie psuje.</p>
+    <p><strong>Teksty piosenek.</strong> Do nowych mp3 Nutka dopisuje tekst piosenki, a&nbsp;jeśli zna czasy linijek – także plik <code>.lrc</code> do karaoke. <a href="#karaoke">Jak je odtwarzać</a>.</p>
   </div>
 </section>
 
@@ -187,6 +188,29 @@
     </ul>
     <div class="uwaga odstep">
       <p><strong>Nutka widzi tylko publiczne playlisty</strong> (w&nbsp;YouTube także „niepubliczne”, dostępne z&nbsp;linku). Prywatnych playlist i&nbsp;„Polubionych utworów” ze Spotify nie wczyta. Ustaw playlistę jako publiczną albo skopiuj utwory do publicznej.</p>
+    </div>
+  </div>
+</section>
+
+<section id="karaoke">
+  <div class="wrap">
+    <div class="sekcja-naglowek">
+      <h2>Teksty piosenek i&nbsp;karaoke</h2>
+      <p>Do każdego nowego mp3 Nutka dopisuje tekst piosenki z&nbsp;otwartej bazy <a href="https://lrclib.net">LRCLIB</a>. Gdy baza zna też czasy linijek, obok mp3 pojawia się plik <code>.lrc</code> o&nbsp;tej samej nazwie – z&nbsp;niego tekst przewija się w&nbsp;rytm piosenki.</p>
+    </div>
+    <ol class="kroki">
+      <li><h3>Pobierz piosenki</h3><p>Z&nbsp;włączonym przełącznikiem „Teksty do karaoke”. W&nbsp;okienku na dole zobaczysz, ile utworów dostało tekst.</p></li>
+      <li><h3>Kopiuj mp3 razem z&nbsp;.lrc</h3><p>Na telefon albo pendrive przenoś oba pliki: w&nbsp;jednym folderze i&nbsp;z&nbsp;tą samą nazwą. Bez pliku <code>.lrc</code> tekst nie będzie się przewijał.</p></li>
+      <li><h3>Śpiewaj</h3><p>Włącz piosenkę i&nbsp;otwórz w&nbsp;odtwarzaczu widok tekstu.</p></li>
+    </ol>
+    <div class="odstep-duzy">
+      <dl class="cechy">
+        <div><dt>Czym odtwarzać</dt><dd>Na komputerze <strong>AIMP</strong> (za darmo, po polsku). Na telefonie z&nbsp;Androidem <strong>Musicolet</strong> (za darmo, bez reklam) albo <strong>Poweramp</strong>. Wiele innych odtwarzaczy pokaże sam tekst, bez przewijania.</dd></div>
+        <div><dt>Przełącznik</dt><dd>Od wersji 1.8.0 obok pola „Zapisz do” stoi przełącznik <strong>Teksty do karaoke</strong>. Wyłączony = Nutka nie dopisuje tekstów do nowych mp3. Program pamięta, jak go ustawisz. Znak <span class="przycisk">?</span> obok otwiera skrót tego, co tutaj.</dd></div>
+      </dl>
+    </div>
+    <div class="uwaga odstep">
+      <p><strong>Nie każdy utwór jest w&nbsp;bazie</strong> – wtedy plik zostaje bez tekstu, a&nbsp;reszta działa normalnie. Głosu wokalisty Nutka nie wycina.</p>
     </div>
   </div>
 </section>

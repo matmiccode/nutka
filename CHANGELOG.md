@@ -8,7 +8,8 @@ przy proponowaniu aktualizacji – pisz ją dla zwykłego użytkownika.
 - **Muzyka czy film – widać od razu.** Przełącznik „Muzyka (mp3) / Wideo (mp4)” stoi teraz na początku
   wiersza wyszukiwania, a nie na dole przy folderze, gdzie łatwo go było przeoczyć.
 - **Teksty piosenek, kiedy chcesz.** Przy folderze jest przełącznik „Teksty do karaoke”. Wyłącz go, a Nutka
-  przestanie dopisywać teksty do nowych mp3. Program zapamiętuje ten wybór.
+  przestanie dopisywać teksty do nowych mp3. Program zapamiętuje ten wybór. Znak „?” obok podpowiada, czym
+  odtwarzać teksty i jak zrobić karaoke (to samo w instrukcji, w nowej części „Teksty i karaoke”).
 
 ## [1.7.0] – 2026-11-06
 

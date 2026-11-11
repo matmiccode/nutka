@@ -433,6 +433,7 @@ class Aplikacja(ctk.CTk):
         self.okno_aktualizacji: ctk.CTkToplevel | None = None
         self.okno_o_programie: ctk.CTkToplevel | None = None
         self.okno_licencji: ctk.CTkToplevel | None = None
+        self.okno_karaoke: ctk.CTkToplevel | None = None
         self._raport_w_toku = False  # „Zgłoś problem”: autotest w tle już leci
 
         self._zbuduj_ui()
@@ -632,6 +633,34 @@ class Aplikacja(ctk.CTk):
         self._link(dol, t("Strona programu"), lambda: webbrowser.open(strona_programu()), 13).pack(side="left", padx=(7, 0))
         self._przycisk(dol, t("Licencje"), self._pokaz_licencje, width=120, height=34).pack(side="right")
 
+    def _pokaz_karaoke(self):
+        """„?” przy „Teksty do karaoke”: co robi przełącznik, czym odtwarzać, jak zrobić karaoke. Samo okienko, bez
+        odsyłania do instrukcji - kotwica w lokalnym pliku HTML ginie przy otwieraniu przez Windows."""
+        if self._juz_otwarte(self.okno_karaoke):
+            return
+        okno = self.okno_karaoke = self._okienko(t("Teksty do karaoke"), "560x400")
+        ctk.CTkLabel(okno, text=t("Teksty do karaoke"), text_color=TEKST, font=ctk.CTkFont(FONT, 18, "bold")).pack(
+            anchor="w", padx=24, pady=(20, 6))
+
+        def akapit(tekst: str, naglowek: bool = False, szary: bool = False):
+            ctk.CTkLabel(okno, text=tekst, text_color=TEKST_SZARY if szary else TEKST, wraplength=510, justify="left",
+                         font=ctk.CTkFont(FONT, 14 if naglowek else 13, "bold" if naglowek else "normal")).pack(
+                anchor="w", padx=24, pady=(14 if naglowek or szary else 0, 4 if naglowek else 0))
+
+        akapit(t("Gdy przełącznik jest włączony, Nutka dopisuje do każdego nowego mp3 tekst piosenki z otwartej bazy "
+                 "LRCLIB. Jeśli baza zna też czasy linijek, obok mp3 pojawia się plik .lrc – z niego tekst przewija się "
+                 "w rytm piosenki."))
+        akapit(t("Czym odtwarzać"), naglowek=True)
+        akapit(t("•  Komputer: AIMP (za darmo, po polsku).\n"
+                 "•  Telefon z Androidem: Musicolet (za darmo, bez reklam) albo Poweramp.\n"
+                 "Wiele innych odtwarzaczy pokaże sam tekst, bez przewijania."))
+        akapit(t("Karaoke krok po kroku"), naglowek=True)
+        akapit(t("1.  Pobierz piosenki z włączonym przełącznikiem.\n"
+                 "2.  Na telefon albo pendrive kopiuj mp3 razem z plikiem .lrc – w jednym folderze, z tą samą nazwą.\n"
+                 "3.  Włącz piosenkę i otwórz w odtwarzaczu widok tekstu."))
+        akapit(t("Nie każdy utwór jest w bazie – wtedy plik zostaje bez tekstu. Głosu wokalisty Nutka nie wycina."),
+               szary=True)
+
     def _pokaz_licencje(self):
         """LICENSE i THIRD-PARTY.md w oknie z przewijaniem (plik .md nie ma w Windows domyślnego programu)."""
         if self._juz_otwarte(self.okno_licencji):
@@ -798,6 +827,10 @@ class Aplikacja(ctk.CTk):
                       command=self._zapisz_ustawienia_pobierania, switch_width=38, switch_height=20,
                       fg_color=OBRYS, progress_color=WYBRANY, button_color=TEKST, button_hover_color="#FFFFFF",
                       text_color=TEKST, font=ctk.CTkFont(FONT, 13)).pack(side="left")
+        # „?” = okienko: co robi przełącznik, czym odtwarzać teksty, jak zrobić karaoke (_pokaz_karaoke)
+        ctk.CTkButton(self.ramka_tekstow, text="?", command=self._pokaz_karaoke, width=26, height=26, corner_radius=13,
+                      fg_color=POLE, hover_color=OBRYS, text_color=TEKST, font=ctk.CTkFont(FONT, 13, "bold")
+                      ).pack(side="left", padx=(6, 0))
         self._przycisk(karta_zapisu, t("Wybierz…"), self._wybierz_folder, width=120, height=38).grid(
             row=0, column=3, padx=(10, 0))
 

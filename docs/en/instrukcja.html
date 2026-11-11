@@ -41,6 +41,7 @@
     <li><a href="#download">Downloading mp3</a></li>
     <li><a href="#video">Videos from YouTube</a></li>
     <li><a href="#spotify">Playlists and albums</a></li>
+    <li><a href="#karaoke">Lyrics and karaoke</a></li>
     <li><a href="#language">Language</a></li>
     <li><a href="#updates">Updates</a></li>
     <li><a href="#problems">When something doesn't work</a></li>
@@ -137,7 +138,7 @@
     </table>
     <p class="odstep">Files go to the <strong>Music \ Nutka</strong> folder (<code>C:\Users\&lt;you&gt;\Music\Nutka</code>). Change the folder with the <span class="przycisk">Browse…</span> button and open it with <span class="przycisk">Open folder</span>. An album and a playlist land in their own subfolder, an album with track numbers.</p>
     <p>The music always comes from YouTube, also with Spotify links: Nutka takes only the title, artist and cover art from Spotify and downloads the audio from YouTube. That's why you occasionally get a different version of a track, e.g. a live one. The quality is mp3 at roughly 250–270 kbps.</p>
-    <p><strong>Song lyrics.</strong> Nutka adds the lyrics to every new mp3 from the open <a href="https://lrclib.net">LRCLIB</a> database, if it finds them there – your player shows them with the track. When the database also knows the line timings, an <code>.lrc</code> file with the same name appears next to the mp3. It lets the lyrics scroll in time with the song, e.g. in Poweramp on a phone or in AIMP and MusicBee on a computer; when you move your music, take it along with the mp3. Not every song is in the database, and missing lyrics don't break anything.</p>
+    <p><strong>Song lyrics.</strong> Nutka adds the lyrics to new mp3 files, and when it knows the line timings, an <code>.lrc</code> file for karaoke too. <a href="#karaoke">How to play them</a>.</p>
   </div>
 </section>
 
@@ -187,6 +188,29 @@
     </ul>
     <div class="uwaga odstep">
       <p><strong>Nutka sees only public playlists</strong> (on YouTube also “unlisted” ones, available via a link). It can't load private playlists or Spotify's “Liked Songs”. Make the playlist public or copy the tracks into a public one.</p>
+    </div>
+  </div>
+</section>
+
+<section id="karaoke">
+  <div class="wrap">
+    <div class="sekcja-naglowek">
+      <h2>Song lyrics and karaoke</h2>
+      <p>Nutka adds the song's lyrics from the open <a href="https://lrclib.net">LRCLIB</a> database to every new mp3. When the database also knows the line timings, an <code>.lrc</code> file with the same name appears next to the mp3 – it lets the lyrics scroll in time with the song.</p>
+    </div>
+    <ol class="kroki">
+      <li><h3>Download the songs</h3><p>With the “Lyrics for karaoke” switch on. The box at the bottom tells you how many tracks got lyrics.</p></li>
+      <li><h3>Copy the mp3 with its .lrc</h3><p>When moving music to a phone or a USB stick, take both files: same folder, same name. Without the <code>.lrc</code> file the lyrics won't scroll.</p></li>
+      <li><h3>Sing</h3><p>Play the song and open the lyrics view in your player.</p></li>
+    </ol>
+    <div class="odstep-duzy">
+      <dl class="cechy">
+        <div><dt>What to play them with</dt><dd>On a computer, <strong>AIMP</strong> (free). On an Android phone, <strong>Musicolet</strong> (free, no ads) or <strong>Poweramp</strong>. Many other players show the plain lyrics, without scrolling.</dd></div>
+        <div><dt>The switch</dt><dd>Since version 1.8.0 there is a <strong>Lyrics for karaoke</strong> switch next to the “Save to” field. Off = Nutka doesn't add lyrics to new mp3 files. Nutka remembers your choice. The <span class="przycisk">?</span> next to it opens a short version of this section.</dd></div>
+      </dl>
+    </div>
+    <div class="uwaga odstep">
+      <p><strong>Not every song is in the database</strong> – then the file simply has no lyrics, and everything else works as usual. Nutka doesn't remove the singer's voice.</p>
     </div>
   </div>
 </section>
