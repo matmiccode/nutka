@@ -5,6 +5,13 @@ przy proponowaniu aktualizacji – pisz ją dla zwykłego użytkownika.
 
 ## [1.8.0] – w przygotowaniu
 
+- **Odsłuch znowu gra.** YouTube zaczął odrzucać odtwarzanie przez pierwsze sekundy, więc „Odsłuchaj” milczał.
+  Nutka teraz chwilę czeka i w razie potrzeby próbuje jeszcze raz – pierwszy utwór rusza po kilku sekundach,
+  kolejne z albumu bez przerwy.
+- **Karaoke w Nutce.** W trakcie odsłuchu obok „Następny” jest przycisk „Karaoke”: okno z tekstem piosenki,
+  w którym bieżąca linijka świeci się w rytm muzyki. Okno możesz powiększyć na cały ekran, a litery urosną razem
+  z nim. Przy albumie tekst sam przechodzi na kolejny utwór.
+
 - **Muzyka czy film – widać od razu.** Przełącznik „Muzyka (mp3) / Wideo (mp4)” stoi teraz na początku
   wiersza wyszukiwania, a nie na dole przy folderze, gdzie łatwo go było przeoczyć.
 - **Teksty piosenek, kiedy chcesz.** Przy folderze jest przełącznik „Teksty do karaoke”. Wyłącz go, a Nutka

@@ -91,6 +91,17 @@ class Znajdz(unittest.TestCase):
         self.assertIsNotNone(slowa)
         self.assertTrue(any("Official" not in a and "Ma%C5%82omiasteczkowy" in a for a in lrclib.adresy))
 
+    def test_tytul_filmu_z_dluga_kreska(self):
+        # „Queen – Bohemian Rhapsody (Official Video Remastered)” z kanału „Queen Official”: w tytułach filmów
+        # wykonawcę od tytułu oddziela często półpauza albo pauza, nie minus
+        for kreska in ("–", "—"):
+            lrclib = AtrapaLrclib(szukane=[wynik()])
+            slowa = tp.znajdz("Kanał Muzyczny", f"Dawid Podsiadło {kreska} Małomiasteczkowy (Official Video)", "", 203,
+                              pobierz=lrclib)
+            self.assertIsNotNone(slowa, kreska)
+            zapytania = [parse_qs(urlsplit(a).query) for a in lrclib.adresy]
+            self.assertIn({"track_name": ["Małomiasteczkowy"], "artist_name": ["Dawid Podsiadło"]}, zapytania, kreska)
+
     def test_inna_dlugosc_sam_zwykly_tekst(self):
         # teledysk z intro jest dłuższy od utworu: czasy linijek by się rozjechały, ale słowa są te same
         szukane = [wynik(id=1, duration=300.0, plainLyrics="wersja live"), wynik(id=2, duration=203.0)]

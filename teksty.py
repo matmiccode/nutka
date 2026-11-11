@@ -74,7 +74,16 @@ EN = {
     "Wybierz…": "Browse…",
     "♫  Muzyka (mp3)": "♫  Music (mp3)",
     "Teksty do karaoke": "Lyrics for karaoke",
-    # okienko „?” przy przełączniku tekstów (_pokaz_karaoke)
+    # okno „Karaoke” przy odsłuchu
+    "Karaoke": "Karaoke",
+    "Włącz „Odsłuchaj”, a tekst piosenki pojawi się tutaj.": "Click “Listen” and the lyrics will show up here.",
+    "Szukam tekstu…": "Looking for the lyrics…",
+    "Nie udało się połączyć z bazą tekstów.": "Couldn't reach the lyrics database.",
+    "Tekst z LRCLIB – bieżąca linijka świeci się w rytm piosenki.":
+        "Lyrics from LRCLIB – the current line lights up in time with the song.",
+    "Ta wersja piosenki nie ma czasów linijek, więc tekst się nie przewija.":
+        "This version of the song has no line timings, so the lyrics don't scroll.",
+    # okienko „?” przy przełączniku tekstów (_pokaz_pomoc_tekstow)
     "Gdy przełącznik jest włączony, Nutka dopisuje do każdego nowego mp3 tekst piosenki z otwartej bazy "
     "LRCLIB. Jeśli baza zna też czasy linijek, obok mp3 pojawia się plik .lrc – z niego tekst przewija się "
     "w rytm piosenki.":
@@ -82,9 +91,11 @@ EN = {
         "database also knows the line timings, an .lrc file appears next to the mp3 – it lets the lyrics scroll in "
         "time with the song.",
     "Czym odtwarzać": "What to play them with",
+    "•  W Nutce: w trakcie odsłuchu kliknij „Karaoke”.\n"
     "•  Komputer: AIMP (za darmo, po polsku).\n"
     "•  Telefon z Androidem: Musicolet (za darmo, bez reklam) albo Poweramp.\n"
     "Wiele innych odtwarzaczy pokaże sam tekst, bez przewijania.":
+        "•  In Nutka: while listening, click “Karaoke”.\n"
         "•  Computer: AIMP (free).\n"
         "•  Android phone: Musicolet (free, no ads) or Poweramp.\n"
         "Many other players show the plain lyrics, without scrolling.",

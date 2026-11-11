@@ -1,12 +1,14 @@
 """Teksty piosenek z LRCLIB (https://lrclib.net) - otwarta, społecznościowa baza tekstów, bez kluczy i kont (MATCODE).
 
 Do mp3 trafia zwykły tekst (tag USLT - pokazuje go prawie każdy odtwarzacz) i tekst z czasami linijek (tag SYLT),
-a obok mp3 plik .lrc o tej samej nazwie - z niego tekst przewijany w rytm piosenki biorą odtwarzacze, np. Poweramp
-na telefonie, AIMP i MusicBee na PC. Brak tekstu albo brak sieci = plik bez tekstu, pobieranie się nie psuje.
+a obok mp3 plik .lrc o tej samej nazwie - z niego tekst przewijany w rytm piosenki biorą odtwarzacze, np. Musicolet
+i Poweramp na telefonie, AIMP na PC. Brak tekstu albo brak sieci = plik bez tekstu, pobieranie się nie psuje.
+Od 1.8.0 te same teksty pokazuje okno „Karaoke” przy odsłuchu (app.py, indeks_linii).
 
 Do LRCLIB idą tylko dane utworu: wykonawca, tytuł, album i długość.
 """
 
+import bisect
 import json
 import re
 import urllib.error
@@ -40,6 +42,11 @@ def linie(lrc: str) -> list[tuple[int, str]]:
             reszta = reszta[m.end():]
         wynik += [(ms, reszta.strip()) for ms in czasy]
     return sorted(wynik, key=lambda para: para[0])
+
+
+def indeks_linii(czasy_ms: list[int], ms: int) -> int:
+    """Która linijka teraz leci (karaoke przy odsłuchu): ostatnia, której czas już minął; -1 przed pierwszą."""
+    return bisect.bisect_right(czasy_ms, ms) - 1
 
 
 def _pobierz_json(adres: str):
@@ -80,9 +87,10 @@ def _warianty(wykonawca: str, tytul: str) -> list[tuple[str, str]]:
     Dopiski w nawiasach („(Official Video)”) tylko przeszkadzają wyszukiwarce."""
     czysty = re.sub(r"\s*[(\[].*?[)\]]", "", tytul).strip() or tytul
     warianty = [(wykonawca, czysty)]
-    przed, _, po = czysty.partition(" - ")
-    if przed.strip() and po.strip():
-        warianty.append((przed.strip(), po.strip()))
+    # „Queen – Bohemian Rhapsody”: w tytułach filmów często półpauza albo pauza zamiast minusa
+    czesci = re.split(r"\s+[-–—]\s+", czysty, maxsplit=1)
+    if len(czesci) == 2 and czesci[0].strip() and czesci[1].strip():
+        warianty.append((czesci[0].strip(), czesci[1].strip()))
     return warianty
 
 

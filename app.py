@@ -20,6 +20,7 @@ import shutil
 import subprocess
 import sys
 import threading
+import time
 import tkinter as tk
 import webbrowser
 from pathlib import Path
@@ -354,6 +355,34 @@ def procent_postepu(tekst: str) -> float | None:
         return None
 
 
+# karaoke przy odsłuchu (od 1.8.0): yt-dlp podaje razem z adresem strumienia dane do szukania tekstu - tytuł do logu,
+# wykonawca (pierwszy z listy; przy zwykłym filmie kanał), tytuł utworu, album, długość - a ffplay z -stats
+# wypisuje na stderr zegar audio „  12.34 M-A: …” (co ~30 ms, mimo -loglevel quiet), czyli prawdziwą sekundę piosenki
+POLA_STRUMIENIA = ("--print", "%(title)s", "--print", "%(artists.0,artist,creator,uploader|)s",
+                   "--print", "%(track,title)s", "--print", "%(album|)s", "--print", "%(duration|0)s", "--print", "urls")
+_POZYCJA_FFPLAY = re.compile(rb"\s*(-?\d+\.\d+)\s+[AMV]-[AMV]:")
+ODSLUCH_ADRES_GOTOWY_S = 3.0  # adres strumienia od yt-dlp działa dopiero po tylu sekundach (wcześniej YouTube daje 403)
+
+
+def dane_strumienia(wyjscie: str) -> tuple[str, str, tuple[str, str, str, int]] | None:
+    """Wyjście yt-dlp z POLA_STRUMIENIA -> (tytuł, adres, (wykonawca, tytuł utworu, album, sekundy)); None = błąd."""
+    linie = wyjscie.rstrip("\r\n").split("\n")
+    if len(linie) < 6 or not linie[-1].startswith("http"):
+        return None
+    tytul, kto, co, album, dlugosc = (linia.strip() for linia in linie[:5])
+    try:
+        sekundy = round(float(dlugosc))
+    except ValueError:
+        sekundy = 0
+    return tytul, linie[-1].strip(), (kto, co or tytul, album, sekundy)
+
+
+def pozycja_ffplay(linia: bytes) -> float | None:
+    """Linia stanu ffplay -stats -> bieżąca sekunda (zegar audio); inne linie -> None."""
+    m = _POZYCJA_FFPLAY.match(linia)
+    return max(0.0, float(m[1])) if m else None
+
+
 def skroc_tekst(tekst: str, szer: float, czcionka) -> str:
     """Tekst mieszczący się w szer pikseli: za długi kończy się „…” po ostatnim mieszczącym się znaku
     (Tk obcina w pół litery). czcionka = tkinter.font.Font (CTkFont też nim jest)."""
@@ -433,7 +462,18 @@ class Aplikacja(ctk.CTk):
         self.okno_aktualizacji: ctk.CTkToplevel | None = None
         self.okno_o_programie: ctk.CTkToplevel | None = None
         self.okno_licencji: ctk.CTkToplevel | None = None
+        self.okno_pomocy_tekstow: ctk.CTkToplevel | None = None
+        # okno „Karaoke” przy odsłuchu (od 1.8.0): wątek odsłuchu numeruje utwory (_karaoke_nr), pozycja z ffplay
+        # i znaleziony tekst ze starszego numeru są pomijane
         self.okno_karaoke: ctk.CTkToplevel | None = None
+        self._karaoke_nr = 0
+        self._karaoke_utwor: tuple | None = None  # (nr, (wykonawca, tytuł utworu, album, sekundy))
+        self._karaoke_slowa: tuple | None = None  # (nr, Slowa | None) - None w krotce = nie ma tekstu
+        self._karaoke_pozycja: tuple | None = None  # (nr, sekunda piosenki, time.monotonic() odczytu)
+        self._karaoke_czasy: list[int] = []  # ms linijek wyświetlonego tekstu (puste = bez przewijania)
+        self._karaoke_biezaca = -1
+        self._karaoke_szukany: int | None = None  # numer utworu, którego tekst właśnie idzie z LRCLIB
+        self._teksty_odsluchu: dict[tuple, teksty_piosenek.Slowa | None] = {}  # LRCLIB pytany raz na utwór
         self._raport_w_toku = False  # „Zgłoś problem”: autotest w tle już leci
 
         self._zbuduj_ui()
@@ -445,10 +485,10 @@ class Aplikacja(ctk.CTk):
             self.after(200, self._po_ekranie_startowym)  # okno już narysowane
             self.after(3000, self._aktualizuj)
 
-    def _kolor_paska_tytulu(self):
+    def _kolor_paska_tytulu(self, okno=None):
         """Windows 11: pasek tytułu w kolorze tła okna (na Windows 10 po prostu ciemny - ignoruje atrybut)."""
         try:
-            hwnd = ctypes.windll.user32.GetParent(self.winfo_id())
+            hwnd = ctypes.windll.user32.GetParent((okno or self).winfo_id())
             r, g, b = (int(TLO[i:i + 2], 16) for i in (1, 3, 5))
             kolor = ctypes.c_int(r | g << 8 | b << 16)  # COLORREF = 0x00BBGGRR
             ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, 35, ctypes.byref(kolor), 4)  # DWMWA_CAPTION_COLOR
@@ -633,12 +673,12 @@ class Aplikacja(ctk.CTk):
         self._link(dol, t("Strona programu"), lambda: webbrowser.open(strona_programu()), 13).pack(side="left", padx=(7, 0))
         self._przycisk(dol, t("Licencje"), self._pokaz_licencje, width=120, height=34).pack(side="right")
 
-    def _pokaz_karaoke(self):
+    def _pokaz_pomoc_tekstow(self):
         """„?” przy „Teksty do karaoke”: co robi przełącznik, czym odtwarzać, jak zrobić karaoke. Samo okienko, bez
         odsyłania do instrukcji - kotwica w lokalnym pliku HTML ginie przy otwieraniu przez Windows."""
-        if self._juz_otwarte(self.okno_karaoke):
+        if self._juz_otwarte(self.okno_pomocy_tekstow):
             return
-        okno = self.okno_karaoke = self._okienko(t("Teksty do karaoke"), "560x400")
+        okno = self.okno_pomocy_tekstow = self._okienko(t("Teksty do karaoke"), "560x400")
         ctk.CTkLabel(okno, text=t("Teksty do karaoke"), text_color=TEKST, font=ctk.CTkFont(FONT, 18, "bold")).pack(
             anchor="w", padx=24, pady=(20, 6))
 
@@ -651,7 +691,8 @@ class Aplikacja(ctk.CTk):
                  "LRCLIB. Jeśli baza zna też czasy linijek, obok mp3 pojawia się plik .lrc – z niego tekst przewija się "
                  "w rytm piosenki."))
         akapit(t("Czym odtwarzać"), naglowek=True)
-        akapit(t("•  Komputer: AIMP (za darmo, po polsku).\n"
+        akapit(t("•  W Nutce: w trakcie odsłuchu kliknij „Karaoke”.\n"
+                 "•  Komputer: AIMP (za darmo, po polsku).\n"
                  "•  Telefon z Androidem: Musicolet (za darmo, bez reklam) albo Poweramp.\n"
                  "Wiele innych odtwarzaczy pokaże sam tekst, bez przewijania."))
         akapit(t("Karaoke krok po kroku"), naglowek=True)
@@ -827,8 +868,8 @@ class Aplikacja(ctk.CTk):
                       command=self._zapisz_ustawienia_pobierania, switch_width=38, switch_height=20,
                       fg_color=OBRYS, progress_color=WYBRANY, button_color=TEKST, button_hover_color="#FFFFFF",
                       text_color=TEKST, font=ctk.CTkFont(FONT, 13)).pack(side="left")
-        # „?” = okienko: co robi przełącznik, czym odtwarzać teksty, jak zrobić karaoke (_pokaz_karaoke)
-        ctk.CTkButton(self.ramka_tekstow, text="?", command=self._pokaz_karaoke, width=26, height=26, corner_radius=13,
+        # „?” = okienko: co robi przełącznik, czym odtwarzać teksty, jak zrobić karaoke (_pokaz_pomoc_tekstow)
+        ctk.CTkButton(self.ramka_tekstow, text="?", command=self._pokaz_pomoc_tekstow, width=26, height=26, corner_radius=13,
                       fg_color=POLE, hover_color=OBRYS, text_color=TEKST, font=ctk.CTkFont(FONT, 13, "bold")
                       ).pack(side="left", padx=(6, 0))
         self._przycisk(karta_zapisu, t("Wybierz…"), self._wybierz_folder, width=120, height=38).grid(
@@ -843,6 +884,8 @@ class Aplikacja(ctk.CTk):
         self.przycisk_odsluch.pack(side="left", padx=(10, 0))
         # „Następny” pojawia się tylko podczas odsłuchu (_pokaz_odsluch) - stale wyszarzony był martwym elementem
         self.przycisk_nastepny = self._przycisk(przyciski, t("Następny  ›"), self._nastepny, width=110, height=42)
+        # „Karaoke” też tylko podczas odsłuchu: okno z tekstem i podświetloną bieżącą linijką (_pokaz_karaoke)
+        self.przycisk_karaoke = self._przycisk(przyciski, t("Karaoke"), self._pokaz_karaoke, width=100, height=42)
         self._przycisk(przyciski, t("Otwórz folder"), self._otworz_folder, width=130, height=42).pack(side="left", padx=(6, 0))
         # w spoczynku pasek ma kolor tła (_schowaj_postep) - szara kreska wyglądała jak ozdobny separator;
         # obok napis: procent albo „3/12” przy liście
@@ -1581,7 +1624,11 @@ class Aplikacja(ctk.CTk):
                         self.kolejka.put(("odsluch_koniec", None))
                     return
                 link = f"https://music.youtube.com/watch?v={utwor.youtube_id}"
-            self._odsluch_w_tle(link, nr)
+                # tekst do karaoke szukamy po danych ze Spotify - pewniejsze niż te z YouTube
+                dane = (utwor.wykonawcy[0] if utwor.wykonawcy else "", utwor.tytul, utwor.album, utwor.sekundy)
+                self._odsluch_w_tle(link, nr, dane)
+            else:
+                self._odsluch_w_tle(link, nr)
         threading.Thread(target=w_tle, args=(self.odsluch_nr, link), daemon=True).start()
 
     @staticmethod
@@ -1589,25 +1636,27 @@ class Aplikacja(ctk.CTk):
         return subprocess.run([*narzedzie("yt-dlp"), "-q", "--no-warnings", "--ignore-config", *argumenty], capture_output=True,
                               text=True, encoding="utf-8", errors="replace", env=ENV_UTF8, creationflags=BEZ_OKNA)
 
-    def _strumien(self, utwor: str) -> tuple[str | None, str]:
-        """(tytuł, adres strumienia audio) albo (None, opis błędu)."""
-        wynik = self._yt_dlp("--no-playlist", "-f", "bestaudio", "--print", "title", "--print", "urls", "--", utwor)
-        linie = wynik.stdout.strip().splitlines()
-        if len(linie) < 2:
-            return None, wynik.stderr.strip()[-200:]
-        return linie[0], linie[-1]
+    def _strumien(self, utwor: str) -> tuple[str | None, str, tuple | None, float]:
+        """(tytuł, adres strumienia audio, dane do szukania tekstu, kiedy adres wydano) albo (None, błąd, None, 0)."""
+        wynik = self._yt_dlp("--no-playlist", "-f", "bestaudio", *POLA_STRUMIENIA, "--", utwor)
+        dane = dane_strumienia(wynik.stdout)
+        if dane is None:
+            return None, wynik.stderr.strip()[-200:], None, 0.0
+        return (*dane, time.monotonic())
 
-    def _odsluch_w_tle(self, link: str, nr: int):
+    def _odsluch_w_tle(self, link: str, nr: int, dane_utworu: tuple | None = None):
         """Utwór albo cały album/playlista po kolei. Gra ffplay bez okna; adres następnego utworu
-        wyciągamy, gdy leci bieżący - bez kilkusekundowej dziury między utworami."""
+        wyciągamy, gdy leci bieżący - bez kilkusekundowej dziury między utworami. Każdy utwór dostaje numer
+        karaoke; ffplay -stats podaje na stderr bieżącą sekundę (_czytaj_pozycje - stderr trzeba czytać do końca,
+        inaczej pełny bufor zatrzymałby odtwarzanie)."""
         try:
             if to_playlista_yt(link):
                 lista = self._yt_dlp("--flat-playlist", "--print", "url", "--", link).stdout.split()
             else:
                 lista = [link]
-            nastepny = self._strumien(lista[0]) if lista else (None, t("pusta playlista"))
+            nastepny = self._strumien(lista[0]) if lista else (None, t("pusta playlista"), None, 0.0)
             for i in range(len(lista)):
-                tytul, adres = nastepny
+                tytul, adres, dane, wydany = nastepny
                 if nr != self.odsluch_nr:
                     return  # w międzyczasie kliknięto Stop albo inny utwór
                 if tytul is None:
@@ -1615,8 +1664,21 @@ class Aplikacja(ctk.CTk):
                 else:
                     numer = f"[{i + 1}/{len(lista)}] " if len(lista) > 1 else ""
                     self.kolejka.put(("log", f"🎧 {numer}{tytul}"))
+                    self._karaoke_nr += 1
+                    self.kolejka.put(("karaoke_utwor", (self._karaoke_nr, dane_utworu or dane)))
+                    # świeży adres YouTube odpowiada 403 przez pierwsze ~3 s (sprawdzone 2026-11-11; 1.7.0 przez to
+                    # milczała) - czekamy; następny utwór ma adres z wyprzedzeniem, więc on już nie czeka
+                    if (zostalo := wydany + ODSLUCH_ADRES_GOTOWY_S - time.monotonic()) > 0:
+                        time.sleep(zostalo)
+                        if nr != self.odsluch_nr:
+                            return
+                    # -reconnect…: gdyby 3 s nie wystarczyły, ffplay sam ponawia (po 0, 1 i 3 s)
                     self.odsluch = subprocess.Popen(
-                        ["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet", adres], creationflags=BEZ_OKNA)
+                        ["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet", "-stats", "-reconnect", "1",
+                         "-reconnect_on_http_error", "4xx,5xx", "-reconnect_delay_max", "4", adres],
+                        stderr=subprocess.PIPE, creationflags=BEZ_OKNA)
+                    threading.Thread(target=self._czytaj_pozycje, args=(self.odsluch, self._karaoke_nr),
+                                     daemon=True).start()
                     if nr != self.odsluch_nr:  # Stop kliknięty w ułamku sekundy przed startem
                         self.odsluch.kill()
                         return
@@ -1635,9 +1697,11 @@ class Aplikacja(ctk.CTk):
         if gra:
             self.przycisk_odsluch.configure(text=t("■  Stop"), fg_color=AKCENT, hover_color=AKCENT_NAJECHANY)
             self.przycisk_nastepny.pack(side="left", padx=(6, 0), after=self.przycisk_odsluch)
+            self.przycisk_karaoke.pack(side="left", padx=(6, 0), after=self.przycisk_nastepny)
         else:
             self.przycisk_odsluch.configure(text=t("▶  Odsłuchaj"), fg_color=POLE, hover_color=OBRYS)
             self.przycisk_nastepny.pack_forget()
+            self.przycisk_karaoke.pack_forget()
 
     def _nastepny(self):
         if self.odsluch:
@@ -1649,6 +1713,163 @@ class Aplikacja(ctk.CTk):
             self.odsluch.kill()
             self.odsluch = None
         self._pokaz_odsluch(False)
+
+    # ---------- karaoke przy odsłuchu (od 1.8.0) ----------
+
+    def _czytaj_pozycje(self, proces: subprocess.Popen, nr: int):
+        """Wątek: stderr ffplay do samego końca; z każdej paczki ostatnia linia stanu = bieżąca sekunda utworu nr."""
+        bufor = b""
+        try:
+            while kawalek := proces.stderr.read1(4096):
+                *linie, bufor = re.split(rb"[\r\n]", bufor + kawalek)
+                for linia in reversed(linie):
+                    if (sekunda := pozycja_ffplay(linia)) is not None:
+                        self._karaoke_pozycja = (nr, sekunda, time.monotonic())
+                        break
+        except (OSError, ValueError):
+            pass  # proces zabity (Stop, „Następny”)
+
+    def _karaoke_otwarte(self) -> bool:
+        return self.okno_karaoke is not None and self.okno_karaoke.winfo_exists()
+
+    def _pokaz_karaoke(self):
+        """Okno „Karaoke”: tekst grającego utworu z LRCLIB, bieżąca linijka podświetlona i trzymana na środku.
+        Zostaje otwarte przy kolejnych utworach (album, „Następny”), zamknięcie nie zatrzymuje muzyki. Bez transient,
+        żeby dało się je zmaksymalizować (np. na telewizorze) - litery rosną z oknem."""
+        if self._juz_otwarte(self.okno_karaoke):
+            return
+        okno = self.okno_karaoke = ctk.CTkToplevel(self, fg_color=TLO)
+        okno.title(t("Karaoke"))
+        okno.geometry("620x560")
+        okno.minsize(420, 360)
+        okno.after(250, lambda: (okno.iconbitmap(str(ZASOBY / "ikona.ico")) if (ZASOBY / "ikona.ico").exists() else None,
+                                 self._kolor_paska_tytulu(okno), okno.lift(), okno.focus_force()))
+        self._k_tytul = ctk.CTkLabel(okno, text="", text_color=TEKST, font=ctk.CTkFont(FONT, 18, "bold"), anchor="w")
+        self._k_tytul.pack(fill="x", padx=24, pady=(18, 0))
+        self._k_wykonawca = ctk.CTkLabel(okno, text="", text_color=TEKST_SZARY, font=ctk.CTkFont(FONT, 13), anchor="w")
+        self._k_wykonawca.pack(fill="x", padx=24)
+        self._k_opis = ctk.CTkLabel(okno, text="", text_color=TEKST_SZARY, font=ctk.CTkFont(FONT, 12), anchor="w")
+        self._k_opis.pack(fill="x", side="bottom", padx=24, pady=(6, 12))
+        ramka = ctk.CTkFrame(okno, fg_color=KARTA, corner_radius=14)
+        ramka.pack(fill="both", expand=True, padx=16, pady=(12, 0))
+        # zwykły tk.Text: CTkTextbox nie pozwala na inną czcionkę w tagu, a bieżąca linijka ma być większa
+        self._k_czcionka = tkfont.Font(okno, family=FONT, size=15)
+        self._k_czcionka_biezaca = tkfont.Font(okno, family=FONT, size=19, weight="bold")
+        tekst = self._k_tekst = tk.Text(ramka, bg=KARTA, fg=TEKST_SZARY, relief="flat", borderwidth=0,
+                                        highlightthickness=0, wrap="word", cursor="arrow", padx=18, pady=18,
+                                        font=self._k_czcionka, state="disabled")
+        tekst.pack(fill="both", expand=True, padx=6, pady=6)
+        tekst.tag_configure("linia", justify="center", spacing1=5, spacing3=5)
+        tekst.tag_configure("biezaca", foreground=TEKST, font=self._k_czcionka_biezaca)
+        tekst.tag_configure("komunikat", justify="center", spacing1=60)
+        tekst.bind("<Configure>", self._karaoke_rozmiar, add="+")
+        self._karaoke_rysuj()
+        self._karaoke_szukaj()
+        self._karaoke_tik()
+
+    def _karaoke_rozmiar(self, zdarzenie):
+        """Litery rosną z oknem: rozmiar z szerokości w pikselach logicznych (bez skali DPI)."""
+        szer = zdarzenie.width / getattr(self, "_skala", 1.0)
+        rozmiar = max(13, min(40, round(szer / 38)))
+        if self._k_czcionka.cget("size") != rozmiar:
+            self._k_czcionka.configure(size=rozmiar)
+            self._k_czcionka_biezaca.configure(size=round(rozmiar * 1.3))
+            if self._karaoke_biezaca >= 0:
+                self.after_idle(lambda: self._karaoke_wysrodkuj(self._karaoke_biezaca))
+
+    def _karaoke_szukaj(self):
+        """Tekst bieżącego utworu: z pamięci albo z LRCLIB w tle. Tylko przy otwartym oknie „Karaoke” - bez niego
+        dane słuchanych utworów nigdzie nie idą."""
+        if not (self._karaoke_utwor and self._karaoke_otwarte()):
+            return
+        nr, dane = self._karaoke_utwor
+        if (self._karaoke_slowa and self._karaoke_slowa[0] == nr) or self._karaoke_szukany == nr:
+            return  # już jest, już wiadomo, że nie ma, albo właśnie szukamy
+        if dane in self._teksty_odsluchu:
+            self._karaoke_slowa = (nr, self._teksty_odsluchu[dane])
+            self._karaoke_rysuj()
+            return
+        self._karaoke_szukany = nr
+
+        def w_tle():
+            try:
+                self.kolejka.put(("karaoke_tekst", (nr, dane, teksty_piosenek.znajdz(*dane), False)))
+            except Exception:  # brak sieci: nie zapamiętujemy „brak tekstu”, przy następnym razie spróbujemy znowu
+                self.kolejka.put(("karaoke_tekst", (nr, dane, None, True)))
+        threading.Thread(target=w_tle, daemon=True).start()
+
+    def _karaoke_odebrany_tekst(self, nr: int, dane: tuple, slowa, blad: bool):
+        if not blad:
+            self._teksty_odsluchu[dane] = slowa
+        if self._karaoke_szukany == nr:
+            self._karaoke_szukany = None
+        if self._karaoke_utwor and self._karaoke_utwor[0] == nr:
+            self._karaoke_slowa = (nr, slowa)
+            self._karaoke_rysuj(blad)
+
+    def _karaoke_rysuj(self, blad_sieci: bool = False):
+        """Tytuł, wykonawca i cały tekst bieżącego utworu albo komunikat; podświetlenie robi _karaoke_tik."""
+        if not self._karaoke_otwarte():
+            return
+        tekst = self._k_tekst
+        tekst.configure(state="normal")
+        tekst.delete("1.0", "end")
+        self._karaoke_czasy, self._karaoke_biezaca = [], -1
+        opis = ""
+        if not self._karaoke_utwor:
+            self._k_tytul.configure(text=t("Karaoke"))
+            self._k_wykonawca.configure(text="")
+            tekst.insert("end", t("Włącz „Odsłuchaj”, a tekst piosenki pojawi się tutaj."), ("linia", "komunikat"))
+        else:
+            nr, (kto, co, _album, _sekundy) = self._karaoke_utwor
+            self._k_tytul.configure(text=co)
+            self._k_wykonawca.configure(text=kto)
+            slowa = self._karaoke_slowa[1] if self._karaoke_slowa and self._karaoke_slowa[0] == nr else ...
+            if slowa is ...:
+                tekst.insert("end", t("Szukam tekstu…"), ("linia", "komunikat"))
+            elif slowa is None:
+                tekst.insert("end", t("Nie udało się połączyć z bazą tekstów.") if blad_sieci
+                             else t("Nie znalazłem tekstu tej piosenki."), ("linia", "komunikat"))
+            elif slowa.z_czasami:
+                linie = teksty_piosenek.linie(slowa.z_czasami)
+                self._karaoke_czasy = [ms for ms, _ in linie]
+                tekst.insert("end", "\n".join(linia or "♪" for _, linia in linie) + "\n" * 8, "linia")
+                opis = t("Tekst z LRCLIB – bieżąca linijka świeci się w rytm piosenki.")
+            else:
+                tekst.insert("end", slowa.zwykle, "linia")
+                opis = t("Ta wersja piosenki nie ma czasów linijek, więc tekst się nie przewija.")
+        tekst.configure(state="disabled")
+        tekst.yview_moveto(0)
+        self._k_opis.configure(text=opis)
+
+    def _karaoke_tik(self):
+        """Co 80 ms: która linijka leci (zegar audio z ffplay + czas od ostatniego odczytu), podświetlenie, środek.
+        after na oknie głównym - after na zamkniętym okienku sypałby „invalid command name”."""
+        if not self._karaoke_otwarte():
+            return
+        self.after(80, self._karaoke_tik)
+        poz, utwor = self._karaoke_pozycja, self._karaoke_utwor
+        if not (self._karaoke_czasy and poz and utwor and poz[0] == utwor[0]):
+            return
+        _, sekunda, kiedy = poz
+        sekunda += min(time.monotonic() - kiedy, 0.3)  # ffplay pisze co ~30 ms; dłuższa cisza = koniec albo Stop
+        biezaca = teksty_piosenek.indeks_linii(self._karaoke_czasy, int(sekunda * 1000))
+        if biezaca == self._karaoke_biezaca:
+            return
+        self._k_tekst.tag_remove("biezaca", "1.0", "end")
+        if biezaca >= 0:
+            self._k_tekst.tag_add("biezaca", f"{biezaca + 1}.0", f"{biezaca + 1}.end")
+            self._karaoke_wysrodkuj(biezaca)
+        self._karaoke_biezaca = biezaca
+
+    def _karaoke_wysrodkuj(self, biezaca: int):
+        """Bieżąca linijka na ~40% wysokości okna."""
+        tekst = self._k_tekst
+        tekst.see(f"{biezaca + 1}.0")
+        tekst.update_idletasks()
+        miejsce = tekst.dlineinfo(f"{biezaca + 1}.0")
+        if miejsce:
+            tekst.yview_scroll(int(miejsce[1] - tekst.winfo_height() * 0.4), "pixels")
 
     # ---------- pobieranie ----------
 
@@ -1742,6 +1963,12 @@ class Aplikacja(ctk.CTk):
                     self._pokaz_wyniki(wartosc)
                 elif rodzaj == "odsluch_koniec":
                     self._pokaz_odsluch(False)
+                elif rodzaj == "karaoke_utwor":  # kolejny utwór w odsłuchu: nowy tekst w oknie „Karaoke”
+                    self._karaoke_utwor = wartosc
+                    self._karaoke_rysuj()
+                    self._karaoke_szukaj()
+                elif rodzaj == "karaoke_tekst":
+                    self._karaoke_odebrany_tekst(*wartosc)
                 elif rodzaj == "lista":
                     self._pokaz_liste(*wartosc)
                 elif rodzaj == "status":
