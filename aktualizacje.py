@@ -154,6 +154,9 @@ def wersje_importem() -> dict:
     import yt_dlp_ejs  # noqa: F401
     import spotapi  # noqa: F401
     import ytmusicapi  # noqa: F401
+    # to, czego Nutka naprawdę używa (spotify_lista.py): sam „import spotapi” przepuściłby wersję bez potrzebnych
+    # klas (spotapi 2.0.0 nie ma PublicAlbum - Spotify by przestał działać)
+    from spotapi import PublicAlbum, PublicPlaylist  # noqa: F401
     return {p: wersja(p) for p in (*PAKIETY, "yt-dlp-ejs")}
 
 

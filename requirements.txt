@@ -1,6 +1,8 @@
 yt-dlp
 ytmusicapi
-spotapi
+# spotapi 2.0.0 (2026-11-11) zmieniło API (nie ma PublicAlbum) i wymaga modułu wreq - Nutka zostaje przy 1.x,
+# dopóki spotify_lista.py nie przejdzie na 2.x
+spotapi<2
 # spotapi 1.2.8 importuje je przy starcie (spotapi/utils/saver.py), choć ich nie deklaruje - bez nich „No module named
 # 'pymongo'”. W repozytorium spotapi już poprawione; gdy wyjdzie nowsza wersja na PyPI, można usunąć.
 pymongo

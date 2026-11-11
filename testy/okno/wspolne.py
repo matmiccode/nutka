@@ -67,9 +67,14 @@ class Sprawdzenia:
 
 def zrzut(widget, plik: Path, przytnij: tuple | None = None):
     """PrintWindow okna, w którym siedzi widget (okno główne albo okienko) -> PNG; przytnij = (x1, y1, x2, y2)."""
+    u32 = ctypes.windll.user32
+    return zrzut_okna(u32.GetParent(widget.winfo_id()) or widget.winfo_id(), plik, przytnij)
+
+
+def zrzut_okna(hwnd: int, plik: Path, przytnij: tuple | None = None):
+    """PrintWindow okna o danym uchwycie (np. okno zbudowanego Nutka.exe znalezione po PID) -> PNG."""
     from PIL import Image
     u32, g32 = ctypes.windll.user32, ctypes.windll.gdi32
-    hwnd = u32.GetParent(widget.winfo_id()) or widget.winfo_id()
     r = wintypes.RECT()
     u32.GetWindowRect(hwnd, ctypes.byref(r))
     w, h = r.right - r.left, r.bottom - r.top
