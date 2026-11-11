@@ -41,7 +41,7 @@ from teksty import t
 # język interfejsu: NUTKA_JEZYK (testy) > wybór z przełącznika w nagłówku (ustawienia.json) > język Windows
 teksty.ustaw(os.environ.get("NUTKA_JEZYK") or aktualizacja_programu.czytaj_ustawienia().get("jezyk"))
 
-WERSJA = "1.7.0"  # jedyne źródło wersji: czyta ją zbuduj.ps1 (instalator, wydanie na GitHubie) i aktualizacja_programu
+WERSJA = "1.8.0"  # jedyne źródło wersji: czyta ją zbuduj.ps1 (instalator, wydanie na GitHubie) i aktualizacja_programu
 REPO_GITHUB = "matmiccode/nutka"  # skąd program bierze informację o nowych wersjach (GitHub Releases)
 BUYCOFFEE_URL = "https://buycoffee.to/matcode"  # profil na buycoffee.to - pusty = przycisk „Postaw kawę” się nie pokazuje
 STRONA_PROGRAMU = "https://matmiccode.github.io/nutka/"  # link „Strona programu” w oknie „O programie” (en: /nutka/en/)
@@ -1331,7 +1331,7 @@ class Aplikacja(ctk.CTk):
             t(" – {n} już masz, są odznaczone.").format(n=masz) if masz else "")
         self._dopisz(t("♫ {opis} Odznacz, czego nie chcesz, i kliknij „Pobierz zaznaczone”.").format(opis=opis))
         if lista.zrodlo == "youtube":
-            self._dopisz(t("Przełącznikiem „Muzyka / Wideo” wybierasz, czy lista pobierze się jako mp3, czy jako filmy mp4."))
+            self._dopisz(t("Przełącznikiem u góry wybierasz, czy lista pobierze się jako mp3, czy jako filmy mp4."))
 
     def _rodzaj_listy(self) -> str:
         return {"playlista": t("Playlista"), "album": t("Album"), "utwór": t("Utwór")}[self.lista.rodzaj]
@@ -1774,8 +1774,9 @@ class Aplikacja(ctk.CTk):
         if self._k_czcionka.cget("size") != rozmiar:
             self._k_czcionka.configure(size=rozmiar)
             self._k_czcionka_biezaca.configure(size=round(rozmiar * 1.3))
-            if self._karaoke_biezaca >= 0:
-                self.after_idle(lambda: self._karaoke_wysrodkuj(self._karaoke_biezaca))
+        # też przy pierwszym pokazaniu: wcześniej okno nie zna swojej wysokości i linijka lądowała na samej górze
+        if self._karaoke_biezaca >= 0:
+            self.after_idle(lambda: self._karaoke_otwarte() and self._karaoke_wysrodkuj(self._karaoke_biezaca))
 
     def _karaoke_szukaj(self):
         """Tekst bieżącego utworu: z pamięci albo z LRCLIB w tle. Tylko przy otwartym oknie „Karaoke” - bez niego
@@ -1863,13 +1864,12 @@ class Aplikacja(ctk.CTk):
         self._karaoke_biezaca = biezaca
 
     def _karaoke_wysrodkuj(self, biezaca: int):
-        """Bieżąca linijka na ~40% wysokości okna."""
+        """Bieżąca linijka na ~40% wysokości okna: tyle linijek nad nią, ile się mieści, i ta pierwsza na górze.
+        Całymi linijkami - przewijanie o piksele (yview_scroll … "pixels") ucinało lewy brzeg pogrubionego „ł”."""
         tekst = self._k_tekst
-        tekst.see(f"{biezaca + 1}.0")
-        tekst.update_idletasks()
-        miejsce = tekst.dlineinfo(f"{biezaca + 1}.0")
-        if miejsce:
-            tekst.yview_scroll(int(miejsce[1] - tekst.winfo_height() * 0.4), "pixels")
+        wys_linii = self._k_czcionka.metrics("linespace") + 10  # + spacing1 i spacing3 tagu „linia”
+        nad = max(0, int(tekst.winfo_height() * 0.4 / wys_linii) - 1)
+        tekst.yview(f"{max(1, biezaca + 1 - nad)}.0")
 
     # ---------- pobieranie ----------
 

@@ -83,18 +83,19 @@
       <p>Search box on top, results in the middle, fields and buttons at the bottom.</p>
     </div>
     <figure>
-      <img src="../img/en/okno.png" alt="The Nutka window: the search box with a Paste button, a list of results with one track selected, the Save to field with the Music / Video switch, the Download mp3, Listen and Open folder buttons" width="976" height="759">
+      <img src="../img/en/okno.png" alt="The Nutka window: the Music (mp3) / Video (mp4) switch and the search box with a Paste button, a list of results with one track selected, the Save to field with the Lyrics for karaoke switch, the Download mp3, Listen and Open folder buttons" width="976" height="759">
       <figcaption>Search results. The selected track is the one “Download mp3” downloads and “Listen” plays.</figcaption>
     </figure>
     <dl class="cechy odstep-duzy">
+      <div><dt>Music (mp3) / Video (mp4)</dt><dd>At the start of the search row: what you get from the download, an mp3 or an mp4 video – you can see it before you search. With “Video” a quality list appears next to the “Save to” field – <a href="#video">details below</a>.</dd></div>
       <div><dt>Box on top</dt><dd>Type a title or artist, or paste a YouTube or Spotify link, and press Enter; the <span class="przycisk">Paste</span> button pastes a link from the clipboard and checks it right away. A playlist or album link opens a list, a link to a single video shows it as a row in the table.</dd></div>
       <div><dt>Songs / Albums</dt><dd>Whether you are looking for single songs or whole records.</dd></div>
       <div><dt>Results list</dt><dd>A click selects a track, a double-click downloads it right away.</dd></div>
       <div><dt>Right-click on a row</dt><dd>Copies the link, opens the track in YouTube or Spotify, and shows a downloaded file in its folder.</dd></div>
-      <div><dt>Music / Video</dt><dd>Next to “Save to”: what you get from the download, an mp3 or an mp4 video. With “Video” a quality list appears next to it – <a href="#video">details below</a>.</dd></div>
       <div><dt>Save to</dt><dd>The folder for downloaded files – one for music and a separate one for videos. Change it with the <span class="przycisk">Browse…</span> button.</dd></div>
+      <div><dt>Lyrics for karaoke</dt><dd>A switch next to “Save to” (for music): whether to add the song's lyrics to new mp3 files. The <span class="przycisk">?</span> next to it tells you what to play them with – <a href="#karaoke">details below</a>.</dd></div>
       <div><dt>Download mp3 / Download video</dt><dd>Downloads the selected result or the link pasted into the box on top – as an mp3 or a video, depending on the switch. While it runs, a progress bar with a percentage appears next to it.</dd></div>
-      <div><dt>▶ Listen</dt><dd>Plays the selected track without downloading. While playing it turns into <span class="przycisk">■ Stop</span>, and <span class="przycisk">Next ›</span> appears next to it.</dd></div>
+      <div><dt>▶ Listen</dt><dd>Plays the selected track without downloading. While playing it turns into <span class="przycisk">■ Stop</span>, and <span class="przycisk">Next ›</span> and <span class="przycisk">Karaoke</span> appear next to it.</dd></div>
       <div><dt>Open folder</dt><dd>Opens the folder with the downloaded files in Explorer.</dd></div>
       <div><dt>Box at the bottom</dt><dd>Short messages: what is happening right now and whether it worked.</dd></div>
       <div><dt>Bar at the bottom</dt><dd>The version number on the left. On the right: <strong>Check for updates</strong>, <strong>About</strong> (version, program website and licenses) and <strong>Report a problem</strong> – Nutka checks what works, copies the report to the clipboard and opens a GitHub issue page with the report inside.</dd></div>
@@ -147,14 +148,14 @@
   <div class="wrap">
     <div class="sekcja-naglowek">
       <h2>Videos from YouTube</h2>
-      <p>Nutka downloads video as well: a single video or a whole playlist, hours-long recordings included. Set the <strong>Music / Video</strong> switch next to “Save to” to <strong>Video</strong>, paste a link into the box on top and click <span class="przycisk glowny">Download video</span>.</p>
+      <p>Nutka downloads video as well: a single video or a whole playlist, hours-long recordings included. At the start of the search row switch to <strong>Video (mp4)</strong>, paste a link into the box on top and click <span class="przycisk glowny">Download video</span>.</p>
     </div>
     <figure>
-      <img src="../img/en/wideo.png" alt="The Nutka window in Video mode: the Music / Video switch set to Video, the 1080p quality list next to it, the Save to field showing the Videos folder, the Download video button and a progress bar" width="976" height="759">
-      <figcaption>“Video” mode: the quality list next to the switch, and the videos folder in the “Save to” field.</figcaption>
+      <img src="../img/en/wideo.png" alt="The Nutka window in Video mode: the switch on top set to Video (mp4), the Save to field showing the Videos folder with the 1080p quality list next to it, the Download video button and a progress bar" width="976" height="759">
+      <figcaption>“Video” mode: the videos folder and the quality list next to the “Save to” field.</figcaption>
     </figure>
     <dl class="cechy odstep-duzy">
-      <div><dt>Quality</dt><dd>The list next to the switch: <strong>1080p</strong> (default), <strong>720p</strong>, <strong>480p</strong> or <strong>Highest</strong>. Up to 1080p Nutka picks H.264 video and AAC audio, so the mp4 plays on a computer, a phone and a TV without extra codecs. “Highest” also takes 1440p and 4K when the video has them – such files are several times bigger, and older TVs may not play them.</dd></div>
+      <div><dt>Quality</dt><dd>The list next to the “Save to” field: <strong>1080p</strong> (default), <strong>720p</strong>, <strong>480p</strong> or <strong>Highest</strong>. Up to 1080p Nutka picks H.264 video and AAC audio, so the mp4 plays on a computer, a phone and a TV without extra codecs. “Highest” also takes 1440p and 4K when the video has them – such files are several times bigger, and older TVs may not play them.</dd></div>
       <div><dt>Folder</dt><dd>Videos go to <strong>Videos \ Nutka</strong> (<code>C:\Users\&lt;you&gt;\Videos\Nutka</code>), separately from music. The “Save to” field shows the folder of whatever you are downloading right now; change it with the <span class="przycisk">Browse…</span> button.</dd></div>
       <div><dt>How much space</dt><dd>An hour of 1080p video is usually 1–2 GB, 720p about half of that. YouTube keeps picture and sound separately – Nutka downloads both (the progress bar runs twice) and joins them at the end without re-encoding, so during the download the file briefly takes twice the space on disk.</dd></div>
       <div><dt>Playlists</dt><dd>A playlist link in “Video” mode opens a list of videos with tick boxes – <a href="#spotify">the same as for music</a>. The ticked ones are downloaded into a subfolder named after the playlist; those you already have are unticked.</dd></div>
@@ -184,7 +185,7 @@
       <li>Tracks you already have are marked <em>already yours</em> and unticked. Just load the playlist again to pick up the new ones.</li>
       <li>If something fails, those tracks stay ticked. Click <strong>Download selected</strong> again to retry.</li>
       <li>A playlist goes into a subfolder with its name, an album with track numbers. The files carry the title, artist, album and cover art from Spotify or YouTube.</li>
-      <li>A YouTube list follows the <strong>Music / Video</strong> switch: in “Music” mode it downloads mp3, in “Video” mode mp4 videos in the chosen quality, into the videos folder. After switching, “already yours” is worked out again.</li>
+      <li>A YouTube list follows the <strong>Music (mp3) / Video (mp4)</strong> switch: in “Music” mode it downloads mp3, in “Video” mode mp4 videos in the chosen quality, into the videos folder. After switching, “already yours” is worked out again.</li>
       <li><span class="przycisk">Close list</span> goes back to normal searching.</li>
     </ul>
     <div class="uwaga odstep">
@@ -204,6 +205,10 @@
       <li><h3>Copy the mp3 with its .lrc</h3><p>When moving music to a phone or a USB stick, take both files: same folder, same name. Without the <code>.lrc</code> file the lyrics won't scroll.</p></li>
       <li><h3>Sing</h3><p>Play the song and open the lyrics view in your player.</p></li>
     </ol>
+    <figure>
+      <img src="../img/en/karaoke.png" alt="The Karaoke window: the song title and artist, and below the lyrics with the current line bigger and brighter" width="636" height="599" loading="lazy">
+      <figcaption>The “Karaoke” window in Nutka, while listening. The current line is bigger and brighter; you can maximize the window and the letters grow with it.</figcaption>
+    </figure>
     <div class="odstep-duzy">
       <dl class="cechy">
         <div><dt>What to play them with</dt><dd>In Nutka itself (since version 1.8.0): while listening, click <span class="przycisk">Karaoke</span>. For downloaded files, on a computer use <strong>AIMP</strong> (free). On an Android phone, <strong>Musicolet</strong> (free, no ads) or <strong>Poweramp</strong>. Many other players show the plain lyrics, without scrolling.</dd></div>

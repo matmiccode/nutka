@@ -3,20 +3,26 @@
 Format: najnowsze na górze. Sekcja wersji jest jednocześnie opisem „Co nowego”, który program pokazuje
 przy proponowaniu aktualizacji – pisz ją dla zwykłego użytkownika.
 
-## [1.8.0] – w przygotowaniu
+## [1.8.0] – 2026-11-11
 
-- **Odsłuch znowu gra.** YouTube zaczął odrzucać odtwarzanie przez pierwsze sekundy, więc „Odsłuchaj” milczał.
-  Nutka teraz chwilę czeka i w razie potrzeby próbuje jeszcze raz – pierwszy utwór rusza po kilku sekundach,
-  kolejne z albumu bez przerwy.
 - **Karaoke w Nutce.** W trakcie odsłuchu obok „Następny” jest przycisk „Karaoke”: okno z tekstem piosenki,
   w którym bieżąca linijka świeci się w rytm muzyki. Okno możesz powiększyć na cały ekran, a litery urosną razem
   z nim. Przy albumie tekst sam przechodzi na kolejny utwór.
-
 - **Muzyka czy film – widać od razu.** Przełącznik „Muzyka (mp3) / Wideo (mp4)” stoi teraz na początku
   wiersza wyszukiwania, a nie na dole przy folderze, gdzie łatwo go było przeoczyć.
 - **Teksty piosenek, kiedy chcesz.** Przy folderze jest przełącznik „Teksty do karaoke”. Wyłącz go, a Nutka
   przestanie dopisywać teksty do nowych mp3. Program zapamiętuje ten wybór. Znak „?” obok podpowiada, czym
   odtwarzać teksty i jak zrobić karaoke (to samo w instrukcji, w nowej części „Teksty i karaoke”).
+- **Odsłuch znowu gra.** YouTube zaczął odrzucać odtwarzanie przez pierwsze sekundy, więc „Odsłuchaj” milczał.
+  Nutka teraz chwilę czeka i w razie potrzeby próbuje jeszcze raz – pierwszy utwór rusza po kilku sekundach,
+  kolejne z albumu bez przerwy.
+
+In English: **Karaoke in Nutka** – while listening, the new “Karaoke” button opens the song's lyrics with the
+current line lit up in time with the music; maximize the window and the letters grow with it. **Music or video
+at a glance** – the “Music (mp3) / Video (mp4)” switch now sits at the start of the search row. **Lyrics when
+you want them** – the “Lyrics for karaoke” switch next to the folder turns adding lyrics to new mp3 files on or
+off, and the “?” next to it tells you how to play them. **Listening works again** – YouTube started refusing
+playback for the first few seconds, so “Listen” stayed silent; Nutka now waits a moment and retries.
 
 ## [1.7.0] – 2026-11-06
 

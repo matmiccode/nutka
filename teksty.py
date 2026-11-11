@@ -160,8 +160,8 @@ EN = {
     "Wczytuję listę z YouTube…": "Loading the list from YouTube…",
     "✖ Nie udało się wczytać listy z YouTube ({e}). Czy playlista jest publiczna?":
         "✖ Couldn't load the list from YouTube ({e}). Is the playlist public?",
-    "Przełącznikiem „Muzyka / Wideo” wybierasz, czy lista pobierze się jako mp3, czy jako filmy mp4.":
-        "The “Music / Video” switch decides whether the list downloads as mp3 or as mp4 videos.",
+    "Przełącznikiem u góry wybierasz, czy lista pobierze się jako mp3, czy jako filmy mp4.":
+        "The switch on top decides whether the list downloads as mp3 or as mp4 videos.",
     "yt-dlp nic nie zwrócił": "yt-dlp returned nothing",
     "Sprawdzam link…": "Checking the link…",
     "✖ Nie udało się odczytać linku ({e}).": "✖ Couldn't read the link ({e}).",
