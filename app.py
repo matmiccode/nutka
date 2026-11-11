@@ -415,6 +415,8 @@ class Aplikacja(ctk.CTk):
         jakosc = ustawienia.get("jakosc_wideo")
         self.jakosc = tk.StringVar(value=NAZWY_JAKOSCI[jakosc if jakosc in NAZWY_JAKOSCI else DOMYSLNA_JAKOSC])
         self.tryb = tk.StringVar(value=TRYB_WIDEO if ustawienia.get("pobieranie") == "wideo" else TRYB_MUZYKA)
+        # „Teksty do karaoke” (od 1.8.0): czy do nowych mp3 dopisywać tekst z LRCLIB; domyślnie tak jak w 1.7.0
+        self.z_tekstami = tk.BooleanVar(value=ustawienia.get("teksty") is not False)
         self.link = tk.StringVar()
         self.rodzaj = tk.StringVar(value=t("Utwory"))  # napis z przełącznika; klucz daje _rodzaj_wyszukiwania()
         self._tryb_paska = "determinate"
@@ -788,6 +790,14 @@ class Aplikacja(ctk.CTk):
             font=ctk.CTkFont(FONT, 13), dropdown_font=ctk.CTkFont(FONT, 13),
             command=lambda _: self._zapisz_ustawienia_pobierania())
         self.wybor_jakosci.grid(row=0, column=2, padx=(10, 0))
+        # to samo miejsce co lista jakości: przy muzyce przełącznik tekstów, przy wideo jakość (_zmien_tryb);
+        # tekst dostają tylko mp3
+        self.ramka_tekstow = ctk.CTkFrame(karta_zapisu, fg_color="transparent")
+        self.ramka_tekstow.grid(row=0, column=2, padx=(14, 0))
+        ctk.CTkSwitch(self.ramka_tekstow, text=t("Teksty do karaoke"), variable=self.z_tekstami,
+                      command=self._zapisz_ustawienia_pobierania, switch_width=38, switch_height=20,
+                      fg_color=OBRYS, progress_color=WYBRANY, button_color=TEKST, button_hover_color="#FFFFFF",
+                      text_color=TEKST, font=ctk.CTkFont(FONT, 13)).pack(side="left")
         self._przycisk(karta_zapisu, t("Wybierz…"), self._wybierz_folder, width=120, height=38).grid(
             row=0, column=3, padx=(10, 0))
 
@@ -967,9 +977,11 @@ class Aplikacja(ctk.CTk):
         """Przełącznik „Muzyka / Wideo”: lista jakości i folder filmów tylko przy wideo, napis na „Pobierz”."""
         wideo = self._wideo()
         if wideo:
+            self.ramka_tekstow.grid_remove()
             self.wybor_jakosci.grid()
         else:
             self.wybor_jakosci.grid_remove()
+            self.ramka_tekstow.grid()
         self.pole_folder.configure(textvariable=self._zmienna_folderu())
         if not self.lista:  # w trybie listy przycisk ma swój napis („Pobierz zaznaczone (N)” / „Zatrzymaj”)
             self.przycisk_pobierz.configure(text=t("Pobierz wideo") if wideo else t("Pobierz mp3"))
@@ -981,7 +993,8 @@ class Aplikacja(ctk.CTk):
     def _zapisz_ustawienia_pobierania(self):
         aktualizacja_programu.zapisz_ustawienia({
             "folder": self.folder.get().strip(), "folder_wideo": self.folder_wideo.get().strip(),
-            "pobieranie": "wideo" if self._wideo() else "muzyka", "jakosc_wideo": self._jakosc_wideo()})
+            "pobieranie": "wideo" if self._wideo() else "muzyka", "jakosc_wideo": self._jakosc_wideo(),
+            "teksty": self.z_tekstami.get()})
 
     def _wybierz_folder(self):
         zmienna = self._zmienna_folderu()
@@ -1416,6 +1429,7 @@ class Aplikacja(ctk.CTk):
             return
         lista, folder = self.lista, Path(self._zmienna_folderu().get())
         wideo, jakosc = self._wideo(), self._jakosc_wideo()  # lista z YouTube: mp3 albo mp4 wg przełącznika
+        z_tekstami = self.z_tekstami.get()  # zmiennych Tk nie czytamy z wątków
         self._zapisz_ustawienia_pobierania()  # folder mógł być wpisany ręcznie
         self.pobieranie_listy = True
         self.przerwij_liste.clear()
@@ -1463,8 +1477,8 @@ class Aplikacja(ctk.CTk):
                     self.kolejka.put(("status", (iid, t("zapisuję…"))))
                     spotify_lista.otaguj(plik, utwor, lista)
                     nowe_mp3.append(iid)
-                    if teksty_piosenek.dodaj(plik, utwor.wykonawcy[0] if utwor.wykonawcy else "", utwor.tytul,
-                                             utwor.album, utwor.sekundy):
+                    if z_tekstami and teksty_piosenek.dodaj(
+                            plik, utwor.wykonawcy[0] if utwor.wykonawcy else "", utwor.tytul, utwor.album, utwor.sekundy):
                         z_tekstem.append(iid)
                 self.kolejka.put(("status", (iid, "✓ " + t("pobrano"))))
                 return True
@@ -1481,7 +1495,7 @@ class Aplikacja(ctk.CTk):
                 for i, zadanie in enumerate(as_completed(zadania), 1):
                     (udane if zadanie.result() else nieudane).append(zadania[zadanie])
                     self.kolejka.put(("postep_listy", (i, len(do_pobrania))))
-            if nowe_mp3:
+            if nowe_mp3 and z_tekstami:
                 self.kolejka.put(("log", t("📝 Teksty piosenek: {n} z {m} nowych utworów (z LRCLIB).").format(
                     n=len(z_tekstem), m=len(nowe_mp3))))
             self.kolejka.put(("lista_koniec", (udane, nieudane)))
@@ -1628,9 +1642,10 @@ class Aplikacja(ctk.CTk):
             self._dopisz(t("▶ Start (wideo {jakosc}): {link}").format(jakosc=NAZWY_JAKOSCI[jakosc].lower(), link=link))
         else:
             self._dopisz(t("▶ Start ({zrodlo}): {link}").format(zrodlo=rozpoznaj_zrodlo(link), link=link))
-        threading.Thread(target=self._uruchom, args=(zbuduj_komende(link, folder, jakosc),), daemon=True).start()
+        threading.Thread(target=self._uruchom, args=(zbuduj_komende(link, folder, jakosc), self.z_tekstami.get()),
+                         daemon=True).start()
 
-    def _uruchom(self, komenda: list[str]):
+    def _uruchom(self, komenda: list[str], z_tekstami: bool = True):
         try:
             self.proces = subprocess.Popen(
                 komenda,
@@ -1647,7 +1662,7 @@ class Aplikacja(ctk.CTk):
                     if tekst.startswith("PLIK "):
                         pliki.append(Path(tekst[5:].strip()))
             kod = self.proces.wait()
-            if kod == 0:
+            if kod == 0 and z_tekstami:
                 for plik in pliki:  # mp3: tekst piosenki z LRCLIB po tagach, które wpisał yt-dlp (film mp4 bez tekstu)
                     if plik.suffix.lower() == ".mp3" and plik.exists():
                         slowa = teksty_piosenek.dodaj_z_tagow(plik)

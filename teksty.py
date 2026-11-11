@@ -73,6 +73,7 @@ EN = {
     "Zapisz do": "Save to",
     "Wybierz…": "Browse…",
     "♫  Muzyka (mp3)": "♫  Music (mp3)",
+    "Teksty do karaoke": "Lyrics for karaoke",
     "▶  Wideo (mp4)": "▶  Video (mp4)",
     "Najwyższa": "Highest",
     "Pobierz mp3": "Download mp3",
