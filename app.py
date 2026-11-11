@@ -55,6 +55,8 @@ DOMYSLNY_FOLDER_WIDEO = Path.home() / "Videos" / t("Pobrane")  # filmy osobno od
 JAKOSCI_WIDEO = {"najwyzsza": "res,vcodec:h264,acodec:aac", "1080p": "res:1080,vcodec:h264,acodec:aac",
                  "720p": "res:720,vcodec:h264,acodec:aac", "480p": "res:480,vcodec:h264,acodec:aac"}
 NAZWY_JAKOSCI = {"najwyzsza": t("Najwyższa"), "1080p": "1080p", "720p": "720p", "480p": "480p"}  # napisy na liście
+# napisy przełącznika = wartości self.tryb; format w nawiasie, żeby przed szukaniem było jasne, co wyjdzie z pobrania
+TRYB_MUZYKA, TRYB_WIDEO = t("♫  Muzyka (mp3)"), t("▶  Wideo (mp4)")
 DOMYSLNA_JAKOSC = "1080p"
 ROWNOLEGLE_POBIERANIA = 3  # lista Spotify: ile utworów naraz
 # wklejony tekst trafia jako argument do yt-dlp, więc „link” = tylko http(s) na jednym z tych hostów (rozpoznaj_zrodlo)
@@ -412,7 +414,7 @@ class Aplikacja(ctk.CTk):
         self.folder_wideo = tk.StringVar(value=ustawienia.get("folder_wideo") or str(DOMYSLNY_FOLDER_WIDEO))
         jakosc = ustawienia.get("jakosc_wideo")
         self.jakosc = tk.StringVar(value=NAZWY_JAKOSCI[jakosc if jakosc in NAZWY_JAKOSCI else DOMYSLNA_JAKOSC])
-        self.tryb = tk.StringVar(value=t("Wideo") if ustawienia.get("pobieranie") == "wideo" else t("Muzyka"))
+        self.tryb = tk.StringVar(value=TRYB_WIDEO if ustawienia.get("pobieranie") == "wideo" else TRYB_MUZYKA)
         self.link = tk.StringVar()
         self.rodzaj = tk.StringVar(value=t("Utwory"))  # napis z przełącznika; klucz daje _rodzaj_wyszukiwania()
         self._tryb_paska = "determinate"
@@ -682,20 +684,29 @@ class Aplikacja(ctk.CTk):
         # --- wyszukiwarka ---
         wiersz_szukaj = ctk.CTkFrame(self, fg_color="transparent")
         wiersz_szukaj.grid(row=1, column=1, sticky="ew", padx=margines, pady=(margines, 10))
-        wiersz_szukaj.columnconfigure(0, weight=1)
-        self.pole_szukaj = self._pole(wiersz_szukaj, placeholder_text=t("Wpisz tytuł lub wykonawcę – albo wklej link z YouTube lub Spotify"))
-        self.pole_szukaj.grid(row=0, column=0, sticky="ew")
+        wiersz_szukaj.columnconfigure(1, weight=1)
+        # „Muzyka / Wideo” na początku wiersza (od 1.8.0; przy „Zapisz do” ginął): już przy szukaniu widać, co wyjdzie
+        # z pobrania. Przy wideo lista jakości przy „Zapisz do”, a pole „Zapisz do” pokazuje folder filmów (_zmien_tryb)
+        self.przelacznik_trybu = ctk.CTkSegmentedButton(
+            wiersz_szukaj, values=[TRYB_MUZYKA, TRYB_WIDEO], variable=self.tryb, command=lambda _: self._zmien_tryb(),
+            height=38, corner_radius=10, fg_color=POLE, unselected_color=POLE, unselected_hover_color=OBRYS,
+            selected_color=WYBRANY, selected_hover_color=WYBRANY_NAJECHANY, text_color=TEKST,
+            text_color_disabled=TEKST_SZARY, font=ctk.CTkFont(FONT, 13))
+        self.przelacznik_trybu.grid(row=0, column=0, padx=(0, 10))
+        # krótko, bo pole dzieli wiersz z przełącznikiem; pełny opis jest na pustej tabeli (_pokaz_pusta)
+        self.pole_szukaj = self._pole(wiersz_szukaj, placeholder_text=t("Tytuł, wykonawca albo link"))
+        self.pole_szukaj.grid(row=0, column=1, sticky="ew")
         self.pole_szukaj.bind("<Return>", lambda _: self.szukaj())
         self.after(300, self.pole_szukaj.focus)
         # jedno pole na wszystko (od 1.6.0): fraza do wyszukania albo link; „Wklej” = schowek do pola + Enter
-        self._przycisk(wiersz_szukaj, t("Wklej"), self._wklej, width=90, height=38).grid(row=0, column=1, padx=(10, 0))
+        self._przycisk(wiersz_szukaj, t("Wklej"), self._wklej, width=90, height=38).grid(row=0, column=2, padx=(10, 0))
         ctk.CTkSegmentedButton(
             wiersz_szukaj, values=[t("Utwory"), t("Albumy")], variable=self.rodzaj, height=38, corner_radius=10,
             fg_color=POLE, unselected_color=POLE, unselected_hover_color=OBRYS, selected_color=WYBRANY,
             selected_hover_color=WYBRANY_NAJECHANY, text_color=TEKST, font=ctk.CTkFont(FONT, 13),
-        ).grid(row=0, column=2, padx=(10, 0))
+        ).grid(row=0, column=3, padx=(10, 0))
         self.przycisk_szukaj = self._przycisk(wiersz_szukaj, t("Szukaj"), self.szukaj, glowny=True, width=110, height=38)
-        self.przycisk_szukaj.grid(row=0, column=3, padx=(10, 0))
+        self.przycisk_szukaj.grid(row=0, column=4, padx=(10, 0))
 
         # --- wyniki ---
         karta_wynikow = ctk.CTkFrame(self, fg_color=KARTA, corner_radius=14)
@@ -761,7 +772,8 @@ class Aplikacja(ctk.CTk):
         self.pusta_opis.pack()
         self._pokaz_pusta()
 
-        # --- folder i tryb (od 1.6.0 bez osobnego pola „Link”: link wkleja się w pole u góry) ---
+        # --- folder (od 1.6.0 bez osobnego pola „Link”: link wkleja się w pole u góry; przełącznik Muzyka/Wideo
+        # od 1.8.0 przy wyszukiwarce - przy folderze ginął) ---
         karta_zapisu = ctk.CTkFrame(self, fg_color="transparent")
         karta_zapisu.grid(row=3, column=1, sticky="ew", padx=margines, pady=(12, 0))
         karta_zapisu.columnconfigure(1, weight=1)
@@ -769,23 +781,15 @@ class Aplikacja(ctk.CTk):
         ctk.CTkLabel(karta_zapisu, text=t("Zapisz do"), **opis).grid(row=0, column=0, sticky="w", padx=(2, 12))
         self.pole_folder = self._pole(karta_zapisu, textvariable=self.folder)
         self.pole_folder.grid(row=0, column=1, sticky="ew")
-        # „Muzyka / Wideo” przy folderze: co ma wyjść z pobrania; przy wideo obok lista jakości, a pole „Zapisz do”
-        # pokazuje osobny folder na filmy (_zmien_tryb)
-        self.przelacznik_trybu = ctk.CTkSegmentedButton(
-            karta_zapisu, values=[t("Muzyka"), t("Wideo")], variable=self.tryb, command=lambda _: self._zmien_tryb(),
-            height=38, corner_radius=10, fg_color=POLE, unselected_color=POLE, unselected_hover_color=OBRYS,
-            selected_color=WYBRANY, selected_hover_color=WYBRANY_NAJECHANY, text_color=TEKST,
-            text_color_disabled=TEKST_SZARY, font=ctk.CTkFont(FONT, 13))
-        self.przelacznik_trybu.grid(row=0, column=2, padx=(10, 0))
         self.wybor_jakosci = ctk.CTkOptionMenu(
             karta_zapisu, values=list(NAZWY_JAKOSCI.values()), variable=self.jakosc, width=112, height=38,
             corner_radius=10, fg_color=POLE, button_color=POLE, button_hover_color=OBRYS, text_color=TEKST,
             dropdown_fg_color=KARTA, dropdown_hover_color=WYBRANY, dropdown_text_color=TEKST,
             font=ctk.CTkFont(FONT, 13), dropdown_font=ctk.CTkFont(FONT, 13),
             command=lambda _: self._zapisz_ustawienia_pobierania())
-        self.wybor_jakosci.grid(row=0, column=3, padx=(10, 0))
+        self.wybor_jakosci.grid(row=0, column=2, padx=(10, 0))
         self._przycisk(karta_zapisu, t("Wybierz…"), self._wybierz_folder, width=120, height=38).grid(
-            row=0, column=4, padx=(10, 0))
+            row=0, column=3, padx=(10, 0))
 
         # --- przyciski i pasek postępu ---
         przyciski = ctk.CTkFrame(self, fg_color="transparent")
@@ -949,7 +953,7 @@ class Aplikacja(ctk.CTk):
         self.szukaj()
 
     def _wideo(self) -> bool:
-        return self.tryb.get() == t("Wideo")
+        return self.tryb.get() == TRYB_WIDEO
 
     def _jakosc_wideo(self) -> str:
         """Klucz z JAKOSCI_WIDEO dla napisu wybranego na liście."""
@@ -1220,7 +1224,7 @@ class Aplikacja(ctk.CTk):
         self.przycisk_pobierz.configure(state="normal")
         if lista.zrodlo == "spotify":
             if self._wideo():  # Spotify nie ma filmów, a dopasowany „teledysk” z YouTube Music to zwykle sama okładka
-                self.tryb.set(t("Muzyka"))
+                self.tryb.set(TRYB_MUZYKA)
                 self._zmien_tryb()
                 self._dopisz(t("♫ Ze Spotify Nutka pobiera tylko muzykę (mp3) – przełączam na „Muzyka”."))
             self.przelacznik_trybu.configure(state="disabled")  # lista Spotify zawsze mp3; wraca w zamknij_liste

@@ -46,8 +46,7 @@ EN = {
     "Instrukcja": "Guide",
     "Pobrane": "Nutka",  # domyślny podfolder w Muzyce
     # wyszukiwarka
-    "Wpisz tytuł lub wykonawcę – albo wklej link z YouTube lub Spotify":
-        "Type a title or artist – or paste a YouTube or Spotify link",
+    "Tytuł, wykonawca albo link": "Title, artist or a link",
     "Utwory": "Songs",
     "Albumy": "Albums",
     "Szukaj": "Search",
@@ -73,8 +72,8 @@ EN = {
     "Wklej": "Paste",
     "Zapisz do": "Save to",
     "Wybierz…": "Browse…",
-    "Muzyka": "Music",
-    "Wideo": "Video",
+    "♫  Muzyka (mp3)": "♫  Music (mp3)",
+    "▶  Wideo (mp4)": "▶  Video (mp4)",
     "Najwyższa": "Highest",
     "Pobierz mp3": "Download mp3",
     "Pobierz wideo": "Download video",

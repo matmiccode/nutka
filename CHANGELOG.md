@@ -3,6 +3,11 @@
 Format: najnowsze na górze. Sekcja wersji jest jednocześnie opisem „Co nowego”, który program pokazuje
 przy proponowaniu aktualizacji – pisz ją dla zwykłego użytkownika.
 
+## [1.8.0] – w przygotowaniu
+
+- **Muzyka czy film – widać od razu.** Przełącznik „Muzyka (mp3) / Wideo (mp4)” stoi teraz na początku
+  wiersza wyszukiwania, a nie na dole przy folderze, gdzie łatwo go było przeoczyć.
+
 ## [1.7.0] – 2026-11-06
 
 - **Teksty piosenek.** Do każdego nowego mp3 Nutka dopisuje tekst piosenki z otwartej bazy LRCLIB, więc
